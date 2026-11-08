@@ -94,14 +94,25 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 
 The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Moldgf copies or adapts that source, preserve copyright and license notices, provide the corresponding source and GPL obligations for distributed derivative work, and review all bundled dependencies and assets individually. A clean-room implementation based on published behavior/specifications may have a different provenance; obtain legal review before distribution if licensing is uncertain.
 
-## Current status
+## Current status — updated 2026-11-08
 
-- Repository baseline: commit `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
-- Work branch: `feature/befaco-modules`.
-- Branch contains this planning document only at creation time.
-- Source ZIP is stored as a single archive in the repository. Its internal source files have not yet been extracted or audited in this environment.
-- No module implementation, APK build, DSP test, or Android device test is claimed complete.
+- Protected working boundary: all work is on `feature/befaco-modules`; `main` has not been modified.
+- Source archive extracted by GitHub Actions run [42537553688](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42537553688), with a successful job. Extracted tree is committed under `source/`.
+- Source extraction commit: `c673d68296a3308482c66f02cc4507aad32bd9d2`.
+- Initial source audit completed for README, Gradle configuration, Android manifest, Kotlin MIDI bridge, JS audio engine, C++ wrappers, WASM build script, and CI workflow.
+- Baseline APK workflow: [42537612041](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42537612041). Emscripten setup and original Plaits/Beads WASM build steps passed; Gradle/APK steps were still running at the time of this update. APK success is not yet claimed.
+- Existing application has a monolithic JS engine in `app/src/main/assets/index.html`, with AudioWorklet and ScriptProcessor fallback. Existing type registry currently includes 13 rack types: MIDI→CV, Pamela PRO, Scales, Plaits, Mixer 4→2, Axon-2, PPEXP1, PPEXP2, Polaris, CV→MIDI, BBD, Beads, and Audio Out. None of the 34 requested Befaco modules is implemented as a dedicated module type yet.
+- Engine registration is distributed across `INIT`, `INITR`, `byT`, `mkInst`, `idxE`, `step`, `TY`, UI handlers, and preset tables. A module registry/refactor is required before adding 34 modules safely.
+- Current patch graph uses string-named signals and a simple summed input lookup. It has no explicit port type metadata or visible graph-cycle validation. Module processing order is hard-coded in `step()`; feedback behavior therefore needs an explicit, tested policy before adding general routing.
+- AudioWorklet code is assembled from the engine script plus a generated worker body. Any refactor must keep Worklet and fallback execution paths behaviorally aligned.
+- Android host uses a WebViewAssetLoader HTTPS origin, Android MIDI APIs, SharedPreferences bridge, and document picker. Preserve these paths while extending the DSP engine.
+- The Beads C++ wrapper includes an existing native self-test; Plaits and Beads are built as optional WASM, with JS fallback retained.
+- No Befaco module implementation or Android device validation is claimed complete.
 
-## Next blocking action
+## Phase 0 — remaining
+- Wait for and record Gradle APK result and artifact.
+- Capture a reproducible baseline test/build record.
+- Add automated regression coverage for graph routing, MIDI parser edge cases, and Worklet/fallback consistency before engine refactor.
 
-Make the ZIP's extracted source files available to the development environment, or commit the extracted project tree to this feature branch. Then complete Phase 0 before changing application code.
+## Immediate next engineering step
+Introduce a small, testable module descriptor/registry layer and graph validation without changing existing module DSP behavior. Migrate existing modules incrementally, then add the first Befaco utility modules behind regression tests.
