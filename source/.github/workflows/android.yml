@@ -1,0 +1,34 @@
+name: Build APK
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Opcional: compila o DSP original do Plaits (WebAssembly). Se falhar, o app usa a versão em JS.
+      - uses: mymindstorm/setup-emsdk@v14
+        continue-on-error: true
+      - name: Plaits e Beads originais (WASM)
+        continue-on-error: true
+        run: bash native/build_wasm.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wasm-log
+          path: native/wasm_build.log
+          if-no-files-found: ignore
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eurorack-study-debug-apk
+          path: app/build/outputs/apk/debug/*.apk

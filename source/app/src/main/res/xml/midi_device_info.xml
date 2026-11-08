@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<devices>
+    <device manufacturer="Eurorack Study" product="Rack MIDI" private="false">
+        <input-port name="Entrada" />
+        <output-port name="Saida" />
+    </device>
+</devices>
