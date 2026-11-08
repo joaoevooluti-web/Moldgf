@@ -1,0 +1,39 @@
+name: Unpack Android source archive
+
+on:
+  push:
+    branches:
+      - feature/befaco-modules
+    paths:
+      - ".unpack-source.trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/befaco-modules
+          fetch-depth: 0
+      - name: Extract project archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="eurorack-android (1).zip"
+          test -f "$archive"
+          mkdir -p source
+          unzip -q "$archive" -d /tmp/moldgf-source
+          test -f /tmp/moldgf-source/eurorack-android/app/build.gradle.kts
+          cp -a /tmp/moldgf-source/eurorack-android/. source/
+          echo "Extracted files:"
+          find source -type f | sort
+      - name: Commit extracted source tree
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: extract Android project source for audit"
+          branch: feature/befaco-modules
+          file_pattern: "source/**"
