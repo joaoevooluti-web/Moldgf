@@ -1,0 +1,51 @@
+name: Android APK baseline
+on:
+  push:
+    branches:
+      - feature/befaco-modules
+    paths:
+      - "source/**"
+      - ".github/workflows/build-android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: source
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/befaco-modules
+      - name: Set up Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        continue-on-error: true
+      - name: Build original Plaits and Beads WASM
+        continue-on-error: true
+        run: bash native/build_wasm.sh
+      - name: Upload WASM build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-log
+          path: source/native/wasm_build.log
+          if-no-files-found: ignore
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Assemble debug APK
+        run: gradle assembleDebug --no-daemon
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: eurorack-study-debug-apk
+          path: source/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
