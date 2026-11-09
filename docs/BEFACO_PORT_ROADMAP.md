@@ -134,7 +134,7 @@ The next five-module batch has been selected after auditing the official Befaco 
 4. **Pony VCF** — 6 HP four-pole 24 dB/oct low-pass filter, three-input attenuated mixer with output-to-input-3 feedback normaling, resonance/Q CV, two cutoff CVs, CV1 routing to cutoff or cutoff+VCA, and volume CV with 10 V/CV1 normalization. Official resources: https://www.befaco.org/pony-vcf/ and https://www.befaco.org/docs/Pony_VCF/Pony_VCF_User_Manual.pdf.
 5. **DivKid Stereo Strip** — 6 HP stereo/mono channel strip with low-shelf/mid-bell/high-shelf EQ, constant-power pan and pan CV attenuator, stereo VCA and level CV, on/off/momentary mute, Eurorack/line input-output level switches and soft-clipping limiter. Keep L/R as separate scalar graph ports until the engine has a native stereo bus. Official resources: https://www.befaco.org/stereo-strip/ and https://befaco.org/docs/stereo_strip/Stereo_Strip_manual.pdf.
 
-Implementation order is MIDI Thing V2, Hexmix, Hexpander (after its host), Pony VCF, then Stereo Strip. Preserve the main branch and do not start another workflow until all five modules are implemented and their automated DSP/graph/UI tests are authored.
+Implementation order is Hexmix, Hexpander (after its host), Pony VCF, Stereo Strip, then MIDI Thing V2. Hexmix is now the first module in this batch: its six-channel DSP, stereo graph, VCA-expander normalization, panel and dedicated tests are in place; Node/CI validation is deferred until all five modules are complete. Preserve the main branch and do not start another workflow until all five modules are implemented and their automated DSP/graph/UI tests are authored.
 
 
 ## Licensing and provenance
