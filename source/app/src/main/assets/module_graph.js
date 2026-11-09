@@ -55,9 +55,16 @@
     return descriptor.ports.find((port) => port.id === id) || null;
   }
 
+  function moduleTypeOf(module) {
+    return module && (typeof module.type === "string" ? module.type :
+      (typeof module.t === "string" ? module.t : null));
+  }
+
   function canConnect(registry, sourceModule, sourcePortId, targetModule, targetPortId) {
-    const sourceDescriptor = registry.get(sourceModule.type);
-    const targetDescriptor = registry.get(targetModule.type);
+    const sourceType = moduleTypeOf(sourceModule);
+    const targetType = moduleTypeOf(targetModule);
+    const sourceDescriptor = sourceType && registry.get(sourceType);
+    const targetDescriptor = targetType && registry.get(targetType);
     if (!sourceDescriptor || !targetDescriptor) return { ok: false, code: "unknown-module" };
     const source = portOf(sourceDescriptor, sourcePortId);
     const target = portOf(targetDescriptor, targetPortId);
