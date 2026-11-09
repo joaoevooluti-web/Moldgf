@@ -22,14 +22,25 @@
       const mode = clamp(Math.round(finite(cfg.mode, MODES.CC)), 0, 4);
       const cvInput = x["cv" + (i + 1)];
       const gateInput = x["gate" + (i + 1)];
-      // An unpatched input must be silent: do not emit startup CC/program/transport events.
-      if (cvInput == null && gateInput == null) continue;
+      // An unpatched input must be silent and must not leave notes latched.
+      if (cvInput == null && gateInput == null) {
+        if (mode === MODES.NOTE && s.clockHigh[i]) {
+          events.push({ type: "noteOff", channel: channels, note: s.previous[i] === null ? 60 : s.previous[i], velocity: 0, input: i });
+          s.clockHigh[i] = false;
+        } else if (mode === MODES.START_STOP && s.previous[i] === 1) {
+          events.push({ type: "stop", input: i });
+          s.previous[i] = 0;
+        } else if (mode === MODES.CC || mode === MODES.PROGRAM) {
+          s.previous[i] = null;
+        }
+        continue;
+      }
       const raw = finite(cvInput, 0);
       const normalized = clamp((raw + 5) / 10, 0, 1);
       const value = clamp(Math.round(normalized * 127), 0, 127);
       const prev = s.previous[i];
       if (mode === MODES.CC) {
-        if (cvInput == null) continue;
+        if (cvInput == null) { s.previous[i] = null; continue; }
         const cc = clamp(Math.round(finite(cfg.cc, i)), 0, 127);
         if (prev === null || Math.abs(normalized - prev) >= threshold) {
           events.push({ type: "cc", channel: channels, controller: cc, value, input: i });
