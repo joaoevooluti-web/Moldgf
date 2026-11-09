@@ -441,29 +441,11 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - Visual pass commit: 48815dad8406de99d9a059e72afbe1964c4ec69a. Main remains at 8e81fcb36fb1bedbf63019b6ee5d890f694fb165.
 
 
-### Phase 8 progress — Joystick (DSP core in progress)
+### Phase 8 progress — Joystick (DSP + typed graph foundation)
 
-- [~] **Joystick:** added an isolated clean-room DSP core with manual X/Y CV generation, range and offset, dual attenuverter mode for external X/Y signals, two independent 10 V gate outputs, bounded voltage ranges, finite-value guards and reusable result state. Added 14 focused DSP regression tests covering center/travel, scaling, offsets, attenuverters, unpatched inputs, gate release, clamping and state reuse.
-- [ ] Rack integration remains open: add the 12 HP XY touch surface, mode/range/offset controls, two gate buttons, four typed graph endpoints, engine dispatch, persisted state and panel interaction tests. The DSP tests have been authored but not run; no workflow was triggered.
-- Current Joystick DSP commit: c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; tests: 6a8461a65116e26c4b02ce12574622c2f1bfc4c8.
-- Next: complete Joystick rack and graph integration, then DivKid Mutes mk2. Keep the five-module Phase 8 batch CI-gated until all five implementations and tests are authored.
-
-
-### Phase 8 progress — DivKid Mutes mk2 (DSP prototype only)
-
-- [~] **DivKid Mutes mk2 DSP prototype:** isolated four-channel signal pass/mute model with three-position switch semantics (momentary / off / on), click-free VCA-style smoothing, and cascading input normalisation. Added 11 focused regression tests for switch positions, momentary release, cascaded inputs, smoothing, finite inputs and state reuse.
-- [ ] **Not integrated into the rack:** no panel, 4HP/1U presentation, physical switch interaction, graph ports, audio engine dispatch, or persistence yet. The official Befaco specification confirms four-channel use, 3-position momentary/off/on switching, buffered cascading normalisation, VCA-based click-free muting, LEDs, and 4HP width. DSP prototype remains an approximation pending schematic/manual-level verification.
-- [ ] Tests are authored but not executed in CI. Do not count the module as ported.
-- Commits: DSP prototype 9823ab0beae54368efc784c981dc46304d86618d; tests 5bf56992bdf2a9c390340d4b31df6bbed5bc0ba4.
-- Reference: https://www.befaco.org/divkid_mutes_mk2/ (official product features/specification).
-- Next: finish Joystick rack integration and validate its typed ports; then integrate DivKid Mutes mk2 and CV Thing. Keep CI deferred until the five-module Phase 8 batch is implementation- and test-ready.
-
-
-### Phase 8 progress — CV Thing (DSP core prototype)
-
-- [~] **CV Thing:** added an isolated eight-input CV-to-MIDI mapping core with per-input CC, Note, Program Change, Clock and Start/Stop modes, channel selection, bipolar CV-to-7-bit scaling, threshold suppression for continuous messages, and gate-edge handling for note/clock transport events.
-- [ ] Rack integration remains open: 6HP faceplate with OLED/menu/encoder interaction, eight typed CV inputs, saved per-input mappings, MIDI event routing to the app's MIDI output, and graph/panel interaction tests. This DSP core only emits structured MIDI event objects; it does not itself transmit MIDI and is not a completed port.
-- [ ] Added 12 focused regression tests, authored but not executed. No workflow was triggered.
-- Commits: DSP core 39e09c6524c7dcd4400eb01ae722105df459fe8f; tests 55be2af28e1d4e2b387060ad4320d53d19a46963.
-- Reference: official Befaco CV Thing page and v1 user manual. The hardware has eight mappable CV inputs, USB MIDI and TRS MIDI outputs, OLED and encoder, and supports CC, Notes, Program Change, Clock, Start/Stop and NRPN mappings.
-- Next: complete Joystick rack integration, then DivKid Mutes mk2 rack integration, then CV Thing's UI/graph/MIDI routing. Do not launch CI until all five Phase 8 modules are integrated and the regression suite is ready.
+- [~] **Joystick DSP:** isolated bipolar X/Y CV generation, external X/Y attenuverter mode, range/offset, independent 10 V gates, finite-value handling and reusable result state. 14 DSP tests authored.
+- [x] Registered the six intended typed endpoints in the live rack graph registry: X/Y CV inputs, X/Y CV outputs and X/Y gate outputs. Added graph regression tests for both axis inputs, output signal types, and a manual cable path through the Joystick.
+- [ ] Still not a completed rack module: no 12 HP faceplate/XY touch surface, gate button interaction, DSP worker dispatch, parameter persistence verification, or live DOM-to-cable geometry test. The DSP and graph descriptor are not yet connected to the live processing loop.
+- [ ] DSP and graph tests are authored but not run. No workflow was triggered.
+- Commits: DSP c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; DSP tests 6a8461a65116e26c4b02ce12574622c2f1bfc4c8; typed graph registration 2db9f2d3d10ea3f8aefd45fb40a3e73de7d7c6f6; graph tests 04a55c76e7eb528412fd99aa6f15c9058d7be4d9.
+- Next: connect the registered endpoints to rack panel and worker processing without changing existing manual patch/cable logic, then complete DivKid Mutes mk2 and CV Thing rack integration.
