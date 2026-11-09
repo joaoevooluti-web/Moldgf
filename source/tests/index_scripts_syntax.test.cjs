@@ -49,3 +49,14 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
+
+test("DSP assets and graph descriptors are unique across the complete port set", () => {
+  const htmlPath = path.join(__dirname, "../app/src/main/assets/index.html");
+  const html = fs.readFileSync(htmlPath, "utf8");
+  const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
+  const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
+  assert.equal(pageAssets.length, 21, "expected 21 module DSP assets in the page");
+  assert.equal(new Set(pageAssets).size, 21, "DSP page assets must be unique");
+  assert.equal(descriptors.length, 21, "expected 21 explicit graph descriptors");
+  assert.equal(new Set(descriptors).size, 21, "graph descriptor types must be unique");
+});
