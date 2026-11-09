@@ -174,3 +174,11 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [~] **BF-22:** added `bf22_dsp.js`, two independent HP/LP filter channels, selectable 6/12 dB responses, resonance CV, CV1 attenuverter with three-octave span, CV2 1V/oct tracking across four octaves, manual cutoff/resonance, and A→B link that normalizes A output into B while disconnecting B's external input. Integrated the engine, 10 typed audio/CV graph endpoints, persistent parameters, and an original 17 HP two-channel panel with input/output jacks, CV jacks, controls and live cutoff/resonance/peak meters. Added **22 DSP tests + 5 graph tests** and updated integration assertions to 38 unique assets/descriptors. This is a digital Sallen-Key-inspired model, not a transistor-level MS-20 circuit clone. These tests are authored but have **not** been run in CI.
 - Next module: Crush Delay V3. Keep all intermediate commits marked `[skip ci]`; no Node/WASM/APK workflow until all five Phase 8 modules and their tests are complete.
 - Current branch head: `d7e06e0e7b058b8a76e3bc8cb6891b34171d4f3f` (documentation commits may advance it). Protected `main` remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+
+
+### Phase 8 progress — BF-22 and Crush Delay V3 (2/5)
+
+- [x] **BF-22:** dual 6/12 dB HP/LP filter, CV1 attenuverter (3-octave span), CV2 1V/oct (four-octave range), resonance CV and A→B link; two-channel panel, 10 typed ports, 22 DSP + 5 graph tests authored.
+- [x] **Crush Delay V3:** preallocated 2-second delay buffer, clean 5–400 ms region and crushed extension to 2 seconds, IN/RETURN VCAs with 10 V normaling, TIME/FEEDBACK/DRY-WET CV, three crush modifiers plus 3 V gate input, feedback repeats, fully wet SEND and dry/wet OUT. Added 11 HP-inspired panel, 10 typed ports, 24 DSP + 5 graph tests authored.
+- Combined Phase 8 coverage so far: **46 DSP + 10 graph tests**, all authored but not run in CI. Registry/assets now contain 39 unique entries.
+- Next: Joystick. No workflow until all five Phase 8 modules and tests are complete.
