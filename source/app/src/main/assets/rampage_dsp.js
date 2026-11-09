@@ -66,7 +66,7 @@
    signal:i.signalB,trigger:i.triggerB,riseCV:i.riseCVB,fallCV:i.fallCVB,expCV:i.expCVB,cycleCV:i.cycleCVB
   },s.b,sampleRate);
   const balance=clamp(p.balance,0,1,.5),av=a.out*(1-balance),bv=b.out*balance;
-  return{a,b,outputs:{outA:a.out,outB:b.out,risingA:a.rising,risingB:b.rising,fallingA:a.falling,fallingB:b.falling,eocA:a.eoc,eocB:b.eoc,compare:b.out>a.out?10:0,min:Math.min(av,bv),max:Math.max(av,bv)},state:s};
+  return{a,b,outputs:{outA:a.out,outB:b.out,risingA:a.rising,risingB:b.rising,fallingA:a.falling,fallingB:b.falling,eocA:a.eoc,eocB:b.eoc,compare:bv>av?10:0,min:Math.min(av,bv),max:Math.max(av,bv)},state:s};
  }
  return Object.freeze({clamp,timeSeconds,shapeValue,createChannelState,createState,channel,process});
 });
