@@ -14,17 +14,14 @@ const registry = createRegistry([
   { type: "sink", ports: [{ id: "in", direction: "input", signal: "cv", channels: 1 }] }
 ]);
 
-test("A*B+C exposes all six CV inputs", () => {
+test("ABC exposes six CV inputs and two independently patchable outputs", () => {
   for (const port of ["a1", "b1", "c1", "a2", "b2", "c2"]) {
     assert.equal(canConnect(registry, { type: "source" }, "out", { type: "abc" }, port).ok, true);
   }
-});
-
-test("A*B+C exposes both CV outputs", () => {
   assert.equal(canConnect(registry, { type: "abc" }, "out1", { type: "sink" }, "in").ok, true);
   assert.equal(canConnect(registry, { type: "abc" }, "out2", { type: "sink" }, "in").ok, true);
 });
 
-test("A*B+C rejects reversed signal direction", () => {
+test("ABC graph ports reject reverse cable direction", () => {
   assert.equal(canConnect(registry, { type: "abc" }, "a1", { type: "source" }, "out").code, "direction");
 });
