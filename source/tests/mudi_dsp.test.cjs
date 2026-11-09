@@ -16,11 +16,10 @@ test("base output follows the input clock and uses 0–10V levels", () => {
 test("divider stages produce successive powers-of-two subclocks", () => {
   const state = MuDi.createState();
   const snapshots=[];
-  for(let i=0;i<16;i++){pulse(state);snapshots.push(state.div2?1:0,state.div4?1:0,state.div8?1:0,state.div16?1:0);MuDi.process(0,0,false,state)}
-  assert.equal(snapshots.filter((_,i)=>i%4===0&&snapshots[i]===1).length,8);
-  assert.equal(snapshots.filter((_,i)=>i%4===1&&snapshots[i]===1).length,4);
-  assert.equal(snapshots.filter((_,i)=>i%4===2&&snapshots[i]===1).length,2);
-  assert.equal(snapshots.filter((_,i)=>i%4===3&&snapshots[i]===1).length,1);
+  for(let i=0;i<16;i++){pulse(state);snapshots.push([state.div2,state.div4,state.div8,state.div16]);MuDi.process(0,0,false,state)}
+  const rising=[0,0,0,0], previous=[false,false,false,false];
+  for(const sample of snapshots) for(let j=0;j<4;j++){if(!previous[j]&&sample[j])rising[j]++;previous[j]=sample[j]}
+  assert.deepEqual(rising,[8,4,2,1]);
 });
 
 test("reset clears all divided clocks without stopping the base clock", () => {
