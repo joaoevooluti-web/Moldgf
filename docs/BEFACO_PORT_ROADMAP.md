@@ -139,3 +139,14 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 2. Fix any Node, WASM or Gradle failures; confirm the new APK artifact and preserve the exact tested commit SHA.
 3. Expand graph validation to typed signal semantics and explicit feedback scheduling as new module adapters are migrated.
 4. Continue with Noise Plethora and the remaining oscillator, effects and utility modules.
+
+
+## Official Befaco catalog as visual and scope reference
+
+- Canonical catalog supplied by the user: https://www.befaco.org/all-modules-befaco-synths-barcelona/?filter=todo
+- Use this catalog as the source of truth for current product names and the official product pages as references for panel layout, control labels, jack placement, hardware proportions, manuals, and product photographs.
+- The current catalog lists A*B+C at /axbc/. "AxBC" is the URL slug / existing internal identifier for A*B+C, not a second distinct module. Audit the existing `abc` and `axbc` entries to avoid shipping duplicate implementations or two misleading product names.
+- Dual Atenuverter does not appear in the current catalog menu. Do not present it as a current Befaco product or prioritize it as a distinct port unless an official legacy/manual source confirms the exact module.
+- Atte official behavior: four cascaded attenuator/inverter channels; first input normalled to +10 V; per-channel inversion; four bipolar level LEDs. Reference: https://www.befaco.org/atte/
+- A*B+C official behavior: two channels, each computes A × B + C; B and C inputs normalled to +5 V; signal LEDs. Reference: https://www.befaco.org/axbc/
+- Voltio official behavior: precision 1 V/oct voltage source spanning ten octaves, two-knob note/octave interface, precision adder input, and front-panel banana measurement connectors. Reference: https://www.befaco.org/voltio/
