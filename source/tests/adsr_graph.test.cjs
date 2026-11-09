@@ -6,7 +6,7 @@ const registry = createRegistry([
   { type: "adsr", ports },
   { type: "gate", ports: [{ id: "out", direction: "output", signal: "gate", channels: 1 }] },
   { type: "cv", ports: [{ id: "out", direction: "output", signal: "cv", channels: 1 }] },
-  { type: "sink", ports: [{ id: "in", direction: "input", signal: "cv", channels: 1 }] }
+  { type: "sink", ports: [{ id: "in", direction: "input", signal: "cv", channels: 1, accepts: ["cv", "gate"] }] }
 ]);
 
 test("ADSR accepts gate, trigger and four stage CV inputs", () => {
