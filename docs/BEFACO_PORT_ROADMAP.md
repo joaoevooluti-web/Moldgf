@@ -457,3 +457,13 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - Commits: DSP prototype 9823ab0beae54368efc784c981dc46304d86618d; tests 5bf56992bdf2a9c390340d4b31df6bbed5bc0ba4.
 - Reference: https://www.befaco.org/divkid_mutes_mk2/ (official product features/specification).
 - Next: finish Joystick rack integration and validate its typed ports; then integrate DivKid Mutes mk2 and CV Thing. Keep CI deferred until the five-module Phase 8 batch is implementation- and test-ready.
+
+
+### Phase 8 progress — CV Thing (DSP core prototype)
+
+- [~] **CV Thing:** added an isolated eight-input CV-to-MIDI mapping core with per-input CC, Note, Program Change, Clock and Start/Stop modes, channel selection, bipolar CV-to-7-bit scaling, threshold suppression for continuous messages, and gate-edge handling for note/clock transport events.
+- [ ] Rack integration remains open: 6HP faceplate with OLED/menu/encoder interaction, eight typed CV inputs, saved per-input mappings, MIDI event routing to the app's MIDI output, and graph/panel interaction tests. This DSP core only emits structured MIDI event objects; it does not itself transmit MIDI and is not a completed port.
+- [ ] Added 12 focused regression tests, authored but not executed. No workflow was triggered.
+- Commits: DSP core 39e09c6524c7dcd4400eb01ae722105df459fe8f; tests 55be2af28e1d4e2b387060ad4320d53d19a46963.
+- Reference: official Befaco CV Thing page and v1 user manual. The hardware has eight mappable CV inputs, USB MIDI and TRS MIDI outputs, OLED and encoder, and supports CC, Notes, Program Change, Clock, Start/Stop and NRPN mappings.
+- Next: complete Joystick rack integration, then DivKid Mutes mk2 rack integration, then CV Thing's UI/graph/MIDI routing. Do not launch CI until all five Phase 8 modules are integrated and the regression suite is ready.
