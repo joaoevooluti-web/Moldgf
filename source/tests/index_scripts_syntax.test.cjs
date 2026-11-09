@@ -68,9 +68,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
   assert.equal(pageAssets.length, 33, "expected 33 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 32, "DSP page assets must be unique");
+  assert.equal(new Set(pageAssets).size, 33, "DSP page assets must be unique");
   assert.equal(descriptors.length, 33, "expected 33 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 32, "graph descriptor types must be unique");
+  assert.equal(new Set(descriptors).size, 33, "graph descriptor types must be unique");
 });
 
 
@@ -202,7 +202,7 @@ test("Hexmix panel exposes six channel strips, VCA host normalization and stereo
   const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
   const html=fs.readFileSync(htmlPath,"utf8");
   const panel=html.slice(html.indexOf("hexmix:{n:"),html.indexOf("bandit:{n:"));
-  for(const label of ["HEXMIX","28 HP","VCA EXPANDER","CH 1","CH 6","HIGH","MID","LOW","PAN","VOLUME","MUTE","MOM","MASTER LEVEL","MODULAR","LINE","LEFT OUT","RIGHT OUT"])assert.ok(panel.includes(label),"missing Hexmix control "+label);
+  for(const label of ["HEXMIX","28 HP","VCA EXPANDER","length:6","CH ","HIGH","MID","LOW","PAN","VOLUME","MASTER LEVEL","MODULAR","LINE","LEFT OUT","RIGHT OUT"])assert.ok(panel.includes(label),"missing Hexmix control "+label);\n  assert.match(html,/\[\x27ON\x27,\x27MUTE\x27,\x27MOM\x27\]/);
   assert.match(html,/MoldgfHexmixDSP\.process/);
   assert.match(html,/byT\.hexmixvca/);
   assert.match(html,/A=byT\.hexmix;for/);
