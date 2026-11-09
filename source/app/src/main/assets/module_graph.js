@@ -74,13 +74,15 @@
   function validateGraph(registry, modules, cables) {
     const errors = [];
     const byId = new Map();
+    const seenIds = new Set();
     (modules || []).forEach((module) => {
       if (!module || typeof module.id !== "string" || !module.id.trim()) {
         errors.push({ code: "invalid-module-id" }); return;
       }
-      if (byId.has(module.id)) {
+      if (seenIds.has(module.id)) {
         errors.push({ code: "duplicate-module-id", module: module.id }); return;
       }
+      seenIds.add(module.id);
       if (!registry.has(module.type)) {
         errors.push({ code: "unknown-module", module: module.id, type: module.type }); return;
       }
@@ -106,7 +108,7 @@
       }
       edgeKeys.add(key);
       const feedback = cable.feedback === true;
-      if (feedback && !registry.get(targetModule.type).feedbackSafe) {
+      if (feedback && !registry.get(sourceModule.type).feedbackSafe) {
         errors.push({ code: "unsafe-feedback", from, to }); return;
       }
       edges.push({ from: from.module, to: to.module, feedback });

@@ -67,7 +67,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 
 ### Phase 1 — Modular engine foundation
 - [x] Add a standalone module descriptor registry and typed-port/graph validation contract.
-- [x] Add automated Node tests for registry validation, signal direction/types, channel compatibility, topological order, and explicit feedback-delay handling.
+- [ ] Add automated Node tests for registry validation, signal direction/types, channel compatibility, topological order, and explicit feedback-delay handling.
 - [ ] Integrate the contract with the existing jack/cable model without changing legacy DSP behavior.
 - [ ] Add parameter event queue, state schema/versioning, reset/bypass contract, and scheduler integration.
 - [ ] Migrate existing module types through adapters; keep Worklet and ScriptProcessor paths behaviorally aligned.

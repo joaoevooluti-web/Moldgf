@@ -10,6 +10,10 @@ function fixture() {
       { id: "out", direction: "output", signal: "cv" }
     ] },
     { type: "sink", ports: [{ id: "in", direction: "input", signal: "audio", accepts: ["audio", "cv"] }] },
+    { type: "audioProcessor", ports: [
+      { id: "in", direction: "input", signal: "audio" },
+      { id: "out", direction: "output", signal: "audio" }
+    ] },
     { type: "delay", feedbackSafe: true, ports: [
       { id: "in", direction: "input", signal: "audio" },
       { id: "out", direction: "output", signal: "audio" }
@@ -60,7 +64,7 @@ test("graph rejects cycles unless an explicit feedback-safe edge breaks the cycl
   assert.equal(validateGraph(registry, modules, [edge("a", "b"), edge("b", "a")]).errors[0].code,
     "cycle-without-feedback-delay");
   const delayed = validateGraph(registry,
-    [{ id: "a", type: "processor" }, { id: "d", type: "delay" }],
+    [{ id: "a", type: "audioProcessor" }, { id: "d", type: "delay" }],
     [
       { from: { module: "a", port: "out" }, to: { module: "d", port: "in" } },
       { from: { module: "d", port: "out" }, to: { module: "a", port: "in" }, feedback: true }
@@ -77,4 +81,11 @@ test("graph reports missing endpoints, unknown modules and duplicate cables", ()
   assert.ok(result.errors.some((error) => error.code === "unknown-module"));
   assert.ok(result.errors.some((error) => error.code === "duplicate-module-id"));
   assert.ok(result.errors.some((error) => error.code === "unknown-endpoint"));
+  const duplicates = validateGraph(registry,
+    [{ id: "s", type: "source" }, { id: "p", type: "processor" }],
+    [
+      { from: { module: "s", port: "out" }, to: { module: "p", port: "in" } },
+      { from: { module: "s", port: "out" }, to: { module: "p", port: "in" } }
+    ]);
+  assert.ok(duplicates.errors.some((error) => error.code === "duplicate-cable"));
 });
