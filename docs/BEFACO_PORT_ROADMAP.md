@@ -110,6 +110,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 ### Phase 5 — Effects and spectral processing
 - [ ] Spring Reverb, Iroi, Bandit, Chopping Kinky, and Stereo Strip.
 - [ ] Validate stability, denormals, parameter smoothing, stereo image, tail handling, and CPU/memory budgets.
+- [~] **Spring Reverb — module 2/5:** two independent CV-controlled input VCAs, IN1 dry plus tank routing, IN2 tank-only routing, +10 V CV normaling, additive MIX CV, HPF before the tank, independent WET and DRY/WET MIX outputs, input/wet peak meters, and an 8 HP-inspired original Moldgf panel with vertical faders, rotary HPF/MIX controls, CV jacks and meters. Added a preallocated delay/comb/allpass spring-style tank model, sample-rate-aware state, typed audio/CV graph ports, and persisted controls. Eleven DSP tests and five graph tests execute in the local V8 validation harness. This is a digital spring-style approximation, not a physical tank or circuit-level emulation; actual Node runner, CI/APK and device audio validation remain deferred until the five-module batch is complete.
 
 ### Phase 6 — MIDI, UI, and release validation
 - [ ] MIDI Thing V2 integration with the existing Android MIDI service.
@@ -136,20 +137,22 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 ## Immediate next steps
 
-1. Keep all workflows and APK builds blocked until five additional, previously unported catalogue modules have DSP, graph integration, dedicated UI panels, and automated regression tests. **Rampage is module 1/5; four modules remain.**
-2. Remaining modules in this batch: **Spring Reverb, Kickall, Noise Plethora, and Muxlicer**. These represent a spring-reverb effect, drum voice, multitimbral noise source, and sequential switch/sequencer.
+1. Keep all workflows and APK builds blocked until five additional, previously unported catalogue modules have DSP, graph integration, dedicated UI panels, and automated regression tests. **Rampage and Spring Reverb are modules 1–2/5; three modules remain.**
+2. Remaining modules in this batch: **Kickall, Noise Plethora, and Muxlicer**. These represent a drum voice, multitimbral noise source, and sequential switch/sequencer.
 3. Implement and validate each module in isolation, then integrate its DSP asset, engine state/processing, typed graph ports, panel controls, state persistence, and UI readouts. Preserve mono engine limitations explicitly; do not claim hardware-level polyphony.
 4. Run local syntax and deterministic DSP/graph tests after each module. Only after all five are integrated and tests are prepared may the next consolidated CI/APK workflow be considered.
 5. After the five-module gate, run the Node suite and consolidated CI/APK build, fix Node/WASM/Gradle failures, inspect the generated APK artifact, and record the exact tested commit SHA. Continue typed signal semantics and explicit feedback scheduling during subsequent migrations.
 
 ## Repository audit — 2026-11-09
 
-- Verified feature branch HEAD after the Rampage integration: `7a1d5added67273a43648bc28614546751ba4473`.
-- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 229 commits ahead, 0 behind. `main` remains exactly at the baseline SHA (0 ahead, 0 behind); no changes were made to `main`.
+- Verified feature branch HEAD after the Spring Reverb integration: `d2f7b9881470b3a2f8cf24d91477d3350cca440e`.
+- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 238 commits ahead, 0 behind. `main` remains exactly at the baseline SHA (0 ahead, 0 behind); no changes were made to `main`.
 - The current `source/app/src/main/assets/index.html` already registers and processes **Even VCO** and **Chopping Kinky**, each with a dedicated DSP asset and DSP/graph tests. They must not be counted as unported or reimplemented.
 - The current assets include the following additional module implementations beyond the first batch: Mixer2, Mixer, STMix, Morphader, Hexmix VCA, Motion MTR, Slew Limiter, Slew, Pony VCO, ADSR, Percall, MuDi, Burst, Sampling Modulator, Chopping Kinky, and Even VCO. The roadmap's earlier count of 21 modules needs a separate inventory reconciliation before the next release gate.
 - Rampage implementation is committed on `feature/befaco-modules` across commits `fd59eee8` (DSP/test foundation), `13a7eb32` (engine/panel/graph integration), and subsequent DSP/UI/test corrections through `7a1d5add`. The current files are `source/app/src/main/assets/rampage_dsp.js`, `source/tests/rampage_dsp.test.cjs`, `source/tests/rampage_graph.test.cjs`, and the integrated `index.html`.
 - Local V8 validation compiled the AudioWorklet engine, rack UI, and Rampage DSP; it executed all 19 authored Rampage DSP/graph test cases successfully. This is not a claim that `node --test`, Android packaging, or hardware audio validation has passed.
+- Spring Reverb implementation is committed on `feature/befaco-modules` across DSP, test, engine/UI and follow-up panel commits, ending with `d2f7b988`. The current files are `source/app/src/main/assets/spring_reverb_dsp.js`, `source/tests/spring_reverb_dsp.test.cjs`, `source/tests/spring_reverb_graph.test.cjs`, and the integrated `index.html`.
+- Local V8 validation compiled the AudioWorklet engine, rack UI, and both new DSP assets; it executed all 35 authored DSP/graph test cases across Rampage and Spring Reverb successfully (Rampage 14 DSP + 5 graph; Spring Reverb 11 DSP + 5 graph). The actual `node --test` runner, Android packaging, and hardware audio validation remain unverified and are deferred until the five-module gate.
 - No workflow was started during this audit. The five-module gate remains closed; `main` remains untouched.
 - Official hardware references for the selected batch: [Rampage](https://www.befaco.org/rampage-2/), [Spring Reverb](https://www.befaco.org/spring-reverb/), [Kickall](https://www.befaco.org/kickall-2/), [Noise Plethora](https://www.befaco.org/noise-plethora/), and [Muxlicer](https://www.befaco.org/muxlicer-2/). Panels must be redrawn as original Moldgf artwork from hardware documentation; do not copy proprietary panel artwork or logos.
 
