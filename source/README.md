@@ -100,3 +100,9 @@ Phase 7 rerun: the six Node test failures from workflow #26 have been corrected;
 - Workflow #28 is the final full-suite/WASM/Gradle/APK rerun. The module batch remains unvalidated until it completes successfully.
 
 Phase 7 CI rerun: workflow #27 passed 550/551 tests; the final PROGRAM CHANGE panel label assertion is corrected in the current branch. This commit triggers the final Node/WASM/APK rerun.
+
+
+### Phase 7 CI correction log — run #28
+
+- Workflow #28 again ran 551 Node tests: 550 passed and one static panel assertion failed because the faceplate footer abbreviated OSCILLATOR as OSC. The faceplate now spells out OSCILLATOR. The regression assertion continues to check the full visible label and the panel's selector controls.
+- Workflow #29 will rerun the complete Node/WASM/Gradle/APK gate. No APK was produced by #28.
