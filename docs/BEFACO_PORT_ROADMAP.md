@@ -450,4 +450,12 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [~] Gate button behavior and hardware-reference visual review still need verification. Added `joystick_runtime_integration.test.cjs` to check page/Worklet loading, runtime state, processing dispatch, six panel jack IDs, XY handler presence and inline engine syntax. These tests are authored but not run; parameter save/restore, live cable geometry and device behavior still need validation.
 - [ ] No workflow was triggered; the five-module batch gate remains in force.
 - Commits: DSP c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; DSP tests 6a8461a65116e26c4b02ce12574622c2f1bfc4c8; graph registration 2db9f2d3d10ea3f8aefd45fb40a3e73de7d7c6f6; graph tests 04a55c76e7eb528412fd99aa6f15c9058d7be4d9; engine/panel integration 8010d8be998251571b276fad33b5af76fdd34eb6; faceplate styling d8037351419c299dbec4e8423326cae74baef980; XY touch interaction 70a3acb74f769d3acbb10e7d33083b630299e456.
-- Next: add interaction/runtime regression tests and verify the Joystick panel without disturbing cable creation, then integrate DivKid Mutes mk2 and CV Thing into the same live rack engine.
+- [x] Added `joystick_runtime_integration.test.cjs` for page/Worklet loading, state initialization, processing dispatch, six panel jack IDs, XY handler and inline script syntax. Test authored; not executed.
+- **DivKid Mutes mk2 — live rack integration in progress:**
+  - [x] Added its DSP to page and AudioWorklet loading, initialized persistent DSP state, and dispatched all four audio channels in the shared engine.
+  - [x] Registered four typed audio inputs and four typed audio outputs; added a dedicated four-channel panel with MOM/OFF/ON selector, momentary HOLD interaction, channel LEDs and response control.
+  - [x] Added `divkid_mutes_mk2_runtime_integration.test.cjs` covering loading, dispatch, typed jack declarations, momentary release and inline script syntax. Test authored; not executed.
+  - [ ] Validate the real hardware switch feel, LED behavior, patch normalization through the graph, parameter save/restore, and audio transitions. The current DSP is a smoothed VCA model; it still requires manual/schematic verification against the module.
+  - Commits: runtime/graph/panel integration fa8ea3195f20b824b0a467d4b35ec2a72aafb273; panel styling and momentary interaction 76dd9be2f2f29a633e5c472377f9ba3419587bfc; runtime tests f95c2ef9830355bec5e29002db0f2fe63cbf26b8.
+- [ ] No workflow has been triggered. The five-module batch gate remains in force.
+- Next: complete the Mutes validation hooks and integrate CV Thing into the live engine and rack UI; then revalidate BF-22 and Crush Delay V3.
