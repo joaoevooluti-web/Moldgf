@@ -8,6 +8,7 @@
  const finite=v=>Number.isFinite(v)?v:0;
  const COMB_SECONDS=[.0297,.0331,.0379,.0413];
  const ALLPASS_SECONDS=[.0051,.0017,.00063];
+ const COMB_FEEDBACK=[.79,.775,.755,.735],COMB_DAMP=[.19,.16,.13,.11],ALLPASS_GAIN=[.68,.61,.54];
  function buffers(sr){return{
   comb:COMB_SECONDS.map(t=>new Float32Array(Math.max(8,Math.round(t*sr)))),
   combIndex:[0,0,0,0],combDamp:[0,0,0,0],
@@ -30,16 +31,15 @@
  function tank(input,state,sr){
   const driven=Math.tanh(clamp(input,-20,20,0)*.45);
   let sum=0;
-  const feedback=[.79,.775,.755,.735],damp=[.19,.16,.13,.11];
   for(let i=0;i<4;i++){
    const line=state.comb[i],index=state.combIndex[i],delayed=line[index];
-   state.combDamp[i]+=(delayed-state.combDamp[i])*damp[i];
-   line[index]=clamp(driven*.22+state.combDamp[i]*feedback[i],-1.5,1.5,0);
+   state.combDamp[i]+=(delayed-state.combDamp[i] )*COMB_DAMP[i];
+   line[index]=clamp(driven*.22+state.combDamp[i]*COMB_FEEDBACK[i],-1.5,1.5,0);
    state.combIndex[i]=(index+1)%line.length;sum+=delayed;
   }
   let wet=sum*.42;
   for(let i=0;i<3;i++){
-   const line=state.allpass[i],index=state.allpassIndex[i],delayed=line[index],g=[.68,.61,.54][i];
+   const line=state.allpass[i],index=state.allpassIndex[i],delayed=line[index],g=ALLPASS_GAIN[i];
    const output=delayed-g*wet;
    line[index]=clamp(wet+g*output,-1.5,1.5,0);
    state.allpassIndex[i]=(index+1)%line.length;wet=output;
