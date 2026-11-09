@@ -29,7 +29,7 @@ test("MULT mode normalizes A1 to A2 while a connected A2 overrides it", () => {
   assert.deepEqual(ABC.processPair({ a1: 5, a2: -5, b1: 5, c1: 0, b2: 5, c2: 0 }, controls, 0, false), [5, -5]);
 });
 
-test("MIX mode sums OUT1 into unpatched OUT2 and keeps patched OUT2 independent", () => {
+test("MIX mode sums OUT1 into the bus until OUT1 is patched", () => {
   const controls = [unity, unity];
   const inputs = { a1: 5, a2: 5, b1: 5, c1: 0, b2: 5, c2: 0 };
   assert.deepEqual(ABC.processPair(inputs, controls, 1, false), [5, 10]);
