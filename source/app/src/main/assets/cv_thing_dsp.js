@@ -8,14 +8,15 @@
   const finite = (v, d) => Number.isFinite(v) ? v : d;
   const MODES = Object.freeze({ CC: 0, NOTE: 1, PROGRAM: 2, CLOCK: 3, START_STOP: 4 });
   function createState() {
-    return { previous: Array(8).fill(null), clockHigh: Array(8).fill(false), events: [] };
+    return { previous: Array(8).fill(null), clockHigh: Array(8).fill(false), cooldown: Array(8).fill(0), events: [] };
   }
-  function process(params, inputs, state) {
+  function process(params, inputs, state, sampleRate) {
     const p = params || {}, x = inputs || {}, s = state || createState();
     const events = s.events;
     events.length = 0;
     const channel = clamp(Math.round(finite(p.channel, 1)), 1, 16);
     const threshold = clamp(finite(p.threshold, 0.005), 0, 1);
+    const midiInterval = Math.max(1, Math.round((finite(sampleRate, 48000) * 0.004)));
     const maps = Array.isArray(p.maps) ? p.maps : [];
     for (let i = 0; i < 8; i++) {
       const cfg = maps[i] || {};
@@ -27,13 +28,15 @@
       const normalized = clamp((raw + 5) / 10, 0, 1);
       const value = clamp(Math.round(normalized * 127), 0, 127);
       const previous = s.previous[i];
+      if (s.cooldown[i] > 0) s.cooldown[i]--;
 
       if (mode === MODES.CC) {
         if (cv == null) { s.previous[i] = null; continue; }
         const controller = clamp(Math.round(finite(cfg.cc, i)), 0, 127);
-        if (previous === null || Math.abs(normalized - previous) >= threshold) {
+        if ((previous === null || Math.abs(normalized - previous) >= threshold) && s.cooldown[i] <= 0) {
           events.push({ type: "cc", channel, controller, value, input: i });
           s.previous[i] = normalized;
+          s.cooldown[i] = midiInterval;
         }
       } else if (mode === MODES.NOTE) {
         // Hardware behavior: an odd CV input is paired with the following even input as Gate.
@@ -50,15 +53,20 @@
         const note = clamp(base + Math.round(raw * finite(cfg.octaveScale, 12)), 0, 127);
         const high = finite(gate, 0) > 1;
         if (high && !s.clockHigh[i]) events.push({ type: "noteOn", channel, note, velocity: clamp(Math.round(finite(cfg.velocity, 100)), 1, 127), input: i });
+        else if (high && s.clockHigh[i] && previous !== note) {
+          events.push({ type: "noteOff", channel, note: previous === null ? note : previous, velocity: 0, input: i });
+          events.push({ type: "noteOn", channel, note, velocity: clamp(Math.round(finite(cfg.velocity, 100)), 1, 127), input: i });
+        }
         if (!high && s.clockHigh[i]) events.push({ type: "noteOff", channel, note: previous === null ? note : previous, velocity: 0, input: i });
         s.clockHigh[i] = high;
         s.previous[i] = note;
       } else if (mode === MODES.PROGRAM) {
         if (cv == null) { s.previous[i] = null; continue; }
         const program = value;
-        if (previous === null || Math.abs(normalized - previous) >= threshold) {
+        if ((previous === null || Math.abs(normalized - previous) >= threshold) && s.cooldown[i] <= 0) {
           events.push({ type: "programChange", channel, program, input: i });
           s.previous[i] = normalized;
+          s.cooldown[i] = midiInterval;
         }
       } else if (mode === MODES.CLOCK) {
         if (cv == null) { s.clockHigh[i] = false; continue; }
