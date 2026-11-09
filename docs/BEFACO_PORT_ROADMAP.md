@@ -56,6 +56,17 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - Do not claim real-time performance, low latency, or audio correctness until measured on target Android devices.
 - Use original Moldgf panel artwork and interaction design. Do not copy Befaco logos, proprietary panel graphics, or imply official endorsement.
 
+
+## Visual front-panel fidelity (required for every module)
+
+- Each Befaco module must render a dedicated, module-specific Eurorack faceplate rather than a generic row of HTML controls.
+- Use official user manuals, panel diagrams, and product photographs as references for control placement, jack grouping, labels, legends, switch positions, LED colors, and relative proportions.
+- Recreate the functional layout and visual language with original Moldgf artwork/SVG/CSS; do not copy Befaco logos, proprietary panel artwork, or imply official endorsement.
+- Every visible jack, knob, switch, button, and indicator must map to the existing DSP parameter, graph port, or live signal readout. No decorative controls without behavior.
+- Preserve touch usability: adequate hit targets, responsive scaling, readable legends, and no horizontal overflow on phone screens.
+- A module is not visually complete until its faceplate has been reviewed against its hardware reference and its controls, cable endpoints, state persistence, and live indicators have regression coverage.
+- Apply the same standard retroactively to Atte and every already-ported module, not only to future ports. Visual completion is tracked separately from DSP/graph completion.
+
 ## Proposed implementation phases
 
 ### Phase 0 — Source and build audit
