@@ -301,3 +301,22 @@ test("manual jack patching uses live rack IDs, typed BF-22 ports and persists ca
   for (const id of ["in", "cv1", "cv2", "resCV", "out"]) assert.ok(descriptor.includes("id:'" + id + "'"), "BF-22 descriptor missing " + id);
   assert.doesNotMatch(descriptor, /id:'(?:inA|inB|outA|outB|cv1A|cv2A|resCVA|cv1B|cv2B|resCVB)'/);
 });
+
+test("Befaco hardware faceplates use HP-scaled vertical layouts instead of oversized generic cards",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const style=html.slice(html.lastIndexOf("/* Befaco hardware-proportion pass"),html.lastIndexOf("</style>"));
+  const rules=[
+    [".mod.random8{width:156px","Random8 8HP faceplate"],
+    [".mod.mex{width:82px","MEX 4HP faceplate"],
+    [".mod.octaves{width:218px","Octaves 12HP faceplate"],
+    [".mod.iroi{width:326px","IROI 18HP faceplate"],
+    [".mod.bandit{width:184px","Bandit 10HP faceplate"],
+    [".mod.mex .mex-switches{grid-template-columns:1fr","MEX vertical eight-step control rail"],
+    [".mod.random8 .r8-channels{grid-template-columns:repeat(8","Random8 eight-channel hardware rail"],
+    [".mod.iroi .iroi-main{grid-template-columns:1fr 1fr","IROI grouped hardware control sections"],
+    [".mod.bandit .bandit-bands{grid-template-columns:repeat(4","Bandit four spectral bands"]
+  ];
+  for(const [needle,label] of rules)assert.ok(style.includes(needle),"missing "+label);
+  for(const t of ["random8","mex","octaves","iroi","bandit"])assert.match(html,new RegExp("mod\\."+t+"\\s*\\{width:"));
+});
