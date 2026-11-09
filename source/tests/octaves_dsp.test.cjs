@@ -17,4 +17,5 @@ test("unpatched level CV uses the manual level directly",()=>{const s=Octaves.cr
 test("frequency is limited to a safe fraction of Nyquist across six octaves",()=>{const s=Octaves.createState(),r=Octaves.process(params({tune:1,tuneRange:0,octave:6}),{pitch1:8},s,48000,[]);assert.ok(r.frequency*32<48000*.46)});
 test("invalid parameters and CV inputs remain finite",()=>{const s=Octaves.createState(),r=Octaves.process({tune:NaN,tuneRange:NaN,octave:NaN,pwm:NaN,level:[NaN]},{pitch1:NaN,pitch2:NaN,pwmCV:NaN,levelCV:[NaN]},s,48000,[]);assert.ok(Number.isFinite(r.frequency));assert.ok(r.outputs.every(Number.isFinite))});
 test("Octaves reuses output buffers and result object in the audio callback",()=>{const s=Octaves.createState(),p=params(),a=Octaves.process(p,{},s,48000,[]),b=Octaves.process(p,{},s,48000,[]);assert.equal(a,b);assert.equal(a.outputs,s.outputs)});
-\ntest("polyBLEP pulse edges stay finite near discontinuities",()=>{for(const phase of [0,.001,.25,.499,.5,.999])assert.ok(Number.isFinite(Octaves.pulseAtPhase(phase,.5,.1)))});\n
+
+test("polyBLEP pulse edges stay finite near discontinuities",()=>{for(const phase of [0,.001,.25,.499,.5,.999])assert.ok(Number.isFinite(Octaves.pulseAtPhase(phase,.5,.1)))});
