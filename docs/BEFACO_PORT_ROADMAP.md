@@ -105,12 +105,13 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 - Published artifact: `eurorack-study-debug-apk`, artifact ID `13640156829`, 1,262,191 bytes, SHA-256 `8664bd134566e44435993bfa9c7586fc499fcef9846c684b48cbd87ac6709e56`; GitHub retention through 2027-02-06. This proves CI packaging only, not installation or audio validation on a device.
 - Existing engine audit: the 129 KB `index.html` embeds the engine, has AudioWorklet and ScriptProcessor fallback, a string-keyed signal store, summed input lookup, cable list, and hard-coded `step()` processing order. Current module registration and UI are distributed across `INIT`, `INITR`, `byT`, `mkInst`, `idxE`, `step`, `TY`, and handlers.
 - Existing rack types: MIDI→CV, Pamela PRO, Scales, Plaits, Mixer 4→2, Axon-2, PPEXP1, PPEXP2, Polaris, CV→MIDI, BBD, Beads, and Audio Out. None of the 34 requested Befaco modules is implemented as a dedicated type.
-- The new graph contract now validates live jack endpoints and output-to-input direction when the user creates a cable. Existing rack jacks are temporarily represented as permissive legacy signals; typed audio/CV/gate semantics and cycle scheduling will be enabled module-by-module so saved patches are not broken.
+- The new graph contract validates live jack endpoints and output-to-input direction. Legacy ports are mapped to the engine's actual mono channel model and permissive signal compatibility; typed audio/CV/gate semantics and cycle scheduling will be enabled module-by-module.
+- Befaco Atte has been added as the first utility module: four independent attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, per-channel gain/mode controls, and a voltage readout. Its dedicated DSP tests exposed a signed-zero edge case; a fix is committed, and the full CI validation is pending.
 - Android host uses WebViewAssetLoader, Android MIDI APIs, SharedPreferences bridge, and document picker. Plaits and Beads have optional WASM builds with JS fallbacks; Beads also has a native self-test in the build script.
 
 ## Immediate next steps
 
 1. Run the new graph contract tests and Android baseline workflow on the updated branch.
-2. Add the first utility DSP module (Atte), including typed port metadata, UI, cascaded input normaling, bipolar/positive attenuation, state persistence, and DSP tests.
+2. Validate the new Atte module end-to-end in CI, then complete any UI/graph integration gaps before moving to Dual Atenuverter and Voltio.
 3. Expand graph validation to typed signal semantics and explicit feedback scheduling as new module adapters are migrated.
 4. Continue in small groups with automated tests before moving to modulation, oscillators, and effects.

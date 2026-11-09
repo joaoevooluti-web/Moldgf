@@ -700,7 +700,7 @@ function ensurePortDescriptor(module){
   id:id.slice(prefix.length),
   direction:jk[id].classList.contains('o')?'output':'input',
   signal:'cv',
-  channels:'poly',
+  channels:1,
   accepts:LEGACY_SIGNAL_TYPES
  }));
  PORT_REGISTRY.register({type:module.t,ports});

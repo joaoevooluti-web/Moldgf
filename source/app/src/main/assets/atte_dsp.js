@@ -13,7 +13,9 @@
   }
   function applyGain(input, gain, positiveMode) {
     const level = Number.isFinite(gain) ? Math.max(0, Math.min(1, gain)) : 0;
-    return input * level * (positiveMode ? 1 : -1);
+    if (level === 0 || input === 0) return 0;
+    const output = input * level * (positiveMode ? 1 : -1);
+    return Object.is(output, -0) ? 0 : output;
   }
   return Object.freeze({ normalledVoltage, resolveInput, applyGain });
 });
