@@ -1375,7 +1375,7 @@ function ui(t){requestAnimationFrame(ui);if(t-lastT<33)return;lastT=t;flush();if
 // ---- saída MIDI (ponte nativa e/ou Web MIDI)
 let wmo=[];
 function midiFlat(a){if(!a||!a.length)return;if(NAT&&NAT.midiOutBatch){let t='';for(let i=0;i<a.length;i+=3)t+=(i?';':'')+a[i]+','+a[i+1]+','+a[i+2];try{NAT.midiOutBatch(t)}catch(e){}}
- for(const o of wmo){try{for(let i=0;i<a.length;i+=3)o.send([a[i],a[i+1],a[i+2]])}catch(e){}}}
+ for(const o of wmo){try{for(let i=0;i<a.length;i+=3){const st=a[i]&255,hi=st&240;if(st>=248)o.send([st]);else if(hi===192||hi===208)o.send([st,a[i+1]&127]);else o.send([st,a[i+1]&127,a[i+2]&127])}}catch(e){}}}
 // ---- presets por módulo, patches do rack, exportar/importar
 const FACT={po:[
  {n:'LP 24 dB clássico',s:{mo:0,ty:[3,0,3,0,0,1],co:.62,q:.1,dr:.5,di:0}},
