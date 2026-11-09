@@ -75,7 +75,8 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 ### Phase 2 — Utility and routing modules
 - [x] Atte — four attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, individual outputs, and saved control state; dedicated DSP tests pass.
 - [~] Dual Atenuverter — DSP core, two input/output channels, IN A→IN B normaling, bipolar attenuverter, ±10 V offset, output polarity indicators, graph descriptor, rack UI, five DSP tests and three graph-port tests authored; DSP boundary assertions and all inline-script syntax checks passed in the local V8 validation, while the Node test suite and APK build remain deferred to the five-module batch.
-- [~] Voltio — clean-room 1 V/oct source, 12-tone semitone steps, selectable 0–10 V / ±5 V octave range, precision sum input, graph routing, rack controls and four DSP tests plus three graph-port tests authored; pending batch test/build validation.\n- [ ] A*B+C, AxBC, Bypass, both Mixer variants, STMix, Morphader, Hex Mix VCA, and Motion MTR.
+- [~] Voltio — clean-room 1 V/oct source, 12-tone semitone steps, selectable 0–10 V / ±5 V octave range, precision sum input, graph routing, rack controls and four DSP tests plus three graph-port tests authored; pending batch test/build validation.
+- [ ] A*B+C, AxBC, Bypass, both Mixer variants, STMix, Morphader, Hex Mix VCA, and Motion MTR.
 - [ ] Validate gain staging, polarity, summing, stereo routing, and clipping.
 
 ### Phase 3 — Modulation, envelopes, and timing
