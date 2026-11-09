@@ -124,6 +124,19 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [ ] Complete patch save/load, UI accessibility, touch interaction, automation, and preset coverage.
 - [ ] Run CI, install/build verification, audio graph regression suite, and target-device performance tests.
 
+## Phase 7 — MIDI, mixers, filters, and stereo channel strips
+
+The next five-module batch has been selected after auditing the official Befaco catalog and confirming all five are absent from the current 32 DSP assets and 32 module registry entries:
+
+1. **MIDI Thing V2** — 6 HP, 12 assignable CV/gate ports, polyphonic voice allocation, note CV/glide/gate/velocity, ADSR, oscillator, LFO, MIDI clock, merge/routing and configuration UI. Integrate with the existing Android MIDI service; model its 12 configurable outputs as typed graph ports. Official resources: https://www.befaco.org/midi-thing-v2/ and https://befaco.org/docs/Midi_thing_V2/Midi%20Thing%20V2_User_Manual_v1.2.pdf.
+2. **Hexmix** — 28 HP six-channel performance mixer, per-channel three-band EQ, volume, vactrol-style latch/momentary mute and constant-power pan, plus master EQ/level and stereo output. Official resources: https://www.befaco.org/hexmix/ and https://befaco.org/docs/Hexmix/Hex_Mix_System_User_Manual.pdf.
+3. **Hexpander** — 28 HP Hexmix expansion: three aux sends per channel, stereo returns, pre/post fader/EQ send paths, PFL/cue monitor, direct post-EQ channel outputs, master and headphone outputs. Model its host dependency as an internal expansion link to Hexmix; do not require physical expansion hardware. Official resources: https://www.befaco.org/hexpander/ and https://befaco.org/docs/Hexpander/Hex_Mix_System_User_Manual.pdf.
+4. **Pony VCF** — 6 HP four-pole 24 dB/oct low-pass filter, three-input attenuated mixer with output-to-input-3 feedback normaling, resonance/Q CV, two cutoff CVs, CV1 routing to cutoff or cutoff+VCA, and volume CV with 10 V/CV1 normalization. Official resources: https://www.befaco.org/pony-vcf/ and https://www.befaco.org/docs/Pony_VCF/Pony_VCF_User_Manual.pdf.
+5. **DivKid Stereo Strip** — 6 HP stereo/mono channel strip with low-shelf/mid-bell/high-shelf EQ, constant-power pan and pan CV attenuator, stereo VCA and level CV, on/off/momentary mute, Eurorack/line input-output level switches and soft-clipping limiter. Keep L/R as separate scalar graph ports until the engine has a native stereo bus. Official resources: https://www.befaco.org/stereo-strip/ and https://befaco.org/docs/stereo_strip/Stereo_Strip_manual.pdf.
+
+Implementation order is MIDI Thing V2, Hexmix, Hexpander (after its host), Pony VCF, then Stereo Strip. Preserve the main branch and do not start another workflow until all five modules are implemented and their automated DSP/graph/UI tests are authored.
+
+
 ## Licensing and provenance
 
 The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Moldgf copies or adapts that source, preserve copyright and license notices, provide the corresponding source and GPL obligations for distributed derivative work, and review all bundled dependencies and assets individually. A clean-room implementation based on published behavior/specifications may have a different provenance; obtain legal review before distribution if licensing is uncertain.
