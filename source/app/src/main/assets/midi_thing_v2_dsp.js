@@ -211,13 +211,14 @@
 
   function voiceForPort(state, port, channel) {
     const selected = Math.round(finite(port.voice, 1));
+    const omni = Math.round(finite(port.channel, 0)) === 0;
     if (selected > 0) {
       const v = state.voices[clamp(selected - 1, 0, PORTS - 1)];
-      return v.active && v.channel === channel ? v : null;
+      return v.active && (omni || v.channel === channel) ? v : null;
     }
     for (let i = 0; i < PORTS; i++) {
       const v = state.voices[i];
-      if (v.active && v.channel === channel) return v;
+      if (v.active && (omni || v.channel === channel)) return v;
     }
     return null;
   }
@@ -280,7 +281,7 @@
     let peak = 0;
     for (let i = 0; i < PORTS; i++) {
       const port = ports[i] || {};
-      const mode = port.mode || "OFF";
+      const mode = typeof port.mode === "number" ? (MODES[clamp(Math.round(port.mode), 0, MODES.length - 1)] || "OFF") : (port.mode || "OFF");
       const channel = portChannel(state, port);
       const voice = voiceForPort(state, port, channel);
       const range = Math.round(finite(port.range, finite(params.voltageRange, 2)));
