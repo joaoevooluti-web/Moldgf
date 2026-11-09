@@ -49,4 +49,4 @@ node --test tests/*.test.cjs
 gradle assembleDebug --no-daemon
 \`\`\`
 
-The Android CI/APK gate is now open on feature/befaco-modules. The resulting CI run must still be inspected for Node, WASM, Gradle and APK artifact success before these ports are treated as release-validated.
+Workflow #22 (run 42557029992) completed successfully on code commit c24cf7f07acdf193f4322cd1374b309b6294f811: the repository Node suite passed 308/308, Plaits and Beads generated real WebAssembly payloads (185,636 and 196,726 bytes), Beads native selftests passed, the final CI step validated both payloads with WebAssembly.compile, and Gradle produced the debug APK. The APK SHA-256 is 217e71cf119ae417b7d0fb2abfb603f991f8cbd5f070035afb98d410302bbbb1. Physical-device audio/UI testing remains pending.
