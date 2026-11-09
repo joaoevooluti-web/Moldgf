@@ -441,11 +441,13 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - Visual pass commit: 48815dad8406de99d9a059e72afbe1964c4ec69a. Main remains at 8e81fcb36fb1bedbf63019b6ee5d890f694fb165.
 
 
-### Phase 8 progress — Joystick (DSP + typed graph foundation)
+### Phase 8 progress — Joystick (DSP connected to rack engine; visual/interaction validation pending)
 
-- [~] **Joystick DSP:** isolated bipolar X/Y CV generation, external X/Y attenuverter mode, range/offset, independent 10 V gates, finite-value handling and reusable result state. 14 DSP tests authored.
-- [x] Registered the six intended typed endpoints in the live rack graph registry: X/Y CV inputs, X/Y CV outputs and X/Y gate outputs. Added graph regression tests for both axis inputs, output signal types, and a manual cable path through the Joystick.
-- [ ] Still not a completed rack module: no 12 HP faceplate/XY touch surface, gate button interaction, DSP worker dispatch, parameter persistence verification, or live DOM-to-cable geometry test. The DSP and graph descriptor are not yet connected to the live processing loop.
-- [ ] DSP and graph tests are authored but not run. No workflow was triggered.
-- Commits: DSP c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; DSP tests 6a8461a65116e26c4b02ce12574622c2f1bfc4c8; typed graph registration 2db9f2d3d10ea3f8aefd45fb40a3e73de7d7c6f6; graph tests 04a55c76e7eb528412fd99aa6f15c9058d7be4d9.
-- Next: connect the registered endpoints to rack panel and worker processing without changing existing manual patch/cable logic, then complete DivKid Mutes mk2 and CV Thing rack integration.
+- [~] **Joystick DSP:** bipolar X/Y CV generation, external X/Y CV mode, range/offset, independent 10 V gates, finite-value handling and reusable result state. 14 DSP tests authored; not yet executed.
+- [x] Six typed graph endpoints remain registered: X/Y CV inputs, X/Y CV outputs and X/Y gate outputs. Graph regression tests cover both axes, signal types and a manual cable path.
+- [x] Added Joystick DSP to both browser script loading and AudioWorklet DSP source loading; initialized its runtime state and added a per-step processor that reads the typed X/Y inputs and publishes X/Y plus gate outputs. This also makes the same DSP callable in the ScriptProcessor fallback because both use the shared engine.
+- [x] Added a dedicated original Moldgf 12 HP-style faceplate layout, axis controls, six jack positions, custom CSS and a touch XY pad that updates saved module parameters. The normal rack jack DOM IDs and cable drawing/rebuild functions were not changed.
+- [ ] Gate button behavior and hardware-reference visual review still need verification. No browser/device test has been run; parameter save/restore, live cable geometry and graph/runtime tests still need automated validation.
+- [ ] No workflow was triggered; the five-module batch gate remains in force.
+- Commits: DSP c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; DSP tests 6a8461a65116e26c4b02ce12574622c2f1bfc4c8; graph registration 2db9f2d3d10ea3f8aefd45fb40a3e73de7d7c6f6; graph tests 04a55c76e7eb528412fd99aa6f15c9058d7be4d9; engine/panel integration 8010d8be998251571b276fad33b5af76fdd34eb6; faceplate styling d8037351419c299dbec4e8423326cae74baef980; XY touch interaction 70a3acb74f769d3acbb10e7d33083b630299e456.
+- Next: add interaction/runtime regression tests and verify the Joystick panel without disturbing cable creation, then integrate DivKid Mutes mk2 and CV Thing into the same live rack engine.
