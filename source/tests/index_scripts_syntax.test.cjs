@@ -108,3 +108,12 @@ test("five-module Befaco batch exposes dedicated hardware-inspired panels and li
   assert.match(noise,/NOISE PLETHORA/);assert.match(noise,/GENERATOR C/);assert.match(noise,/GRITTY/);assert.match(noise,/FILTERED/);
   assert.match(mux,/MUXLICER/);assert.match(mux,/mux-in-group/);assert.match(mux,/mux-out-group/);assert.match(mux,/ALL GATES/);assert.match(mux,/TAP TEMPO/);
 });
+
+test("Muxlicer engine preserves zero-based state while displaying one-based steps",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  assert.ok(html.includes("m.r.displayStep=o.step"));
+  assert.ok(!html.includes("m.r.step=o.step"));
+  assert.ok(html.includes("m.r.step===n-1"));
+  assert.ok(html.includes("STEP '+((m.r.step||0)+1)"));
+});
