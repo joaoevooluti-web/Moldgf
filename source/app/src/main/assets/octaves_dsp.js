@@ -29,7 +29,7 @@
   const octave=Math.round(clamp(p.octave,0,6,2))-2;
   const pitch=finite(i.pitch1)+finite(i.pitch2);
   const rawFrequency=261.625565*Math.pow(2,octave+tuneSemitones/12+pitch);
-  const frequency=clamp(rawFrequency,5,sr*.45/32,261.625565);
+  const frequency=clamp(rawFrequency,5,sr*.45,261.625565);
   const pwmCV=i.pwmCV===null||i.pwmCV===undefined?0:finite(i.pwmCV);
   const width=clamp(p.pwm+(pwmCV/10)*clamp(p.pwmAtt,0,1,0),.05,.95,.5);
   const sync=finite(i.sync)>=2.5,syncEdge=sync&&!s.syncHigh;s.syncHigh=sync;
@@ -37,7 +37,7 @@
   s.phase+=frequency/sr;if(s.phase>=1)s.phase-=Math.floor(s.phase);
   let sum=0;
   for(let n=0;n<6;n++){
-   const ratio=Math.pow(2,n),phase=(s.phase*ratio)%1,pulse=pulseAtPhase(phase,width,Math.min(.49,frequency*ratio/sr));
+   const ratio=Math.pow(2,n),phase=(s.phase*ratio)%1,octaveFrequency=frequency*ratio,pulse=octaveFrequency<sr*.45?pulseAtPhase(phase,width,Math.min(.49,octaveFrequency/sr)):0;
    const manual=clamp(Array.isArray(p.level)?p.level[n]:1,0,1,1);
    const cv=i.levelCV&&i.levelCV[n]!==undefined?i.levelCV[n]:i["levelCV"+(n+1)];
    const gain=cv===null||cv===undefined?manual:manual*clamp(finite(cv)/10,0,1,0);
