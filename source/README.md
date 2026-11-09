@@ -92,3 +92,11 @@ Phase 7 CI validation snapshot: this commit closes the five-module implementatio
 
 
 Phase 7 rerun: the six Node test failures from workflow #26 have been corrected; this source commit triggers workflow #27 for the full Node/WASM/Android APK gate.
+
+
+### Phase 7 CI correction log — run #27
+
+- Workflow #27 ran all **551 Node tests: 550 passed, one failed**. The only remaining failure was a static UI label assertion: the MIDI Thing V2 footer shortened PROGRAM CHANGE to PROGRAM. The full label is now displayed. No DSP or graph test failed in this run.
+- Workflow #28 is the final full-suite/WASM/Gradle/APK rerun. The module batch remains unvalidated until it completes successfully.
+
+Phase 7 CI rerun: workflow #27 passed 550/551 tests; the final PROGRAM CHANGE panel label assertion is corrected in the current branch. This commit triggers the final Node/WASM/APK rerun.
