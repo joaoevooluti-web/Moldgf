@@ -54,12 +54,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "bandit_dsp.js",
     "hexmix_dsp.js",
     "hexpander_dsp.js",
-    "pony_vcf_dsp.js"
+    "pony_vcf_dsp.js",
+    "stereo_strip_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander", "ponyVcf"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander", "ponyVcf", "stereoStrip"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -69,10 +70,10 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 35, "expected 35 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 35, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 35, "expected 35 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 35, "graph descriptor types must be unique");
+  assert.equal(pageAssets.length, 36, "expected 36 module DSP assets in the page");
+  assert.equal(new Set(pageAssets).size, 36, "DSP page assets must be unique");
+  assert.equal(descriptors.length, 36, "expected 36 explicit graph descriptors");
+  assert.equal(new Set(descriptors).size, 36, "graph descriptor types must be unique");
 });
 
 
@@ -229,4 +230,14 @@ test("Pony VCF panel exposes the four-pole filter, three-input mixer and CV1/VCA
   assert.match(html,/MoldgfPonyVCFDSP\.process/);
   assert.match(html,/s\.lastOutput/);
   assert.match(html,/A=byT\.ponyVcf;for/);
+});
+
+test("Stereo Strip panel exposes mono/stereo I/O, 3-band EQ, pan/VCA CV and level switches",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("stereoStrip:{n:"),html.indexOf("ponyVcf:{n:"));
+  for(const label of ["STEREO STRIP","6 HP","INPUT L","INPUT R","OUTPUT L","OUTPUT R","LOW","MID","HIGH","PAN","PAN CV ATT","PAN CV","LEVEL / VCA","LEVEL CV","INPUT LEVEL","OUTPUT LEVEL","EURORACK","LINE","SOFT CLIP LIMITER"])assert.ok(panel.includes(label),"missing Stereo Strip control "+label);
+  assert.match(html,/MoldgfStereoStripDSP\.process/);
+  assert.match(html,/m\.s\.mute=\(\(m\.s\.mute\|0\)\+1\)%3/);
+  assert.match(html,/A=byT\.stereoStrip;for/);
 });
