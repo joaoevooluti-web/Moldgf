@@ -1429,6 +1429,9 @@ rk.addEventListener('pointerdown',historyBegin,true);
 rk.addEventListener('pointerup',()=>{if(historyBefore!==null)historyCommit()},true);
 rk.addEventListener('pointercancel',()=>{historyBefore=null},true);
 rk.addEventListener('change',()=>{if(historyBefore!==null)historyCommit()},true);
+rk.addEventListener('click',()=>{historyBegin();queueMicrotask(historyCommit)},true);
+addEventListener('keydown',e=>{if(!e.ctrlKey&&!e.metaKey&&!e.altKey&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)){historyBegin()}},true);
+addEventListener('keyup',()=>{if(historyBefore!==null)historyCommit()},true);
 \nlet restored=0;try{const a=LS.getItem('rack:auto');if(a){const d=JSON.parse(a);if(d&&d.mods&&d.mods.length){loadRack(d);restored=1}}}catch(e){restored=0}
 if(!restored)defaultRack();historyUpdate();requestAnimationFrame(ui);
 </script></body></html>
