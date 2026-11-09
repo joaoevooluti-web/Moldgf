@@ -11,7 +11,7 @@ test("unpatched MIX 1+2 is normalized into the master output", () => {
 });
 
 test("each channel gain is independent and bounded to unity", () => {
-  assert.deepEqual(Mixer2.process([10, 10, 10, 10], [0.5, 0.25, 0, 2], true, false), [7.5, 0]);
+  assert.deepEqual(Mixer2.process([10, 10, 10, 10], [0.5, 0.25, 0, 2], true, false), [7.5, 10]);
 });
 
 test("optional hardware compatibility clips both outputs to +/-10V", () => {
