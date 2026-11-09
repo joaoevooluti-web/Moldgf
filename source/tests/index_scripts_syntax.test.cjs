@@ -262,7 +262,9 @@ test("BF-22 panel exposes both Sallen-Key-inspired filter channels, CV tracking 
   const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
   const html=fs.readFileSync(htmlPath,"utf8");
   const panel=html.slice(html.indexOf("bf22:{n:"),html.indexOf("midiThingV2:{n:"));
-  for(const label of ["BF-22","DUAL HI / LOW-PASS FILTER","FILTER A","FILTER B","LINK","A → B","CUTOFF","RESONANCE","CV1 ATTENUVERTER","LOW PASS","HIGH PASS","6 dB","12 dB","CUTOFF CV","V/OCT","RESONANCE CV","FILTER OUT","SALLEN-KEY INSPIRED"])assert.ok(panel.includes(label),"missing BF-22 panel feature "+label);
+  for(const label of ["BF-22","DUAL HI / LOW-PASS FILTER","LINK","A → B","CUTOFF","RESONANCE","CV1 ATTENUVERTER","LOW PASS","HIGH PASS","6 dB","12 dB","CUTOFF CV","V/OCT","RESONANCE CV","FILTER OUT","SALLEN-KEY INSPIRED"])assert.ok(panel.includes(label),"missing BF-22 panel feature "+label);
+  assert.match(panel,/\[\x27A\x27,\x27B\x27\]\.map/);
+  assert.match(panel,/FILTER '\+ch/);
   assert.match(html,/MoldgfBF22DSP\.process/);
   assert.match(html,/function bf22F\(m\)/);
   assert.match(html,/type:'bf22'/);
