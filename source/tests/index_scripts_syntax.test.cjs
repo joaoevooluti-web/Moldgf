@@ -335,3 +335,5 @@ test("rack-wide undo and redo restore modules, parameters, order and patch cable
   assert.match(html,/e\.key\.toLowerCase\(\);if\(k==='z'\)/);
   assert.match(html,/HISTORY_LIMIT=80/);
 });
+
+// Re-run full Android packaging gate after inline history script syntax correction.
