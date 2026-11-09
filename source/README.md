@@ -140,3 +140,18 @@ Phase 7 validation run #30: this commit triggers the full Node test suite, Plait
 
 
 Workflow #31 trigger: validate the new Android testDebugUnitTest step added to the consolidated build workflow, in addition to the 554 Node tests, Plaits/Beads WASM and debug APK.
+
+
+## Phase 8 — next five Befaco modules selected (implementation not yet started)
+
+The official Befaco catalogue lists these five products, and the current rack registry / DSP asset list does not contain them. They form the next batch after the Phase 7 validation gate:
+
+1. **BF-22** — dual Sallen-Key high-/low-pass filter, selectable 6/12 dB response, two cutoff CV inputs per channel, resonance CV, attenuverter and A→B link. 17 HP. Official page: https://www.befaco.org/bf-22/ ; user manual: https://befaco.org/docs/BF-22/BF_22_User_Manual.pdf
+2. **Crush Delay V3** — PT2399-inspired echo/delay with main IN and RETURN VCAs, TIME and FEEDBACK CV, three gate-controlled crush modifiers, DRY/WET, OUT and fully wet SEND. Published clean delay reaches 400 ms; the noisy/crushed region extends the repetitions. 11 HP. Official page: https://www.befaco.org/crush-delay-v3/ ; user manual: https://befaco.org/docs/Crush_Delay/Crush_Delay_V3_User_Manual.pdf
+3. **CV Thing** — eight configurable CV inputs mapped to MIDI CC, V/Oct note, poly note, note, velocity, pitch bend, program change, channel pressure, clock/start-stop, 14-bit CC and NRPN, plus digital/chord functions. 6 HP. Official page: https://www.befaco.org/cv_thing/ ; user manual v1.4.1: https://befaco.org/docs/CV_Thing/CV_Thing_V1.4.1_User_Manual.pdf
+4. **Joystick** — X/Y CV controller with range/offset, attenuverter mode for two incoming signals, and two manual gate buttons. 12 HP. Official page: https://www.befaco.org/joystick/ ; assembly guide: https://befaco.org/docs/Joystick/Joystick_V1_Assembly_Manual.pdf
+5. **DivKid Mutes mk2** — four click-free VCA mute channels, each with momentary/OFF/ON switching, signal LEDs and buffered cascading normalled inputs; 4 HP, with a convertible 1U panel. Official page: https://www.befaco.org/divkid_mutes_mk2/ ; assembly guide: https://befaco.org/docs/Mutes/Mutes_mk2_Assembly_Manual.pdf
+
+Implementation order: BF-22 → Crush Delay V3 → Joystick → DivKid Mutes mk2 → CV Thing. CV Thing is last because it requires a robust 8-input CV-to-MIDI event bridge through the Android MIDI output service. Its physical TRS/USB host connectors will not be represented as hardware on the phone; MIDI routing will use supported Android MIDI endpoints. BF-22 and Crush Delay are clean-room digital approximations of documented behavior, not transistor/PT2399 circuit emulations. Joystick will be represented by a touch XY surface and two gate buttons, not a physical arcade stick.
+
+For each module: DSP asset, typed graph descriptor, rack engine integration, persistent state, original hardware-layout-inspired panel, signal meters/LEDs, dedicated DSP and graph tests, and integration assertions. **Do not trigger Node/WASM/APK workflows until all five Phase 8 modules are implemented and their tests are authored.** Preserve existing 37 modules and main.
