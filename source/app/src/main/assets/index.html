@@ -672,6 +672,26 @@ out:{n:'Audio Out',html:id=>`<div class="row">${['l','r'].map((c,n)=>`<div class
 mix:{n:'Mixer 4→2',html:id=>`<div class="row">${[0,1,2,3].map(n=>`<div class="st">${J(id+'.i'+(n+1),'IN '+(n+1),'i')}<div class="mt"><div class="mb" data-pk="${n}"></div></div><input type="range" class="fd" data-k="l.${n}" min="0" max="1.5" step=".01"><input type="range" style="width:56px" data-k="p.${n}" min="-1" max="1" step=".01">${B('mu',n,'M')}</div>`).join('')}<div class="st">${J(id+'.L','L','o')}${J(id+'.R','R','o')}<input type="range" class="fd" data-k="ms" min="0" max="1.5" step=".01">MASTER</div></div>`}};
 const rk=$('#rack'),cnt={};let jk={},sel=null,kd=null,kbd=null,mdv=[],jd=null,sup=0,lt=null,pkT=null,node=null,ac=null,needDr=1,ledEls=[],abt=null,taps=[],lastSel={m:'',i:-1,t:0},lastK=null,lastR=null,kmoved=false;
 const dirty=new Set(),post=d=>{if(node)node.port.postMessage(d)};
+const PORT_REGISTRY=MoldgfModuleGraph.createRegistry();
+const LEGACY_SIGNAL_TYPES=MoldgfModuleGraph.signals;
+function endpointOfJack(jackId){
+ const dot=jackId.lastIndexOf('.');
+ if(dot<=0)return null;
+ const module=I[jackId.slice(0,dot)];
+ return module?{module,port:jackId.slice(dot+1)}:null;
+}
+function ensurePortDescriptor(module){
+ if(PORT_REGISTRY.has(module.t))return;
+ const prefix=module.id+'.';
+ const ports=Object.keys(jk).filter(id=>id.startsWith(prefix)).map(id=>({
+  id:id.slice(prefix.length),
+  direction:jk[id].classList.contains('o')?'output':'input',
+  signal:'cv',
+  channels:'poly',
+  accepts:LEGACY_SIGNAL_TYPES
+ }));
+ PORT_REGISTRY.register({type:module.t,ports});
+}
 const reg=()=>{jk={};document.querySelectorAll('.jk').forEach(e=>jk[e.dataset.id]=e);ledEls=[...document.querySelectorAll('[data-v]')];needDr=1};
 function idx(){idxE();reg()}
 function postCab(){post({t:'cab',cab:cab.map(c=>[c.a,c.b])})}
@@ -702,7 +722,18 @@ function axPress(m,k){const h=byT.pam[m.s.host|0];if(!h)return;const P=h.s,fn=k?
  case 5:bankStep(h,1);break;case 6:bankStep(h,-1);break;case 7:post({t:'rst',id:h.id});if(!node){h.r.beat=0;h.r.tick=0;h.r.o.forEach(q=>q.lc=-1)}}
  dirty.add(h.id);sync()}
 function seqRec(m,i){const s=m.s,n=i+12*s.oct;if(s.rp<128)s.seq[s.rp++]={n,t:s.tie?'t':'n'};s.tie=0;dirty.add(m.id);post({t:'sk',id:m.id,n,g:1});if(!node){m.r.kn=n;m.r.kg=1}}
-function connect(x,y){const ox=jk[x].classList.contains('o'),oy=jk[y].classList.contains('o');if(ox===oy)return false;const a=ox?x:y,b=ox?y:x,ex=cab.findIndex(c=>c.b===b);if(ex>=0)cab.splice(ex,1);cab.push({a,b});rb();return true}
+function connect(x,y){
+ const ox=jk[x].classList.contains('o'),oy=jk[y].classList.contains('o');
+ if(ox===oy)return false;
+ const from=endpointOfJack(ox?x:y),to=endpointOfJack(ox?y:x);
+ if(!from||!to)return false;
+ ensurePortDescriptor(from.module);ensurePortDescriptor(to.module);
+ const check=MoldgfModuleGraph.canConnect(PORT_REGISTRY,from.module,from.port,to.module,to.port);
+ if(!check.ok){toast('Conexão recusada: '+check.code);return false}
+ const a=ox?x:y,b=ox?y:x,ex=cab.findIndex(c=>c.b===b);
+ if(ex>=0)cab.splice(ex,1);
+ cab.push({a,b});rb();return true
+}
 rk.addEventListener('pointerdown',e=>{
  const jj=e.target.closest('.jk');if(jj){jd={id:jj.dataset.id,x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,on:0};return}
  const ri=e.target.closest('input[type=range][data-k]');if(ri){const now=Date.now();if(lastR&&lastR.el===ri&&now-lastR.t<320){const[o,n]=tgt(ri,1);o[n]=dflt(ri);sync();lastR=null}else lastR={el:ri,t:now}}

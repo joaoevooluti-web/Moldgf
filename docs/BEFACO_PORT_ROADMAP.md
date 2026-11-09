@@ -68,7 +68,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 ### Phase 1 — Modular engine foundation
 - [x] Add a standalone module descriptor registry and typed-port/graph validation contract.
 - [x] Add automated Node tests for registry validation, signal direction/types, channel compatibility, topological order, and explicit feedback-delay handling (6/6 passed in workflow 42539116720, commit c231aaa4ecb3601f1423c84dbfa0710f7e59edc4).
-- [ ] Integrate the contract with the existing jack/cable model without changing legacy DSP behavior.
+- [x] Integrate endpoint/port-direction validation with the existing jack/cable model. Legacy ports retain permissive signal compatibility until their true audio/CV/gate metadata is declared, preserving existing patch behavior.
 - [ ] Add parameter event queue, state schema/versioning, reset/bypass contract, and scheduler integration.
 - [ ] Migrate existing module types through adapters; keep Worklet and ScriptProcessor paths behaviorally aligned.
 
@@ -105,12 +105,12 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 - Published artifact: `eurorack-study-debug-apk`, artifact ID `13640156829`, 1,262,191 bytes, SHA-256 `8664bd134566e44435993bfa9c7586fc499fcef9846c684b48cbd87ac6709e56`; GitHub retention through 2027-02-06. This proves CI packaging only, not installation or audio validation on a device.
 - Existing engine audit: the 129 KB `index.html` embeds the engine, has AudioWorklet and ScriptProcessor fallback, a string-keyed signal store, summed input lookup, cable list, and hard-coded `step()` processing order. Current module registration and UI are distributed across `INIT`, `INITR`, `byT`, `mkInst`, `idxE`, `step`, `TY`, and handlers.
 - Existing rack types: MIDI→CV, Pamela PRO, Scales, Plaits, Mixer 4→2, Axon-2, PPEXP1, PPEXP2, Polaris, CV→MIDI, BBD, Beads, and Audio Out. None of the 34 requested Befaco modules is implemented as a dedicated type.
-- The graph currently has no explicit signal type/channel metadata or graph-cycle validation. Existing legacy patches must remain compatible while the new graph contract is integrated behind adapters.
+- The new graph contract now validates live jack endpoints and output-to-input direction when the user creates a cable. Existing rack jacks are temporarily represented as permissive legacy signals; typed audio/CV/gate semantics and cycle scheduling will be enabled module-by-module so saved patches are not broken.
 - Android host uses WebViewAssetLoader, Android MIDI APIs, SharedPreferences bridge, and document picker. Plaits and Beads have optional WASM builds with JS fallbacks; Beads also has a native self-test in the build script.
 
 ## Immediate next steps
 
 1. Run the new graph contract tests and Android baseline workflow on the updated branch.
-2. Integrate graph validation with the existing jack IDs and cable persistence, preserving legacy patch loading.
-3. Implement the first utility DSP module (Atte), including descriptor, UI, CV/audio semantics, state persistence, and DSP tests.
+2. Add the first utility DSP module (Atte), including typed port metadata, UI, cascaded input normaling, bipolar/positive attenuation, state persistence, and DSP tests.
+3. Expand graph validation to typed signal semantics and explicit feedback scheduling as new module adapters are migrated.
 4. Continue in small groups with automated tests before moving to modulation, oscillators, and effects.
