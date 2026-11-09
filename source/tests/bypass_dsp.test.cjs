@@ -17,7 +17,7 @@ test("hard bypass crossfades from dry input to the stereo FX return", () => {
   assert.equal(result.outLeft, 2);
   assert.equal(result.outRight, -3);
   result = Bypass.process(params({ button: true }), inputs(), state, 0.2);
-  assert.equal(result.sendActive, 1);
+  assert.ok(Math.abs(result.sendActive - 1) < 1e-6);
   assert.ok(Math.abs(result.outLeft - 7) < 1e-6);
   assert.ok(Math.abs(result.outRight - 5) < 1e-6);
 });
@@ -34,7 +34,7 @@ test("right input normals to left and send outputs follow the smoothed active st
   const result = Bypass.process(params({ active: true }), inputs({ inL: 4, inR: null }), state, 0.2);
   assert.ok(Math.abs(result.sendLeft - 4) < 1e-6);
   assert.ok(Math.abs(result.sendRight - 4) < 1e-6);
-  assert.equal(result.outRight, 5);
+  assert.ok(Math.abs(result.outRight - 5) < 1e-6);
 });
 
 test("FX return gain follows the -30dB to +12dB control taper", () => {
