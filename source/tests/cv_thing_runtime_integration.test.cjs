@@ -10,9 +10,10 @@ test("CV Thing DSP loads in page and AudioWorklet source bundle", () => {
   assert.match(html, /'cv_thing_dsp\.js'/);
 });
 test("CV Thing is initialized and dispatched in the shared sample engine", () => {
-  assert.match(html, /cvThing:\s*\(\)\s*=>\(\{channel:1,threshold:\.005,maps:/);\n  assert.match(html, /cvThing:\s*\(\)\s*=>\s*MoldgfCVThingDSP\.createState\(\)/);
+  assert.match(html, /cvThing:\s*\(\)\s*=>\(\{channel:1,threshold:\.005,maps:/);
+  assert.match(html, /cvThing:\s*\(\)\s*=>\s*MoldgfCVThingDSP\.createState\(\)/);
   assert.match(html, /function cvThingF\(m\)/);
-  assert.match(html, /A=byT\.cvThing;for\(i=0;i<A\.length;i\+\+\)cvThingF\(A\[i\]\)/);
+  assert.match(html, /A=byT\.cvThing;for\(i=0;i<A.length;i\+\+\)cvThingF\(A\[i\]\)/);
 });
 test("CV Thing has eight typed CV inputs and eight typed gate inputs", () => {
   assert.match(html, /type:'cvThing',ports:/);
@@ -23,17 +24,15 @@ test("CV Thing has eight typed CV inputs and eight typed gate inputs", () => {
     assert.ok(html.includes("id+'.gate" + i + "'"), "missing gate jack " + i);
   }
 });
-test("CV Thing maps all supported MIDI event classes to the existing MIDI queue", () => {
-  for (const status of ["176|(ch&15)", "144|(ch&15)", "128|(ch&15)", "192|(ch&15)", "mq(248", "mq(250", "mq(252"]) {
-    assert.ok(html.includes(status), "missing MIDI route " + status);
-  }
+test("CV Thing routes CC, note, program, clock and transport events through the MIDI queue", () => {
+  for (const status of ["176|(ch&15)", "144|(ch&15)", "128|(ch&15)", "192|(ch&15)", "mq(248", "mq(250", "mq(252"]) assert.ok(html.includes(status), "missing MIDI route " + status);
   assert.match(html, /function midiFlat\(a\)/);
   assert.match(html, /NAT\.midiOutBatch/);
 });
-test("CV Thing exposes channel, threshold, mode, CC and note controls", () => {
+test("CV Thing exposes channel, threshold, mapping mode, CC and note controls", () => {
   assert.match(html, /Sel\('channel','MIDI CHANNEL'/);
   assert.match(html, /R\('threshold','CHANGE THRESHOLD'/);
-  assert.match(html, /Sel\('maps '\+i\+'\.mode'/);
+  assert.match(html, /Sel\('maps\.'\+i\+'\.mode'/);
   assert.match(html, /data-k="maps\.'\+i\+'\.cc"/);
   assert.match(html, /data-k="maps\.'\+i\+'\.note"/);
 });
