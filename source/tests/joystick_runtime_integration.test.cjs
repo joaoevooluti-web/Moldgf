@@ -23,6 +23,8 @@ test("Joystick faceplate exposes the six graph endpoint IDs", () => {
   }
   assert.match(html, /data-xy=/);
   assert.match(html, /function joySet\(e\)/);
+  assert.match(html, /Sel\('mode','CONTROL',\['MANUAL','CV INPUT'\]\)/);
+  assert.match(html, /case'gateX':s\.gateX\^=1;break;case'gateY':s\.gateY\^=1;break;/);
 });
 
 test("inline engine script remains syntactically valid", () => {
