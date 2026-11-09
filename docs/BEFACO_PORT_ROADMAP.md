@@ -148,8 +148,8 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 ## Repository audit — 2026-11-09
 
-- Last code commit validated by workflow #22: `c24cf7f9d9a6c4a0e6d0f3c7e1b8f4f9e5b7c3d1`.
-- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 278 commits ahead, 0 behind. `main` remains exactly at the baseline SHA (0 ahead, 0 behind); no changes were made to `main`.
+- Last code commit validated by workflow #22: `c24cf7f07acdf193f4322cd1374b309b6294f811`. The current branch HEAD `61f8be426efc70a3cf095836f651dd8e1c58e3a5` adds only this roadmap update.
+- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 279 commits ahead, 0 behind. `main` remains exactly at the baseline SHA (0 ahead, 0 behind); no changes were made to `main`.
 - The current `source/app/src/main/assets/index.html` already registers and processes **Even VCO** and **Chopping Kinky**, each with a dedicated DSP asset and DSP/graph tests. They must not be counted as unported or reimplemented.
 - The current assets include the following additional module implementations beyond the first batch: Mixer2, Mixer, STMix, Morphader, Hexmix VCA, Motion MTR, Slew Limiter, Slew, Pony VCO, ADSR, Percall, MuDi, Burst, Sampling Modulator, Chopping Kinky, and Even VCO. The roadmap's earlier count of 21 modules needs a separate inventory reconciliation before the next release gate.
 - Rampage implementation is committed on `feature/befaco-modules` across commits `fd59eee8` (DSP/test foundation), `13a7eb32` (engine/panel/graph integration), and subsequent DSP/UI/test corrections through `7a1d5add`. The current files are `source/app/src/main/assets/rampage_dsp.js`, `source/tests/rampage_dsp.test.cjs`, `source/tests/rampage_graph.test.cjs`, and the integrated `index.html`.
