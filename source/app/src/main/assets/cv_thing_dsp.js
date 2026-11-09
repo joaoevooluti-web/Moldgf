@@ -14,61 +14,63 @@
     const p = params || {}, x = inputs || {}, s = state || createState();
     const events = s.events;
     events.length = 0;
-    const channels = clamp(Math.round(finite(p.channel, 1)), 1, 16);
+    const channel = clamp(Math.round(finite(p.channel, 1)), 1, 16);
     const threshold = clamp(finite(p.threshold, 0.005), 0, 1);
     const maps = Array.isArray(p.maps) ? p.maps : [];
     for (let i = 0; i < 8; i++) {
       const cfg = maps[i] || {};
       const mode = clamp(Math.round(finite(cfg.mode, MODES.CC)), 0, 4);
-      const cvInput = x["cv" + (i + 1)];
-      const gateInput = x["gate" + (i + 1)];
-      // An unpatched input must be silent and must not leave notes latched.
-      if (cvInput == null && gateInput == null) {
-        if (mode === MODES.NOTE && s.clockHigh[i]) {
-          events.push({ type: "noteOff", channel: channels, note: s.previous[i] === null ? 60 : s.previous[i], velocity: 0, input: i });
-          s.clockHigh[i] = false;
-        } else if (mode === MODES.START_STOP && s.previous[i] === 1) {
-          events.push({ type: "stop", input: i });
-          s.previous[i] = 0;
-        } else if (mode === MODES.CC || mode === MODES.PROGRAM) {
-          s.previous[i] = null;
-        }
-        continue;
-      }
-      const raw = finite(cvInput, 0);
+      const cv = x["cv" + (i + 1)];
+      const raw = finite(cv, 0);
       const normalized = clamp((raw + 5) / 10, 0, 1);
       const value = clamp(Math.round(normalized * 127), 0, 127);
-      const prev = s.previous[i];
+      const previous = s.previous[i];
+
       if (mode === MODES.CC) {
-        if (cvInput == null) { s.previous[i] = null; continue; }
-        const cc = clamp(Math.round(finite(cfg.cc, i)), 0, 127);
-        if (prev === null || Math.abs(normalized - prev) >= threshold) {
-          events.push({ type: "cc", channel: channels, controller: cc, value, input: i });
+        if (cv == null) { s.previous[i] = null; continue; }
+        const controller = clamp(Math.round(finite(cfg.cc, i)), 0, 127);
+        if (previous === null || Math.abs(normalized - previous) >= threshold) {
+          events.push({ type: "cc", channel, controller, value, input: i });
           s.previous[i] = normalized;
         }
       } else if (mode === MODES.NOTE) {
+        // Hardware behavior: an odd CV input is paired with the following even input as Gate.
+        // Even-numbered mapping rows cannot start a second note mapping while serving as a gate.
+        if ((i & 1) !== 0) continue;
+        const gate = x["cv" + (i + 2)];
+        if (cv == null || gate == null) {
+          if (s.clockHigh[i]) events.push({ type: "noteOff", channel, note: previous === null ? 60 : previous, velocity: 0, input: i });
+          s.clockHigh[i] = false;
+          s.previous[i] = null;
+          continue;
+        }
         const base = clamp(Math.round(finite(cfg.note, 60)), 0, 127);
         const note = clamp(base + Math.round(raw * finite(cfg.octaveScale, 12)), 0, 127);
-        const gate = finite(gateInput, 0) > 1;
-        const wasGate = s.clockHigh[i];
-        if (gate && !wasGate) events.push({ type: "noteOn", channel: channels, note, velocity: clamp(Math.round(finite(cfg.velocity, 100)), 1, 127), input: i });
-        if (!gate && wasGate) events.push({ type: "noteOff", channel: channels, note: prev === null ? note : prev, velocity: 0, input: i });
-        s.clockHigh[i] = gate;
+        const high = finite(gate, 0) > 1;
+        if (high && !s.clockHigh[i]) events.push({ type: "noteOn", channel, note, velocity: clamp(Math.round(finite(cfg.velocity, 100)), 1, 127), input: i });
+        if (!high && s.clockHigh[i]) events.push({ type: "noteOff", channel, note: previous === null ? note : previous, velocity: 0, input: i });
+        s.clockHigh[i] = high;
         s.previous[i] = note;
       } else if (mode === MODES.PROGRAM) {
-        if (cvInput == null) continue;
-        const program = clamp(Math.round(normalized * 127), 0, 127);
-        if (prev === null || Math.abs(normalized - prev) >= threshold) {
-          events.push({ type: "programChange", channel: channels, program, input: i });
+        if (cv == null) { s.previous[i] = null; continue; }
+        const program = value;
+        if (previous === null || Math.abs(normalized - previous) >= threshold) {
+          events.push({ type: "programChange", channel, program, input: i });
           s.previous[i] = normalized;
         }
       } else if (mode === MODES.CLOCK) {
-        const high = finite(gateInput, raw) > 1;
+        if (cv == null) { s.clockHigh[i] = false; continue; }
+        const high = raw > 2;
         if (high && !s.clockHigh[i]) events.push({ type: "clock", input: i });
         s.clockHigh[i] = high;
       } else {
-        const run = finite(gateInput, raw) > 1;
-        if (s.previous[i] === null || run !== !!s.previous[i]) {
+        if (cv == null) {
+          if (s.previous[i] === 1) events.push({ type: "stop", input: i });
+          s.previous[i] = null;
+          continue;
+        }
+        const run = raw > 2;
+        if (previous === null || run !== !!previous) {
           events.push({ type: run ? "start" : "stop", input: i });
           s.previous[i] = run ? 1 : 0;
         }
