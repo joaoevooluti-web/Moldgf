@@ -70,3 +70,21 @@ test("Kickall output remains finite and bounded at extreme CV values",()=>{
  for(let n=0;n<5000;n++)r=Kickall.process({tune:1,shape:1,time:0,bend:1,decay:0},{trigger:n===0?10:0,tune:10,shape:10,decay:10,volume:10},s,96000);
  assert.ok(Number.isFinite(r.out)&&Math.abs(r.out)<=5);assert.ok(Number.isFinite(r.frequency));
 });
+
+test("trigger input uses the documented 3.5 V threshold",()=>{
+ const s=Kickall.createState(),p={tune:.5,shape:0,time:.5,bend:.5,decay:.5};
+ Kickall.process(p,{trigger:3.49},s,48000);assert.equal(s.triggerCount,0);
+ Kickall.process(p,{trigger:0},s,48000);Kickall.process(p,{trigger:3.5},s,48000);
+ assert.equal(s.triggerCount,1);
+});
+test("volume envelope decays to silence at short decay settings",()=>{
+ const s=Kickall.createState(),p={tune:.5,shape:0,time:.5,bend:0,decay:0};
+ let r;for(let n=0;n<12000;n++)r=Kickall.process(p,{trigger:n===0?5:0},s,48000);
+ assert.ok(r.volumeEnvelope<.001);
+});
+test("Tune CV spans multiple octaves at one volt per octave",()=>{
+ const p={tune:.5,shape:0,time:.5,bend:0,decay:.5};
+ const a=Kickall.process(p,{tune:0},Kickall.createState(),48000);
+ const b=Kickall.process(p,{tune:4},Kickall.createState(),48000);
+ assert.ok(Math.abs(b.frequency/a.frequency-16)<1e-8);
+});
