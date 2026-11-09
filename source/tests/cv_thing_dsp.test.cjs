@@ -44,7 +44,9 @@ test("paired Gate falling edge emits note off for the last note", () => {
 test("the input following a V/Oct Note mapping is reserved as its Gate", () => {
   const maps = [{ mode: DSP.modes.NOTE, note: 60 }, { mode: DSP.modes.CC, cc: 7 }];
   const e = DSP.process({ maps }, { cv1: 0, cv2: 5 }, DSP.createState());
-  assert.equal(e.length, 0);
+  assert.equal(e.length, 1);
+  assert.equal(e[0].type, "noteOn");
+  assert.equal(e.some(event => event.type === "cc"), false);
 });
 test("removing the paired Gate sends note off to avoid a stuck MIDI note", () => {
   const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.NOTE, note: 64 }] };
@@ -91,4 +93,11 @@ test("event array is reused between processing calls", () => {
   const s = DSP.createState(), a = DSP.process({ maps: [{ mode: 0 }] }, { cv1: 0 }, s);
   const b = DSP.process({ maps: [{ mode: 0 }] }, { cv1: 1 }, s);
   assert.equal(a, b);
+});
+
+test("Start/Stop mode does not send a spurious STOP when first connected low", () => {
+  const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.START_STOP }] };
+  assert.equal(DSP.process(p, { cv1: 0 }, s).length, 0);
+  assert.equal(DSP.process(p, { cv1: 5 }, s)[0].type, "start");
+  assert.equal(DSP.process(p, { cv1: 0 }, s)[0].type, "stop");
 });
