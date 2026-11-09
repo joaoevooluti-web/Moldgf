@@ -32,12 +32,20 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "morphader_dsp.js",
     "hexmixvca_dsp.js",
     "motionmtr_dsp.js",
-    "slewlimiter_dsp.js"
+    "slewlimiter_dsp.js",
+    "slew_dsp.js",
+    "pony_vco_dsp.js",
+    "adsr_dsp.js",
+    "percall_dsp.js",
+    "mudi_dsp.js",
+    "burst_dsp.js",
+    "sampling_modulator_dsp.js",
+    "chopping_kinky_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
