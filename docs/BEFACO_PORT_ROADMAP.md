@@ -429,3 +429,13 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [ ] Visual fidelity is not yet complete. The previous generic HP CSS pass is insufficient for accurate per-module faceplates. Official product references confirm examples such as Random8 8HP, MEX 4HP, IROI 18HP, Rampage 18HP, while a catalog rack lists Bandit 8HP; the existing Bandit 10HP width rule is therefore wrong and must be corrected. Each of the 39 renderers still needs its own reference-driven control layout, jack coordinates, switch/knob sizes, colors and typography, not just a shared width map.
 - [ ] Next visual implementation should be done in batches with official Befaco photos/manuals as visual ground truth, starting by correcting HP metadata and the five latest panels, then the remaining modules. Keep module DSP and graph descriptors untouched unless a matching functional defect is found.
 - Current history commits: 30b60cbc36a8c53428f337446c5c01c8bca6d173 and e2c924318a7b8f1d0bf6b756a7f67c571ecc8ae; regression test: 9b587a9e356abee4320c40e5f1b5bc3c16fa1e87. No APK has been built for this history update yet.
+
+### Visual pass 2 — hardware reference styling for five panels
+
+- [x] Reworked the faceplate visual language for Random8, MEX, Octaves VCO, IROI and Bandit using product photographs as references: dark anodized panels, high-contrast legends, jack ring treatments, red hardware accents, module-specific switch/slider styling and more faithful control grouping.
+- [x] Corrected Bandit to 8HP (156px at the app's current 18px/HP scale plus faceplate allowance). The previous 184px/10HP width was incorrect. IROI remains 18HP/326px; Octaves 12HP/218px; MEX 4HP/82px; Random8 8HP/156px.
+- [x] Preserved module DSP, graph descriptors, jack IDs and cable interaction code; this pass changes only the faceplate CSS.
+- [ ] Visual review against reference images at phone and desktop sizes remains open. This is a substantial styling pass, not a pixel-perfect or visually approved completion.
+- [ ] Add DOM/runtime geometry tests for the five panels and verify all control hit targets, jack coordinates, undo/redo and manual patching after the CSS change.
+- CI status: the previous run #47 succeeded on commit cf4964a50199cb5c2dbe75e01767b67185c46247, but it predates this CSS commit. A new workflow may run automatically for the CSS push; do not treat #47 as validation of this visual pass.
+- Visual pass commit: 48815dad8406de99d9a059e72afbe1964c4ec69a. Main remains at 8e81fcb36fb1bedbf63019b6ee5d890f694fb165.
