@@ -51,7 +51,7 @@
       lastNote: -1,
       lastVelocity: 0,
       lastMessage: "NO MIDI",
-      glideTimeCache: -1, glideModeCache: -1, glideCoefCache: 1,
+      glideTimeCache: -1, glideModeCache: -1, glideSampleRateCache: -1, glideCoefCache: 1,
       peak: 0,
       droppedNotes: 0
     };
@@ -267,8 +267,8 @@
     if (state.sampleRate !== sr) state.sampleRate = sr;
     const ports = Array.isArray(params.ports) ? params.ports : [];
     const glideTime = Math.max(0, finite(params.glideTime, 0.03)) / 1000;
-    if (state.glideTimeCache !== glideTime || state.glideModeCache !== params.glideMode || state.sampleRate !== sr) {
-      state.glideTimeCache = glideTime; state.glideModeCache = params.glideMode;
+    if (state.glideTimeCache !== glideTime || state.glideModeCache !== params.glideMode || state.glideSampleRateCache !== sr) {
+      state.glideTimeCache = glideTime; state.glideModeCache = params.glideMode; state.glideSampleRateCache = sr;
       state.glideCoefCache = glideTime <= 0 ? 1 : (params.glideMode === 1 ? 1 - Math.exp(-1 / (glideTime * sr)) : 1 / Math.max(1, glideTime * sr));
     }
     const glideCoef = state.glideCoefCache;
