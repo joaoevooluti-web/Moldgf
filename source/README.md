@@ -117,3 +117,6 @@ Phase 7 final rerun: the MIDI Thing V2 faceplate now displays the full OSCILLATO
 - The Phase 7 module-specific tests now total **100 DSP tests + 25 graph tests**: Hexmix 18+5, Hexpander 15+5, Pony VCF 17+5, Stereo Strip 19+5, MIDI Thing V2 31+5. The repository-wide Node suite reported 554 tests in run #29.
 - Workflow #29 failed one assertion: the second voice's gate was expected to be 5 V even though its configured range was 0–10 V. The expected value is now 10 V, consistent with the module's range-aware gate output. This correction is committed on the current branch.
 - [ ] Workflow #30 must run the full Node/WASM/Gradle/APK gate on the current branch HEAD. Do not mark the batch validated until every required step and artifact inspection succeeds.
+
+
+Phase 7 validation run #30: this commit triggers the full Node test suite, Plaits/Beads WASM build and validation, Android debug APK assembly and artifact checks on the latest five-module implementation.
