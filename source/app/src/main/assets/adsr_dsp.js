@@ -9,9 +9,10 @@
   function clamp(value, min, max, fallback = 0) {
     return Math.max(min, Math.min(max, Number.isFinite(value) ? value : fallback));
   }
-  function stageTime(control, cv, minimum) {
-    const p = clamp(clamp(control, 0, 1, 0) + clamp(cv, -10, 10, 0) / 10, 0, 1, 0);
-    return minimum * Math.pow(10 / minimum, p);
+  function stageTime(control, cv, minimum, minimumWithNegativeCV) {
+    const p = clamp(control, 0, 1, 0) + clamp(cv, -10, 10, 0) / 10;
+    if (p < 0) return minimum * Math.pow((minimumWithNegativeCV || minimum) / minimum, -p);
+    return minimum * Math.pow(10 / minimum, clamp(p, 0, 1, 0));
   }
   function curve(progress, shape) {
     const t = clamp(progress, 0, 1, 0);
@@ -52,7 +53,7 @@
       const key = s.stage === STAGE.ATTACK ? "attack" : s.stage === STAGE.DECAY ? "decay" : "release";
       const cvKey = key + "CV";
       const minimum = key === "attack" ? 0.003 : 0.0028;
-      const duration = stageTime(params[key], inputs[cvKey], minimum);
+      const duration = stageTime(params[key], inputs[cvKey], minimum, key === 'attack' ? 0.0002 : 0.0004);
       s.progress = Math.min(1, s.progress + dt / duration);
       const shaped = curve(s.progress, params.shape);
       s.env = s.start + (s.target - s.start) * shaped;
