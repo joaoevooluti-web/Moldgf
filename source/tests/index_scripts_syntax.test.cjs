@@ -55,12 +55,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "hexmix_dsp.js",
     "hexpander_dsp.js",
     "pony_vcf_dsp.js",
-    "stereo_strip_dsp.js"
+    "stereo_strip_dsp.js",
+    "midi_thing_v2_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander", "ponyVcf", "stereoStrip"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander", "ponyVcf", "stereoStrip", "midiThingV2"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -70,9 +71,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 36, "expected 36 module DSP assets in the page");
+  assert.equal(pageAssets.length, 37, "expected 37 module DSP assets in the page");
   assert.equal(new Set(pageAssets).size, 36, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 36, "expected 36 explicit graph descriptors");
+  assert.equal(descriptors.length, 37, "expected 37 explicit graph descriptors");
   assert.equal(new Set(descriptors).size, 36, "graph descriptor types must be unique");
 });
 
@@ -240,4 +241,18 @@ test("Stereo Strip panel exposes mono/stereo I/O, 3-band EQ, pan/VCA CV and leve
   assert.match(html,/MoldgfStereoStripDSP\.process/);
   assert.match(html,/m\.s\.mute=\(\(m\.s\.mute\|0\)\+1\)%3/);
   assert.match(html,/A=byT\.stereoStrip;for/);
+});
+
+test("MIDI Thing V2 panel exposes twelve assignable outputs, voice controls and MIDI event routing",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("midiThingV2:{n:"),html.indexOf("stereoStrip:{n:"));
+  for(const label of ["MIDI THING V2","12 ASSIGNABLE PORTS","MIDI CH","VOICES","PRIORITY","CV RANGE","GLIDE","VOICE GENERATORS","NEW VOICE","ALL NOTES OFF","NOTE CV","PITCH BEND","CHANNEL PRESSURE","PROGRAM CHANGE","CLOCK","OSCILLATOR","RPN","NRPN"])assert.ok(panel.includes(label),"missing MIDI Thing V2 control "+label);
+  assert.match(panel,/Array\.from\(\{length:12\}/);
+  assert.match(html,/MoldgfMidiThingV2DSP\.process/);
+  assert.match(html,/MoldgfMidiThingV2DSP\.handleMidi/);
+  assert.match(html,/case'midiThingEvent'/);
+  assert.match(html,/case'midiThingAllOff'/);
+  assert.match(html,/midi_thing_v2_dsp\.js/);
+  assert.match(html,/type:'midiThingV2'/);
 });
