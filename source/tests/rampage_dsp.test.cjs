@@ -45,3 +45,34 @@ test("invalid sample rate and non-finite input remain finite",()=>{
  const s=Rampage.createState(),r=Rampage.process({riseA:NaN,fallA:Infinity,cycleA:true},{signalA:NaN,triggerA:Infinity},s,0);
  for(const v of Object.values(r.outputs))assert.ok(Number.isFinite(v));
 });
+
+test("manual trigger input initializes the selected function generator",()=>{
+ const s=Rampage.createState(),r=Rampage.process({riseA:0,fallA:0,rangeA:0,cycleA:false,manualTriggerA:true},{},s,48000);
+ assert.equal(r.a.stage,1);assert.ok(r.a.out>0);
+});
+test("external signal input follows a rising CV with independent slew time",()=>{
+ const s=Rampage.createState(),p={riseA:0,fallA:0,rangeA:0,cycleA:false};
+ Rampage.process(p,{signalA:0},s,48000);
+ const r=Rampage.process(p,{signalA:5},s,48000);
+ assert.ok(r.a.out>0&&r.a.out<5);
+});
+test("cycle CV inverts the front-panel cycle switch",()=>{
+ const s=Rampage.createState(),p={riseA:0,fallA:0,rangeA:0,cycleA:false};
+ const r=Rampage.process(p,{cycleCVA:5},s,48000);
+ assert.equal(r.a.stage,1);
+});
+test("trigger can retrigger a channel during its falling segment",()=>{
+ const s=Rampage.createState(),p={riseA:0,fallA:0,rangeA:0,cycleA:false};
+ Rampage.process(p,{triggerA:5},s,48000);
+ Rampage.process(p,{triggerA:0},s,48000);
+ let r;for(let n=0;n<20;n++)r=Rampage.process(p,{},s,48000);
+ assert.equal(r.a.stage,2);
+ r=Rampage.process(p,{triggerA:5},s,48000);
+ assert.equal(r.a.stage,1);
+});
+test("one-shot completion emits a single EOC pulse",()=>{
+ const s=Rampage.createState(),p={riseA:0,fallA:0,rangeA:0,cycleA:false};
+ Rampage.process(p,{triggerA:5},s,48000);
+ let pulse=0;for(let n=0;n<100;n++){const r=Rampage.process(p,{},s,48000);if(r.a.eoc===10)pulse++}
+ assert.equal(pulse,1);
+});
