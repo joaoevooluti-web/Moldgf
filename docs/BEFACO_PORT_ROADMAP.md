@@ -99,7 +99,8 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [ ] Validate gain staging, polarity, summing, stereo routing, and clipping.
 
 ### Phase 3 — Modulation, envelopes, and timing
-- [ ] Slew Limiter, Slew, Rampage, ADSR, Percall, Burst, MuDi, Sampling Modulator, Random8, Muxlicer, and Mex.
+- [ ] Slew Limiter, Slew, ADSR, Percall, Burst, MuDi, Sampling Modulator, Random8, Muxlicer, and Mex.
+- [~] **Rampage — first module in the five-module gate:** dual rise/fall function generators with one-shot/cycle operation, trigger/manual retrigger, external-signal slew processing, CV control of rise/fall/EXP, three time ranges, nonlinear shape, rising/falling slope gates, one-shot/cycle EOC pulses, and balanced B>A/MIN/MAX logic. Added dedicated 18 HP-inspired original Moldgf faceplate, persisted controls, engine processing, typed audio/CV/gate graph ports, and live stage/voltage readouts. Fourteen DSP tests and five graph tests were executed in the local V8 validation harness; the actual Node test runner, consolidated CI/APK build, and physical-device validation remain deferred until all five modules are integrated. This is a documented-behavior JS model, not a transistor-level analog clone.
 - [ ] Validate gate edge handling, clock accuracy, retrigger behavior, deterministic seeded random tests, and expander synchronization.
 
 ### Phase 4 — Oscillators, voices, and noise
@@ -135,18 +136,20 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 ## Immediate next steps
 
-1. Keep all workflows and APK builds blocked until five additional, previously unported catalogue modules have DSP, graph integration, dedicated UI panels, and automated regression tests.
-2. The next five-module batch is: **Rampage, Spring Reverb, Kickall, Noise Plethora, and Muxlicer**. These are absent from the current asset/DSP registry audit and represent distinct function families (dual function generator, spring-reverb effect, drum voice, multitimbral noise source, and sequential switch/sequencer).
+1. Keep all workflows and APK builds blocked until five additional, previously unported catalogue modules have DSP, graph integration, dedicated UI panels, and automated regression tests. **Rampage is module 1/5; four modules remain.**
+2. Remaining modules in this batch: **Spring Reverb, Kickall, Noise Plethora, and Muxlicer**. These represent a spring-reverb effect, drum voice, multitimbral noise source, and sequential switch/sequencer.
 3. Implement and validate each module in isolation, then integrate its DSP asset, engine state/processing, typed graph ports, panel controls, state persistence, and UI readouts. Preserve mono engine limitations explicitly; do not claim hardware-level polyphony.
 4. Run local syntax and deterministic DSP/graph tests after each module. Only after all five are integrated and tests are prepared may the next consolidated CI/APK workflow be considered.
-5. After the five-module gate, fix Node/WASM/Gradle failures, inspect the generated APK artifact, and record the exact tested commit SHA. Continue typed signal semantics and explicit feedback scheduling during subsequent migrations.
+5. After the five-module gate, run the Node suite and consolidated CI/APK build, fix Node/WASM/Gradle failures, inspect the generated APK artifact, and record the exact tested commit SHA. Continue typed signal semantics and explicit feedback scheduling during subsequent migrations.
 
 ## Repository audit — 2026-11-09
 
-- Verified feature branch HEAD: `a3358442e2637257bf99352079cbff34b5a73028`.
-- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 215 commits ahead, 0 behind; no changes were made to `main`.
+- Verified feature branch HEAD after the Rampage integration: `7a1d5added67273a43648bc28614546751ba4473`.
+- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 229 commits ahead, 0 behind. `main` remains exactly at the baseline SHA (0 ahead, 0 behind); no changes were made to `main`.
 - The current `source/app/src/main/assets/index.html` already registers and processes **Even VCO** and **Chopping Kinky**, each with a dedicated DSP asset and DSP/graph tests. They must not be counted as unported or reimplemented.
 - The current assets include the following additional module implementations beyond the first batch: Mixer2, Mixer, STMix, Morphader, Hexmix VCA, Motion MTR, Slew Limiter, Slew, Pony VCO, ADSR, Percall, MuDi, Burst, Sampling Modulator, Chopping Kinky, and Even VCO. The roadmap's earlier count of 21 modules needs a separate inventory reconciliation before the next release gate.
+- Rampage implementation is committed on `feature/befaco-modules` across commits `fd59eee8` (DSP/test foundation), `13a7eb32` (engine/panel/graph integration), and subsequent DSP/UI/test corrections through `7a1d5add`. The current files are `source/app/src/main/assets/rampage_dsp.js`, `source/tests/rampage_dsp.test.cjs`, `source/tests/rampage_graph.test.cjs`, and the integrated `index.html`.
+- Local V8 validation compiled the AudioWorklet engine, rack UI, and Rampage DSP; it executed all 19 authored Rampage DSP/graph test cases successfully. This is not a claim that `node --test`, Android packaging, or hardware audio validation has passed.
 - No workflow was started during this audit. The five-module gate remains closed; `main` remains untouched.
 - Official hardware references for the selected batch: [Rampage](https://www.befaco.org/rampage-2/), [Spring Reverb](https://www.befaco.org/spring-reverb/), [Kickall](https://www.befaco.org/kickall-2/), [Noise Plethora](https://www.befaco.org/noise-plethora/), and [Muxlicer](https://www.befaco.org/muxlicer-2/). Panels must be redrawn as original Moldgf artwork from hardware documentation; do not copy proprietary panel artwork or logos.
 
