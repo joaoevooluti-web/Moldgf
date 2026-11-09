@@ -68,3 +68,23 @@ test("event array is reused between processing calls", () => {
   const b = DSP.process({ maps: [{ mode: 0 }] }, { cv1: 1 }, s);
   assert.equal(a, b);
 });
+
+test("unpatched inputs emit no startup MIDI events", () => {
+  const s = DSP.createState();
+  assert.deepEqual(DSP.process({}, {}, s), []);
+  assert.deepEqual(DSP.process({}, {}, s), []);
+});
+test("CC mapping rearms after its CV cable is removed and reconnected", () => {
+  const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.CC, cc: 12 }] };
+  assert.equal(DSP.process(p, { cv1: 0 }, s).length, 1);
+  assert.equal(DSP.process(p, {}, s).length, 0);
+  assert.equal(DSP.process(p, { cv1: 0 }, s).length, 1);
+});
+test("removing a note gate sends note off to avoid a stuck MIDI note", () => {
+  const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.NOTE, note: 64 }] };
+  assert.equal(DSP.process(p, { cv1: 0, gate1: 10 }, s)[0].type, "noteOn");
+  const events = DSP.process(p, {}, s);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].type, "noteOff");
+  assert.equal(events[0].note, 64);
+});
