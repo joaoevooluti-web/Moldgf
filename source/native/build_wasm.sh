@@ -37,7 +37,18 @@ if [ "$PATCHED" -lt 2 ]; then
   say "FALHA: não foi possível ativar os caminhos DSP portáveis do stmlib"
   exit 1
 fi
-say "stmlib: Clip16, ClipU16 e Sqrt usam implementações portáveis em Emscripten/non-ARM"
+USER_DATA_HEADER="$W/mi/plaits/user_data.h"
+if [ ! -f "$USER_DATA_HEADER" ]; then
+  say "FALHA: plaits/user_data.h ausente"
+  exit 1
+fi
+sed -i 's/^#ifdef TEST$/#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)/' "$USER_DATA_HEADER"
+USER_PATCHED="$(grep -Fc '#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)' "$USER_DATA_HEADER" || true)"
+if [ "$USER_PATCHED" -lt 2 ]; then
+  say "FALHA: não foi possível ativar o caminho de UserData sem STM32"
+  exit 1
+fi
+say "stmlib/Plaits: DSP e UserData usam caminhos portáveis em Emscripten/non-ARM"
 STM=""
 for f in stmlib/dsp/atan.cc stmlib/dsp/units.cc stmlib/utils/random.cc; do [ -f "$f" ] && STM="$STM $f"; done
 RC=0
