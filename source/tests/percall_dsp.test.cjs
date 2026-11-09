@@ -46,7 +46,7 @@ test("odd audio inputs normal to the previous even channel", () => {
 test("unpatched individual outputs sum into channel four master output", () => {
   const state = Percall.createState();
   const result = Percall.process({ ...inputs, trigger:[5,5,5,5] }, params, state, 0.001);
-  assert.ok(Math.abs(result.outputs[3] - result.outputs.slice(0,3).reduce((a,b)=>a+b,0) - result.outputs[3]) < 1e-9);
+  assert.ok(Math.abs(result.outputs[3] - (result.outputs[0] + result.outputs[1] + result.outputs[2] + 10 * (0.001 / 0.0015))) < 1e-9);
   assert.ok(result.outputs[3] > result.outputs[0]);
 });
 
