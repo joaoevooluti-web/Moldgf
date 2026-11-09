@@ -135,10 +135,20 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 ## Immediate next steps
 
-1. Trigger the next consolidated CI/APK workflow from the current 21-module source/test state; run #9 already validated the initial five-module batch.
-2. Fix any Node, WASM or Gradle failures; confirm the new APK artifact and preserve the exact tested commit SHA.
-3. Expand graph validation to typed signal semantics and explicit feedback scheduling as new module adapters are migrated.
-4. Continue with Noise Plethora and the remaining oscillator, effects and utility modules.
+1. Keep all workflows and APK builds blocked until five additional, previously unported catalogue modules have DSP, graph integration, dedicated UI panels, and automated regression tests.
+2. The next five-module batch is: **Rampage, Spring Reverb, Kickall, Noise Plethora, and Muxlicer**. These are absent from the current asset/DSP registry audit and represent distinct function families (dual function generator, spring-reverb effect, drum voice, multitimbral noise source, and sequential switch/sequencer).
+3. Implement and validate each module in isolation, then integrate its DSP asset, engine state/processing, typed graph ports, panel controls, state persistence, and UI readouts. Preserve mono engine limitations explicitly; do not claim hardware-level polyphony.
+4. Run local syntax and deterministic DSP/graph tests after each module. Only after all five are integrated and tests are prepared may the next consolidated CI/APK workflow be considered.
+5. After the five-module gate, fix Node/WASM/Gradle failures, inspect the generated APK artifact, and record the exact tested commit SHA. Continue typed signal semantics and explicit feedback scheduling during subsequent migrations.
+
+## Repository audit — 2026-11-09
+
+- Verified feature branch HEAD: `a3358442e2637257bf99352079cbff34b5a73028`.
+- Compared against protected main baseline `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`: feature branch is 215 commits ahead, 0 behind; no changes were made to `main`.
+- The current `source/app/src/main/assets/index.html` already registers and processes **Even VCO** and **Chopping Kinky**, each with a dedicated DSP asset and DSP/graph tests. They must not be counted as unported or reimplemented.
+- The current assets include the following additional module implementations beyond the first batch: Mixer2, Mixer, STMix, Morphader, Hexmix VCA, Motion MTR, Slew Limiter, Slew, Pony VCO, ADSR, Percall, MuDi, Burst, Sampling Modulator, Chopping Kinky, and Even VCO. The roadmap's earlier count of 21 modules needs a separate inventory reconciliation before the next release gate.
+- No workflow was started during this audit. The five-module gate remains closed; `main` remains untouched.
+- Official hardware references for the selected batch: [Rampage](https://www.befaco.org/rampage-2/), [Spring Reverb](https://www.befaco.org/spring-reverb/), [Kickall](https://www.befaco.org/kickall-2/), [Noise Plethora](https://www.befaco.org/noise-plethora/), and [Muxlicer](https://www.befaco.org/muxlicer-2/). Panels must be redrawn as original Moldgf artwork from hardware documentation; do not copy proprietary panel artwork or logos.
 
 
 ## Official Befaco catalog as visual and scope reference
