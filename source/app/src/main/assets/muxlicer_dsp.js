@@ -67,16 +67,17 @@
   const switchMode=Math.round(clamp(p.switchMode,0,1,0));
   let commonOutput=0;
   if(switchMode===0){
-   const stepInput=i["stepIn"+(s.step+1)];
-   const raw=stepInput!==null&&stepInput!==undefined?finite(stepInput):allIn!==null?allIn:cvRangeValue(1,p.cvRange);
-   commonOutput=clamp(raw*clamp(p["level"+(s.step+1)],0,1,1),-10,10,0);
+   const stepInput=i["stepIn"+(s.step+1)],level=clamp(p["level"+(s.step+1)],0,1,1);
+   const raw=stepInput!==null&&stepInput!==undefined?finite(stepInput)*level:allIn!==null?allIn*level:cvRangeValue(level,p.cvRange);
+   commonOutput=clamp(raw,-10,10,0);
    for(let n=0;n<8;n++)s.stepOutputs[n]=0;
   }else{
    commonOutput=0;
    for(let n=0;n<8;n++){
-    let raw=allIn!==null?allIn:0;
-    if(commonIn!==null&&s.step===n)raw=commonIn;
-    s.stepOutputs[n]=clamp(raw*clamp(p["level"+(n+1)],0,1,1),-10,10,0);
+    const level=clamp(p["level"+(n+1)],0,1,1);
+    let raw=allIn!==null?allIn*level:0;
+    if(commonIn!==null&&s.step===n)raw=commonIn*level;
+    s.stepOutputs[n]=clamp(raw,-10,10,0);
    }
   }
   s.commonOutput=commonOutput;
