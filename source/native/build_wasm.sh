@@ -42,8 +42,9 @@ if [ ! -f "$USER_DATA_HEADER" ]; then
   say "FALHA: plaits/user_data.h ausente"
   exit 1
 fi
-sed -i 's/^#ifdef TEST$/#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)/' "$USER_DATA_HEADER"
+sed -i 's/^#ifdef TEST[[:space:]]*$/#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)/' "$USER_DATA_HEADER"
 USER_PATCHED="$(grep -Fc '#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)' "$USER_DATA_HEADER" || true)"
+say "Plaits UserData portable branches patched: $USER_PATCHED"
 if [ "$USER_PATCHED" -lt 2 ]; then
   say "FALHA: não foi possível ativar o caminho de UserData sem STM32"
   exit 1
