@@ -24,7 +24,7 @@
       const pass = position === 1 || (position === -1 && !!held[i]);
       const target = pass ? 1 : 0;
       s.envelope[i] += (target - s.envelope[i]) * coefficient;
-      if (Math.abs(s.envelope[i]) < 1e-12) s.envelope[i] = 0;
+      if (s.envelope[i] < 1e-4) s.envelope[i] = 0;
       if (Math.abs(1 - s.envelope[i]) < 1e-12) s.envelope[i] = 1;
       s.levels[i] = raw;
       s.active[i] = pass;
