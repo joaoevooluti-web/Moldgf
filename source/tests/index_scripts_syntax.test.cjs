@@ -323,3 +323,15 @@ test("Befaco hardware faceplates use HP-scaled vertical layouts instead of overs
 });
 
 // CI gate: run the complete DSP, graph, manual-patch and faceplate regression suite before APK packaging.
+
+test("rack-wide undo and redo restore modules, parameters, order and patch cables",()=>{
+  const html=fs.readFileSync(path.join(__dirname,"../app/src/main/assets/index.html"),"utf8");
+  for(const id of ["undo","redo"])assert.match(html,new RegExp('id="'+id+'"'));
+  assert.match(html,/const undoStack=\[\],redoStack=\[\]/);
+  assert.match(html,/function historySnapshot\(\)\{return JSON\.stringify\(rackData\(\)\)\}/);
+  assert.match(html,/function undoAction\(\)\{historyBefore=null;historyApply\(undoStack,redoStack\)\}/);
+  assert.match(html,/function redoAction\(\)\{historyBefore=null;historyApply\(redoStack,undoStack\)\}/);
+  assert.match(html,/loadRack\(JSON\.parse\(target\)\)/);
+  assert.match(html,/e\.key\.toLowerCase\(\);if\(k==='z'\)/);
+  assert.match(html,/HISTORY_LIMIT=80/);
+});
