@@ -145,8 +145,8 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 - Canonical catalog supplied by the user: https://www.befaco.org/all-modules-befaco-synths-barcelona/?filter=todo
 - Use this catalog as the source of truth for current product names and the official product pages as references for panel layout, control labels, jack placement, hardware proportions, manuals, and product photographs.
-- The current catalog lists A*B+C at /axbc/. "AxBC" is the URL slug / existing internal identifier for A*B+C, not a second distinct module. Audit the existing `abc` and `axbc` entries to avoid shipping duplicate implementations or two misleading product names.
-- Dual Atenuverter does not appear in the current catalog menu. Do not present it as a current Befaco product or prioritize it as a distinct port unless an official legacy/manual source confirms the exact module.
+- Befaco currently exposes two A*B+C documentation pages: `/abc/` describes the earlier A*B+C version (B normalled to +5 V, C to +10 V, first output normalled into the second), while `/axbc/` describes the current A*B+C / voltage-controlled voltage processor (B and C normalled to +5 V, with MULT/MIX routing). The `abc` and `axbc` code paths therefore represent distinct hardware revisions/behaviors, not a duplicate to delete. Keep both DSP paths, label the revisions clearly in the app, and validate each against its matching manual. See https://www.befaco.org/abc/ and https://www.befaco.org/axbc/.
+- Dual Atenuverter is a documented legacy module, not a current catalog model: Befaco lists it under Old Versions documentation and the shop describes it as the earlier version of Atte. It may remain supported as a clearly labeled legacy utility, but must not be represented as the current Atte hardware. See https://www.befaco.org/old-versions/.
 - Atte official behavior: four cascaded attenuator/inverter channels; first input normalled to +10 V; per-channel inversion; four bipolar level LEDs. Reference: https://www.befaco.org/atte/
 - A*B+C official behavior: two channels, each computes A × B + C; B and C inputs normalled to +5 V; signal LEDs. Reference: https://www.befaco.org/axbc/
 - Voltio official behavior: precision 1 V/oct voltage source spanning ten octaves, two-knob note/octave interface, precision adder input, and front-panel banana measurement connectors. Reference: https://www.befaco.org/voltio/
@@ -170,3 +170,14 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 3. Redesign Voltio around its real two-knob note/octave workflow, precision adder input, output, and measurement terminals; verify the DSP state model before changing controls.
 4. Apply the same hardware-faithful panel standard to the remaining already-ported modules, then port the next five distinct catalog modules with DSP/graph tests.
 5. Keep the Android build gate closed until the five additional modules and their tests are complete.
+
+
+### Official revision distinction — A*B+C and AxBC
+
+The initial assumption that `abc` and `axbc` were a duplicate was incorrect and is superseded by this revision audit:
+
+- `abc` maps to the earlier A*B+C hardware behavior documented on the official `/abc/` page: B attenuverter range −2..+2, C offset range −1..+1, B normalled to +5 V, C normalled to +10 V, and OUT1 normalized into OUT2 for four-channel summing.
+- `axbc` maps to the current A*B+C / voltage-controlled voltage processor documented on `/axbc/`: two A×B+C channels, B and C normalled to +5 V, signal indicators, and MULT/MIX routing. Keep this as a distinct revision with its own panel and DSP tests.
+- The official legacy documentation also confirms Dual Atenuverter as a real older Befaco module and the shop describes it as the predecessor to Atte. Retain it as a legacy model with accurate naming, not as a current catalog product.
+- Sources reviewed: https://www.befaco.org/abc/ ; https://www.befaco.org/axbc/ ; https://www.befaco.org/old-versions/ ; https://shop.befaco.org/2-home .
+
