@@ -19,6 +19,8 @@
     const maps = Array.isArray(p.maps) ? p.maps : [];
     for (let i = 0; i < 8; i++) {
       const cfg = maps[i] || {};
+      // The even-numbered jack following a V/Oct Note mapping is reserved as its gate.
+      if (i > 0 && maps[i - 1] && Math.round(finite(maps[i - 1].mode, MODES.CC)) === MODES.NOTE) continue;
       const mode = clamp(Math.round(finite(cfg.mode, MODES.CC)), 0, 4);
       const cv = x["cv" + (i + 1)];
       const raw = finite(cv, 0);
