@@ -49,12 +49,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "muxlicer_dsp.js",
     "random8_dsp.js",
     "mex_dsp.js",
-    "octaves_dsp.js"
+    "octaves_dsp.js",
+    "iroi_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -64,9 +65,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 30, "expected 30 module DSP assets in the page");
+  assert.equal(pageAssets.length, 31, "expected 31 module DSP assets in the page");
   assert.equal(new Set(pageAssets).size, 27, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 30, "expected 30 explicit graph descriptors");
+  assert.equal(descriptors.length, 31, "expected 31 explicit graph descriptors");
   assert.equal(new Set(descriptors).size, 27, "graph descriptor types must be unique");
 });
 
@@ -172,4 +173,15 @@ test("Octaves VCO panel exposes six octave VCAs, CV jacks and cascade mix output
   assert.match(panel,/CASCADED MULTI-MIX OUTPUTS/);
   assert.match(html,/MoldgfOctavesDSP\.process/);
   assert.match(html,/SU\[K\(m,'out6'\)\]/);
+});
+
+test("IROI panel exposes the stereo FX chain, CV mapping, modulation and randomizer controls",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("iroi:{n:"),html.indexOf("octaves:{n:"));
+  for(const label of ["IROI","18 HP","INPUT L","INPUT R","OUTPUT L","OUTPUT R","FILTER MODE","FILTER POSITION","RESONATOR","2 TAP PING PONG","AMBIENCE","MODULATION & MAPPING","MAP","SHIFT","RANDOMIZE","UNDO","REDO","RESONATOR DISSONANCE"])assert.ok(panel.includes(label),"missing IROI control "+label);
+  assert.match(html,/MoldgfIroiDSP\.process/);
+  assert.match(html,/randomUndo/);
+  assert.match(html,/randomRedo/);
+  assert.match(html,/mapMode\?Math\.round/);
 });
