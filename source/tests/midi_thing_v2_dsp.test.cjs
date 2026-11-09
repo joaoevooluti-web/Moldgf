@@ -117,7 +117,7 @@ test("oscillator output follows note pitch and envelope",()=>{
  send(s,p,0x90,69,127);tick(p,s,1);const phase=s.voices[0].phase;
  tick(p,s,100);assert.ok(s.voices[0].phase>phase);assert.ok(Number.isFinite(s.outputs[0]));
 });
-test("all notes off releases every active voice and reset clears transport",()=>{
+test("all notes off releases every active voice without changing transport",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("GATE")]});
  send(s,p,0x90,60,100);send(s,p,0x90,64,100);send(s,p,0xFA);MIDIThing.allNotesOff(s);tick(p,s);
  assert.ok(s.voices.every(v=>v.gate===0));assert.equal(s.running,1);
