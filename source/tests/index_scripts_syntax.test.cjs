@@ -15,3 +15,22 @@ test("all inline rack scripts parse before they are shipped to WebView or AudioW
       "inline script " + index + " must be valid JavaScript");
   });
 });
+
+test("the five-module batch ships every DSP asset and registers each module type", () => {
+  const htmlPath = path.join(__dirname, "../app/src/main/assets/index.html");
+  const html = fs.readFileSync(htmlPath, "utf8");
+  for (const asset of [
+    "atte_dsp.js",
+    "dual_atenuverter_dsp.js",
+    "voltio_dsp.js",
+    "abc_dsp.js",
+    "axbc_dsp.js",
+    "bypass_dsp.js"
+  ]) {
+    assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
+    assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
+  }
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass"]) {
+    assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
+  }
+});
