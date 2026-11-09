@@ -45,8 +45,8 @@
  function nextTarget(c,p){
   const mode=Math.round(clamp(p.mode,0,3,0)),length=Math.round(clamp(p.length,1,32,8));
   if(mode===3&&c.initialized)return c.target;
-  if(mode===1&&c.phraseLength>0){
-   c.phrasePos=(c.phrasePos+1)%Math.min(length,c.phraseLength);
+  if(mode===1&&c.phraseLength>=length){
+   c.phrasePos=(c.phrasePos+1)%length;
    return c.phrase[c.phrasePos];
   }
   if(mode===2&&c.initialized){
@@ -57,10 +57,14 @@
   c.lastRaw=raw;
   const v=quantize(raw*10,p.scale);
   if(mode===1){
-   if(!c.initialized||c.phraseLength===0){c.phraseLength=length;c.phrasePos=0;c.phrase[0]=v;return v}
-   c.phrasePos=(c.phrasePos+1)%Math.min(length,c.phraseLength);
-   c.phrase[c.phrasePos]=v;
-   c.phraseLength=Math.min(length,c.phraseLength+1);
+   if(c.phraseLength<length){
+    c.phrasePos=c.phraseLength;
+    c.phrase[c.phraseLength]=v;
+    c.phraseLength++;
+   }else{
+    c.phrasePos=(c.phrasePos+1)%length;
+    c.phrase[c.phrasePos]=v;
+   }
   }
   return v;
  }
