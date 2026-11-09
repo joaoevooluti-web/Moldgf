@@ -29,8 +29,8 @@
     return clipVoltage((a * scaledB) / 5 + scaledC);
   }
   function ledPolarity(output, threshold = 0.01) {
-    if (!Number.isFinite(output) || Math.abs(output) < Math.max(0, threshold)) return \"off\";
-    return output > 0 ? \"positive\" : \"negative\";
+    if (!Number.isFinite(output) || Math.abs(output) < Math.max(0, threshold)) return "off";
+    return output > 0 ? "positive" : "negative";
   }
   function processPair(inputs, controls, mode, out2Patched) {
     const a1 = clipVoltage(inputs.a1);
