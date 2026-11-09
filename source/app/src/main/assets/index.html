@@ -894,7 +894,7 @@ const UI={pam(m){const P=m.s,R=m.r,o=P.o[P.sel],ext=!!cs[sig(m.id+'.clk')]&&P.ck
   st_(ce(m,'.pi'),PLN[PIDX(P)]+(P.di?' · DIST':''))},
  out(m){cl(m,'[data-pk]').forEach(e=>{const h=Math.round(cp(m.r.pk[+e.dataset.pk])*50)*2+'%';if(e._h!==h){e._h=h;e.style.height=h}});cl(m,'[data-a=omu]').forEach(e=>tg_(e,'on',m.s.mu))},
  atte(m){cl(m,'.att-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')})},
- voltio(m){const v=Vn[m.id+'.out']||0;st_(ce(m,'.voltio-value'),(v>0?'+':'')+v.toFixed(3)+' V')},
+ voltio(m){const bipolar=m.s.range===1,lo=bipolar?-5:0,hi=bipolar?5:10,control=ce(m,'input[data-k="octave"]');if(control){control.min=lo;control.max=hi;if(m.s.octave<lo||m.s.octave>hi){m.s.octave=Math.max(lo,Math.min(hi,m.s.octave));control.value=m.s.octave;dirty.add(m.id)}}const v=Vn[m.id+'.out']||0;st_(ce(m,'.voltio-value'),(v>0?'+':'')+v.toFixed(3)+' V')},
  dualAt(m){cl(m,'.dual-value').forEach(e=>{const v=Vn[m.id+'.out'+(e.dataset.i==='0'?'A':'B')]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')});cl(m,'.dual-led').forEach(e=>{const v=Vn[m.id+'.out'+(e.dataset.led==='0'?'A':'B')]||0,state=MoldgfDualAtenuverterDSP.ledPolarity(v);e.classList.toggle('positive',state==='positive');e.classList.toggle('negative',state==='negative')})},
  mix(m){cl(m,'[data-pk]').forEach(e=>{const h=Math.round(cp(m.r.pk[+e.dataset.pk])*50)*2+'%';if(e._h!==h){e._h=h;e.style.height=h}});cl(m,'[data-a=mu]').forEach(e=>tg_(e,'on',m.s.mu[+e.dataset.i]))}};
 let lastT=0;
