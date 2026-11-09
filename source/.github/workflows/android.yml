@@ -1,7 +1,7 @@
 name: Build APK
 on:
   push:
-    branches: [main, master, feature/befaco-modules]
+    branches: [main, master]
   workflow_dispatch:
 jobs:
   build:

@@ -21,6 +21,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: feature/befaco-modules
+      - name: Run module graph contract tests
+        run: node --test tests/*.test.cjs
       - name: Set up Emscripten
         uses: mymindstorm/setup-emsdk@v14
         continue-on-error: true
