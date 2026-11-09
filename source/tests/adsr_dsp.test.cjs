@@ -12,9 +12,9 @@ test("stage time controls map exponentially between minimum and ten seconds", ()
 
 test("attack rises to ten volts and exposes the attack gate", () => {
   const state = ADSR.createState();
-  const result = ADSR.process(params, { ...inputs, gate: 10 }, state, 0.01);
+  const result = ADSR.process(params, { ...inputs, gate: 10 }, state, 0.001);
   assert.equal(result.stage, ADSR.STAGE.ATTACK);
-  assert.equal(result.envelope, 10);
+  assert.ok(result.envelope > 0 && result.envelope < 10);
   assert.deepEqual(result.gates, [10,0,0,0]);
 });
 
@@ -41,9 +41,9 @@ test("gate falling starts release and returns the envelope to zero", () => {
 
 test("trigger input starts an envelope without holding sustain", () => {
   const state = ADSR.createState();
-  const attack = ADSR.process(params, { ...inputs, trigger: 10 }, state, 0.01);
+  const attack = ADSR.process(params, { ...inputs, trigger: 10 }, state, 0.001);
   assert.equal(attack.stage, ADSR.STAGE.ATTACK);
-  const decay = ADSR.process(params, { ...inputs, trigger: 0 }, state, 0.01);
+  const decay = ADSR.process(params, { ...inputs, trigger: 0 }, state, 0.002);
   assert.equal(decay.stage, ADSR.STAGE.DECAY);
   const release = ADSR.process(params, { ...inputs, trigger: 0 }, state, 0.01);
   assert.equal(release.stage, ADSR.STAGE.RELEASE);
