@@ -439,3 +439,11 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [ ] Add DOM/runtime geometry tests for the five panels and verify all control hit targets, jack coordinates, undo/redo and manual patching after the CSS change.
 - CI status: the previous run #47 succeeded on commit cf4964a50199cb5c2dbe75e01767b67185c46247, but it predates this CSS commit. A new workflow may run automatically for the CSS push; do not treat #47 as validation of this visual pass.
 - Visual pass commit: 48815dad8406de99d9a059e72afbe1964c4ec69a. Main remains at 8e81fcb36fb1bedbf63019b6ee5d890f694fb165.
+
+
+### Phase 8 progress — Joystick (DSP core in progress)
+
+- [~] **Joystick:** added an isolated clean-room DSP core with manual X/Y CV generation, range and offset, dual attenuverter mode for external X/Y signals, two independent 10 V gate outputs, bounded voltage ranges, finite-value guards and reusable result state. Added 14 focused DSP regression tests covering center/travel, scaling, offsets, attenuverters, unpatched inputs, gate release, clamping and state reuse.
+- [ ] Rack integration remains open: add the 12 HP XY touch surface, mode/range/offset controls, two gate buttons, four typed graph endpoints, engine dispatch, persisted state and panel interaction tests. The DSP tests have been authored but not run; no workflow was triggered.
+- Current Joystick DSP commit: c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; tests: 6a8461a65116e26c4b02ce12574622c2f1bfc4c8.
+- Next: complete Joystick rack and graph integration, then DivKid Mutes mk2. Keep the five-module Phase 8 batch CI-gated until all five implementations and tests are authored.
