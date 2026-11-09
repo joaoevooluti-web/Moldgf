@@ -72,7 +72,10 @@
           continue;
         }
         const run = raw > 2;
-        if (previous === null || run !== !!previous) {
+        if (previous === null) {
+          s.previous[i] = run ? 1 : 0;
+          if (run) events.push({ type: "start", input: i });
+        } else if (run !== !!previous) {
           events.push({ type: run ? "start" : "stop", input: i });
           s.previous[i] = run ? 1 : 0;
         }
