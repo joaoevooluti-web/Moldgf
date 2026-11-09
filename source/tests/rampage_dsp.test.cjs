@@ -62,10 +62,10 @@ test("cycle CV inverts the front-panel cycle switch",()=>{
  assert.equal(r.a.stage,1);
 });
 test("trigger can retrigger a channel during its falling segment",()=>{
- const s=Rampage.createState(),p={riseA:0,fallA:0,rangeA:0,cycleA:false};
+ const s=Rampage.createState(),p={riseA:.2,fallA:.2,rangeA:1,cycleA:false};
  Rampage.process(p,{triggerA:5},s,48000);
  Rampage.process(p,{triggerA:0},s,48000);
- let r;for(let n=0;n<20;n++)r=Rampage.process(p,{},s,48000);
+ let r;for(let n=0;n<320;n++)r=Rampage.process(p,{},s,48000);
  assert.equal(r.a.stage,2);
  r=Rampage.process(p,{triggerA:5},s,48000);
  assert.equal(r.a.stage,1);
