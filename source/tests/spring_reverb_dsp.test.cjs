@@ -33,8 +33,8 @@ test("HPF at minimum is transparent and higher settings reject DC",()=>{
 });
 test("tank produces a delayed wet response and a decaying tail",()=>{
  const s=Spring.createState();let first=0,peak=0,last=0;
- for(let n=0;n<18000;n++){const r=Spring.process({level1:1,level2:0,mix:1,hpf:0},{in1:n===0?4:0},s,48000);if(n===0)first=r.wet;peak=Math.max(peak,Math.abs(r.wet));last=Math.abs(r.wet)}
- assert.equal(first,0);assert.ok(peak>.01);assert.ok(Number.isFinite(last));
+ for(let n=0;n<48000;n++){const r=Spring.process({level1:1,level2:0,mix:1,hpf:0},{in1:n===0?4:0},s,48000);if(n===0)first=r.wet;peak=Math.max(peak,Math.abs(r.wet));last=Math.abs(r.wet)}
+ assert.equal(first,0);assert.ok(peak>.01);assert.ok(Number.isFinite(last));assert.ok(last<peak*.01);
 });
 test("feedback-level inputs remain finite and bounded under overload",()=>{
  const s=Spring.createState();let r;
