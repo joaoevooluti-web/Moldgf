@@ -86,7 +86,7 @@
    case 22:
     for(i=0;i<16;i++){if(random(s)>1-dt*(.2+x*3))s.walk[i]=random(s);f=30+Math.abs(s.walk[i])*base;out+=osc(s,i,f,sr,"square")/16}return out;
    case 23:
-    s.counter++;if(s.counter%Math.max(1,Math.floor(2+y*300))===0)s.held=random(s);return delayMix(s.held*(.4+random(s)*.2),.7);
+    s.counter++;if(s.counter%Math.max(1,Math.floor(2+y*300))===0)s.held=random(s);return delayMix(s,s.held*(.4+random(s)*.2),.7);
    case 24:
     m=osc(s,8,base*.07,sr,"sine");s.counter++;if(s.counter%Math.max(1,Math.floor(1+y*100))===0)s.held=random(s);
     v=osc(s,0,base+m*mod*.5,sr,"sine");return Math.tanh(v+(s.held*.4));
@@ -96,9 +96,9 @@
    case 27:
     s.counter++;if(s.counter%Math.max(1,Math.floor(1+y*64))===0)s.held=random(s);m=osc(s,0,base*.2,sr,"sine");return Math.tanh(Math.round((s.held+m*mod*.15)*(4+x*60))/(4+x*60)*2);
    case 28:
-    for(i=0;i<9;i++){s.walk[i]=clamp(s.walk[i]+random(s)*dt*(.2+x*2),-1,1);f=30+Math.abs(s.walk[i])*base;out+=osc(s,i,f,sr,"square",.1+y*.8)/9}return delayMix(Math.round(out*(4+y*80))/(4+y*80),.72);
+    for(i=0;i<9;i++){s.walk[i]=clamp(s.walk[i]+random(s)*dt*(.2+x*2),-1,1);f=30+Math.abs(s.walk[i])*base;out+=osc(s,i,f,sr,"square",.1+y*.8)/9}return delayMix(s,Math.round(out*(4+y*80))/(4+y*80),.72);
    case 29:
-    for(i=0;i<4;i++){m=osc(s,i+8,1+i*2+y*8,sr,"sine");out+=osc(s,i,base*(.3+i*.12),sr,"square",.1+(m+1)*.4)/4}return delayMix(out,.65);
+    for(i=0;i<4;i++){m=osc(s,i+8,1+i*2+y*8,sr,"sine");out+=osc(s,i,base*(.3+i*.12),sr,"square",.1+(m+1)*.4)/4}return delayMix(s,out,.65);
    default:return random(s);
   }
  }
