@@ -9,15 +9,22 @@
   const MODES = Object.freeze([
     "OFF", "NOTE CV", "GATE", "VELOCITY", "CC", "PITCH BEND",
     "CHANNEL PRESSURE", "PROGRAM CHANGE", "CLOCK", "START/STOP",
-    "ADSR", "OSCILLATOR", "LFO", "RPN", "NRPN"
+    "ADSR", "OSCILLATOR", "LFO", "RPN", "NRPN", "DRUM TRIGGER"
   ]);
   const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
   const finite = (v, d) => Number.isFinite(v) ? v : d;
-  const maxForRange = (range) => range === 0 ? 5 : 10;
+  // Preserve the existing persisted range indices: 0=0/+5, 1=-5/+5, 2=0/+10.
+  // Range 3 adds the hardware's 0/+8 option without remapping existing patches.
+  const maxForRange = (range) => range === 0 ? 5 : range === 3 ? 8 : 10;
+  const scaleRange = (normalized, range) => {
+    const value = clamp(finite(normalized, 0), 0, 1);
+    return range === 1 ? value * 10 - 5 : value * maxForRange(range);
+  };
+  const gateVoltage = (range) => range === 0 || range === 1 ? 5 : range === 3 ? 8 : 10;
   const noteVoltage = (note, range) => {
-    const v = note / 12 - 1;
-    if (range === 1) return clamp(v - 5, -5, 5);
-    return clamp(v, 0, maxForRange(range));
+    const volts = clamp(finite(note, 0), 0, 127) / 12;
+    if (range === 1) return clamp(volts - 5, -5, 5);
+    return clamp(volts, 0, maxForRange(range));
   };
 
   function createState(sampleRate) {
@@ -297,32 +304,34 @@
       const mode = typeof port.mode === "number" ? (MODES[clamp(Math.round(port.mode), 0, MODES.length - 1)] || "OFF") : (port.mode || "OFF");
       const channel = portChannel(state, port);
       const voice = voiceForPort(state, port, channel);
-      const range = Math.round(finite(port.range, finite(params.voltageRange, 2)));
-      const max = maxForRange(range);
+      const range = clamp(Math.round(finite(port.range, finite(params.voltageRange, 2))), 0, 3);
       let value = 0;
       if (mode === "NOTE CV" && voice) {
         const target = noteVoltage(voice.note, range);
         const current = voice.currentCV[i];
         voice.currentCV[i] = current + (target - current) * glideCoef;
         value = voice.currentCV[i];
-      } else if (mode === "GATE" && voice) value = voice.gate ? 5 : 0;
-      else if (mode === "VELOCITY" && voice) value = voice.velocity * max;
+      } else if (mode === "GATE" && voice) value = voice.gate ? gateVoltage(range) : 0;
+      else if (mode === "DRUM TRIGGER" && voice) {
+        const selectedNote = clamp(Math.round(finite(port.note, 60)), 0, 127);
+        value = voice.gate && voice.note === selectedNote ? gateVoltage(range) : 0;
+      } else if (mode === "VELOCITY" && voice) value = scaleRange(voice.velocity, range);
       else if (mode === "CC") {
         const cc = clamp(Math.round(finite(port.cc, 1)), 0, 127);
-        value = state.cc[channel * 128 + cc] / 127 * max;
+        value = scaleRange(state.cc[channel * 128 + cc] / 127, range);
       } else if (mode === "PITCH BEND") {
         const bend = state.pitchBend[channel];
-        value = range === 1 ? bend * 5 : (bend + 1) * max * 0.5;
-      } else if (mode === "CHANNEL PRESSURE") value = state.pressure[channel] * max;
-      else if (mode === "PROGRAM CHANGE") value = state.program[channel] / 127 * max;
-      else if (mode === "CLOCK") value = state.clockPulseSamples > 0 ? 5 : 0;
-      else if (mode === "START/STOP") value = state.running ? 5 : 0;
-      else if (mode === "ADSR" && voice) value = voice.envelope * max;
+        value = scaleRange((bend + 1) * 0.5, range);
+      } else if (mode === "CHANNEL PRESSURE") value = scaleRange(state.pressure[channel], range);
+      else if (mode === "PROGRAM CHANGE") value = scaleRange(state.program[channel] / 127, range);
+      else if (mode === "CLOCK") value = state.clockPulseSamples > 0 ? gateVoltage(range) : 0;
+      else if (mode === "START/STOP") value = state.running ? gateVoltage(range) : 0;
+      else if (mode === "ADSR" && voice) value = scaleRange(voice.envelope, range);
       else if (mode === "OSCILLATOR" && voice) {
         value = Math.sin(voice.phase * Math.PI * 2) * 5 * voice.envelope;
-      } else if (mode === "LFO") value = range === 1 ? lfo * 5 : (lfo + 1) * max * 0.5;
-      else if (mode === "RPN") value = state.rpnValue[channel] * max;
-      else if (mode === "NRPN") value = state.nrpnValue[channel] * max;
+      } else if (mode === "LFO") value = scaleRange((lfo + 1) * 0.5, range);
+      else if (mode === "RPN") value = scaleRange(state.rpnValue[channel], range);
+      else if (mode === "NRPN") value = scaleRange(state.nrpnValue[channel], range);
       value = finite(value, 0);
       state.outputs[i] = clamp(value, -10, 10);
       peak = Math.max(peak, Math.abs(state.outputs[i]));
