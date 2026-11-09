@@ -321,3 +321,5 @@ test("Befaco hardware faceplates use HP-scaled vertical layouts instead of overs
   for(const [needle,label] of rules)assert.ok(style.includes(needle),"missing "+label);
   for(const t of ["random8","mex","octaves","iroi","bandit"])assert.match(html,new RegExp("mod\\."+t+"\\s*\\{width:"));
 });
+
+// CI gate: run the complete DSP, graph, manual-patch and faceplate regression suite before APK packaging.
