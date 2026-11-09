@@ -358,3 +358,22 @@ The official Befaco catalogue lists these five products, and the current rack re
 Implementation order: BF-22 → Crush Delay V3 → Joystick → DivKid Mutes mk2 → CV Thing. CV Thing is last because it requires a robust 8-input CV-to-MIDI event bridge through the Android MIDI output service. Its physical TRS/USB host connectors will not be represented as hardware on the phone; MIDI routing will use supported Android MIDI endpoints. BF-22 and Crush Delay are clean-room digital approximations of documented behavior, not transistor/PT2399 circuit emulations. Joystick will be represented by a touch XY surface and two gate buttons, not a physical arcade stick.
 
 For each module: DSP asset, typed graph descriptor, rack engine integration, persistent state, original hardware-layout-inspired panel, signal meters/LEDs, dedicated DSP and graph tests, and integration assertions. **Do not trigger Node/WASM/APK workflows until all five Phase 8 modules are implemented and their tests are authored.** Preserve existing 37 modules and main.
+
+
+## Phase 7 final gate — workflow #31
+
+<badge>Success</badge>
+
+- Workflow: https://github.com/joaoevooluti-web/Moldgf/actions/runs/42632127788
+- Node: **554/554 passed**.
+- Android unit tests: `gradle testDebugUnitTest --no-daemon` — `BUILD SUCCESSFUL`.
+- Plaits and Beads WASM: 185,636 / 196,726 bytes; both passed `WebAssembly.compile`.
+- Gradle debug APK assembly and artifact upload: success.
+- Artifact: `eurorack-study-debug-apk`, ID `13681132622`, archive size 1,657,064 bytes.
+- This validates the additional Kotlin test step added after workflow #30. Physical-device audio, MIDI and touch tests remain pending.
+
+## Phase 8 progress — BF-22 (module 1/5)
+
+- [~] **BF-22:** added `bf22_dsp.js`, two independent HP/LP filter channels, selectable 6/12 dB responses, resonance CV, CV1 attenuverter with three-octave span, CV2 1V/oct tracking across four octaves, manual cutoff/resonance, and A→B link that normalizes A output into B while disconnecting B's external input. Integrated the engine, 10 typed audio/CV graph endpoints, persistent parameters, and an original 17 HP two-channel panel with input/output jacks, CV jacks, controls and live cutoff/resonance/peak meters. Added **22 DSP tests + 5 graph tests** and updated integration assertions to 38 unique assets/descriptors. This is a digital Sallen-Key-inspired model, not a transistor-level MS-20 circuit clone. These tests are authored but have **not** been run in CI.
+- Next module: Crush Delay V3. Keep all intermediate commits marked `[skip ci]`; no Node/WASM/APK workflow until all five Phase 8 modules and their tests are complete.
+- Current branch head: `d7e06e0e7b058b8a76e3bc8cb6891b34171d4f3f` (documentation commits may advance it). Protected `main` remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
