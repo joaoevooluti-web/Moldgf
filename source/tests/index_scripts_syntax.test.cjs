@@ -202,7 +202,8 @@ test("Hexmix panel exposes six channel strips, VCA host normalization and stereo
   const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
   const html=fs.readFileSync(htmlPath,"utf8");
   const panel=html.slice(html.indexOf("hexmix:{n:"),html.indexOf("bandit:{n:"));
-  for(const label of ["HEXMIX","28 HP","VCA EXPANDER","length:6","CH ","HIGH","MID","LOW","PAN","VOLUME","MASTER LEVEL","MODULAR","LINE","LEFT OUT","RIGHT OUT"])assert.ok(panel.includes(label),"missing Hexmix control "+label);\n  assert.match(html,/\[\x27ON\x27,\x27MUTE\x27,\x27MOM\x27\]/);
+  for(const label of ["HEXMIX","28 HP","VCA EXPANDER","length:6","CH ","HIGH","MID","LOW","PAN","VOLUME","MASTER LEVEL","MODULAR","LINE","LEFT OUT","RIGHT OUT"])assert.ok(panel.includes(label),"missing Hexmix control "+label);
+  assert.match(html,/\['ON','MUTE','MOM'\]/);
   assert.match(html,/MoldgfHexmixDSP\.process/);
   assert.match(html,/byT\.hexmixvca/);
   assert.match(html,/A=byT\.hexmix;for/);
