@@ -73,10 +73,10 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 39, "expected 39 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 39, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 39, "expected 39 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 39, "graph descriptor types must be unique");
+  assert.equal(pageAssets.length, 42, "expected 42 module DSP assets in the page");
+  assert.equal(new Set(pageAssets).size, 42, "DSP page assets must be unique");
+  assert.equal(descriptors.length, 42, "expected 42 explicit graph descriptors");
+  assert.equal(new Set(descriptors).size, 42, "graph descriptor types must be unique");
 });
 
 
@@ -298,9 +298,10 @@ test("manual jack patching uses live rack IDs, typed BF-22 ports and persists ca
   assert.match(html, /cab\.push\(\{a,b\}\);rb\(\);return true/);
   assert.match(html, /post\(\{t:'cab',cab:cab\.map\(c=>\[c\.a,c\.b\]\)\}\)/);
   const descriptor = html.slice(html.indexOf("PORT_REGISTRY.register({type:'bf22'"), html.indexOf("PORT_REGISTRY.register({type:'midiThingV2'"));
-  assert.ok(descriptor.includes("id:'in'") && descriptor.includes("id:'out'"), "BF-22 audio ports missing");
-  assert.match(descriptor, /\['cv1','cv2','resCV'\]\.map\(id=>\(\{id,direction:'input',signal:'cv'/);
-  assert.doesNotMatch(descriptor, /id:'(?:inA|inB|outA|outB|cv1A|cv2A|resCVA|cv1B|cv2B|resCVB)'/);
+  assert.ok(descriptor.includes("id:'inA'") && descriptor.includes("id:'inB'"), "BF-22 dual audio inputs missing");
+  assert.ok(descriptor.includes("id:'outA'") && descriptor.includes("id:'outB'"), "BF-22 dual audio outputs missing");
+  assert.match(descriptor, /\['cv1A','cv2A','resCVA','cv1B','cv2B','resCVB'\]\.map\(id=>\(\{id,direction:'input',signal:'cv'/);
+  assert.doesNotMatch(descriptor, /id:'(?:in|out|cv1|cv2|resCV)'/);
 });
 
 test("Befaco hardware faceplates use HP-scaled vertical layouts instead of oversized generic cards",()=>{
