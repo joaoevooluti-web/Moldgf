@@ -268,3 +268,17 @@ The initial assumption that `abc` and `axbc` were a duplicate was incorrect and 
 - Code commit: `4aef76cf746ab6b41d88ae2b6e63b25c559d0783`; test assertion corrections: `adeb6ee7403104f2479854903458de757a8e0923` and `5e05ebd938e4a3db9c66ce19d8ae2bebede9b81f` / `8ff902dee4f3101db9056a53598cd0b2460193e4` (all `[skip ci]`).
 
 - Current authored Node test count now includes one additional static panel regression test; the expanded suite has not yet been executed. Historical local test totals above refer to the pre-panel branch state.
+
+
+## Phase 7 implementation update — 2026-11-09
+
+<badge>Batch complete: 5/5</badge>
+
+The five-module Phase 7 batch is now implemented on `feature/befaco-modules`. This update supersedes earlier notes in this roadmap that said CI was blocked pending MIDI Thing V2.
+
+- [x] **MIDI Thing V2 — module 5/5:** 12 assignable CV/gate output ports; per-port function/channel/voice/CC mapping; global MIDI channel filter; up to 12 voices with LAST/LOW/HIGH/NO STEAL allocation; V/Oct note CV; gate, velocity, CC, pitch bend, channel pressure, program change, MIDI clock, start/stop, ADSR, note oscillator, LFO, RPN and NRPN; sustain pedal; linear/exponential glide; global 0–5 V / ±5 V / 0–10 V output range; NEW VOICE macro (NOTE CV / VELOCITY / GATE); ALL NOTES OFF. Added Android MIDI input dispatch through the existing `window.midiIn` / AudioWorklet message path, persistent port configuration, 6 HP-inspired panel with 12 output jacks and per-port function controls, typed graph descriptor, 26 DSP tests, five graph tests, and static panel/engine integration assertions. The oscillator pitch is precomputed per note and glide coefficients are cached to reduce per-sample CPU.
+- The implementation uses the Android MIDI service's existing input endpoints; physical TRS sockets, USB-host power/role negotiation, and hardware MIDI-merge routing are not emulated. The 12 outputs are statically typed as CV graph endpoints so they can feed CV destinations and destinations that explicitly accept CV as gate/audio input. This is a clean-room digital mapping implementation, not firmware-level reproduction.
+- [x] Five-module gate is complete: Hexmix (18 DSP + 5 graph), Hexpander (15 + 5), Pony VCF (17 + 5), Stereo Strip (18 + 5), MIDI Thing V2 (26 + 5). Total: **94 DSP tests + 25 graph tests**, plus rack inline-script, registry, asset and hardware-panel assertions. The test suite is now eligible for the first consolidated Node/WASM/Android APK run for this batch.
+- [ ] Run the actual `node --test tests/*.test.cjs` suite, build/validate Plaits and Beads WASM, assemble the Android debug APK, inspect the artifact and logs. Fix any failures with interim commits marked `[skip ci]`; do not claim validation until the workflow reports success.
+- [ ] Physical Android MIDI input, touch interaction, polyphonic CV response and audio output remain untested on device. No hardware-parity claim is made.
+- Working branch: `feature/befaco-modules`. Protected `main` remains at `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
