@@ -16,7 +16,7 @@ test("all inline rack scripts parse before they are shipped to WebView or AudioW
   });
 });
 
-test("the five-module batch ships every DSP asset and registers each module type", () => {
+test("all integrated modules ship their DSP assets and graph registrations", () => {
   const htmlPath = path.join(__dirname, "../app/src/main/assets/index.html");
   const html = fs.readFileSync(htmlPath, "utf8");
   for (const asset of [
@@ -25,12 +25,19 @@ test("the five-module batch ships every DSP asset and registers each module type
     "voltio_dsp.js",
     "abc_dsp.js",
     "axbc_dsp.js",
-    "bypass_dsp.js"
+    "bypass_dsp.js",
+    "mixer2_dsp.js",
+    "mixer_dsp.js",
+    "stmix_dsp.js",
+    "morphader_dsp.js",
+    "hexmixvca_dsp.js",
+    "motionmtr_dsp.js",
+    "slewlimiter_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
