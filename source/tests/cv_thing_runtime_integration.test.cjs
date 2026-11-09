@@ -10,7 +10,7 @@ test("CV Thing DSP loads in page and AudioWorklet source bundle", () => {
   assert.match(html, /'cv_thing_dsp\.js'/);
 });
 test("CV Thing is initialized and dispatched in the shared sample engine", () => {
-  assert.match(html, /cvThing:\s*\(\)\s*=>\(\{channel:1,threshold:\.005,maps:/);
+  assert.match(html, /cvThing:\s*\(\)\s*=>\(\{channel:1,threshold:\.005,maps:/);\n  assert.match(html, /cvThing:\s*\(\)\s*=>\s*MoldgfCVThingDSP\.createState\(\)/);
   assert.match(html, /function cvThingF\(m\)/);
   assert.match(html, /A=byT\.cvThing;for\(i=0;i<A\.length;i\+\+\)cvThingF\(A\[i\]\)/);
 });
