@@ -19,17 +19,18 @@ test("all five modules have persistent DSP state and live sample dispatch", () =
   }
 });
 test("BF-22 live descriptor matches the dual-channel panel endpoint scheme", () => {
-  for (const port of ["inA","inB","cv1A","cv2A","resCVA","cv1B","cv2B","resCVB","outA","outB"]) {
-    assert.ok(html.includes("id:'" + port + "'"), "missing BF-22 graph port " + port);
-  }
+  for (const port of ["inA","inB","outA","outB"]) assert.ok(html.includes("id:'" + port + "'"), "missing BF-22 graph port " + port);
+  assert.ok(html.includes("['cv1A','cv2A','resCVA','cv1B','cv2B','resCVB'].map(id=>"), "missing six mapped BF-22 CV ports");
   assert.match(html, /J\(id\+'\.in'\+ch/);
   assert.match(html, /J\(id\+'\.out'\+ch/);
 });
 test("Crush Delay V3 descriptor, panel and processor expose the same ten endpoints", () => {
-  for (const port of ["in","return","timeCV","feedbackCV","inVolCV","dryWetCV","returnVolCV","crushGate","out","send"]) {
+  for (const port of ["in","return","crushGate","out","send"]) {
     assert.ok(html.includes("id:'" + port + "'"), "missing Crush Delay graph port " + port);
     assert.ok(html.includes("id+'." + port + "'"), "missing Crush Delay panel jack " + port);
   }
+  assert.ok(html.includes("['timeCV','feedbackCV','inVolCV','dryWetCV','returnVolCV'].map(id=>"), "missing five mapped Crush Delay CV ports");
+  for (const port of ["timeCV","feedbackCV","inVolCV","dryWetCV","returnVolCV"]) assert.ok(html.includes("id+'." + port + "'"), "missing Crush Delay panel jack " + port);
   assert.match(html, /function crushDelayV3F\(m\)/);
 });
 test("Joystick and Mutes controls are connected to state transitions", () => {
