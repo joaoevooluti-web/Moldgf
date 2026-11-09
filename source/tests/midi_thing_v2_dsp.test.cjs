@@ -68,7 +68,7 @@ test("per-port channel selection filters voice and controller outputs",()=>{
 });
 test("voice allocation is bounded by configured polyphony",()=>{
  const s=MIDIThing.createState(),p=params({voiceCount:2,ports:[port("GATE",{voice:1}),port("GATE",{voice:2})]});
- send(s,p,0x90,60,100);send(s,p,0x90,64,100);send(s,p,0x90,67,100);
+ send(s,p,0x90,60,100);send(s,p,0x90,64,100);send(s,p,0x90,67,100);tick(p,s);
  assert.equal(s.droppedNotes,0);assert.equal(s.activeVoices,2);assert.equal(s.voices.filter(v=>v.active).length,2);
 });
 test("no-steal priority rejects new notes when all voices are occupied",()=>{
