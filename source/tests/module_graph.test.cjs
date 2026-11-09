@@ -37,6 +37,16 @@ test("connection enforces output-to-input direction and signal compatibility", (
   assert.equal(canConnect(registry, { type: "source" }, "out", { type: "delay" }, "in").code, "signal-type");
 });
 
+test("live rack module instances using the runtime t field connect through typed jack validation", () => {
+  const registry = fixture();
+  const source = { id: "cv1", t: "source" };
+  const processor = { id: "proc1", t: "processor" };
+  const result = canConnect(registry, source, "out", processor, "in");
+  assert.equal(result.ok, true);
+  assert.equal(result.source.id, "out");
+  assert.equal(result.target.id, "in");
+});
+
 test("connection rejects incompatible channel counts", () => {
   const registry = createRegistry([
     { type: "poly", ports: [{ id: "out", direction: "output", signal: "audio", channels: "poly" }] },
