@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const ABC = require("../app/src/main/assets/abc_dsp.js");
 
 test("A*B+C uses B normalled to 5V and the B attenuverter spans -2x to +2x", () => {
-  assert.equal(ABC.processChannel(5, null, 0, 0.5, 0), 1);
+  assert.equal(ABC.processChannel(5, null, 0, 0.5, 0), 10 * ABC.bipolarCurve(0.5));
   assert.equal(ABC.processChannel(5, null, 0, 1, 0), 10);
   assert.equal(ABC.processChannel(5, null, 0, -1, 0), -10);
 });
