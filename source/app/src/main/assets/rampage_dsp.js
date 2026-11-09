@@ -7,7 +7,7 @@
  const clamp=(v,a,b,d=0)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:d));
  const finite=v=>Number.isFinite(v)?v:0;
  const GATE=2.5;
- function createChannelState(){return{value:0,stage:0,triggerHigh:false,signalHigh:false,cycleHigh:false,gateHigh:false,eoc:0,rising:0,falling:0,lastValue:0,initialized:false}}
+ function createChannelState(){return{value:0,phase:0,stage:0,triggerHigh:false,signalHigh:false,cycleHigh:false,gateHigh:false,eoc:0,rising:0,falling:0,lastValue:0,initialized:false}}
  function createState(){return{a:createChannelState(),b:createChannelState(),previousA:0,previousB:0}}
  function timeSeconds(control,cv,exp,range){
   const knob=clamp(control,0,1,.25),mod=clamp(cv,-5,5,0);
@@ -32,7 +32,7 @@
   const risingTime=timeSeconds(p.rise,riseCV,expCV,p.range);
   const fallingTime=timeSeconds(p.fall,fallCV,expCV,p.range);
   const triggered=triggerEdge||signalEdge||!!p.manualTrigger;
-  if(triggered&&s.stage!==2){s.stage=1;s.value=0;s.eoc=0}
+  if(triggered&&(s.stage===0||s.stage===2)){s.stage=1;s.phase=0;s.value=0;s.eoc=0}
   let previous=s.value;
   if(external){
    const target=clamp(signal,-10,10);
@@ -49,7 +49,7 @@
    s.value=Math.max(0,s.value-delta*10);
    if(s.value<=0){s.value=0;s.stage=cycle?1:0;if(cycle)s.eoc=1}
   }else if(cycle){
-   s.stage=1;s.value=Math.min(10,s.value+dt/Math.max(.0001,risingTime)*10);
+   s.stage=1;s.phase=Math.min(1,s.phase+dt/Math.max(.0001,risingTime));s.value=10*shapeValue(s.phase,p.shape);if(s.phase>=1){s.value=10;s.phase=0;s.stage=2}
   }
   const delta=s.value-previous;
   s.rising=delta>1e-5?10:0;s.falling=delta< -1e-5?10:0;
