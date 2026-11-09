@@ -15,22 +15,24 @@ test("CV Thing is initialized and dispatched in the shared sample engine", () =>
   assert.match(html, /function cvThingF\(m\)/);
   assert.match(html, /A=byT\.cvThing;for\(i=0;i<A.length;i\+\+\)cvThingF\(A\[i\]\)/);
 });
-test("CV Thing has eight typed CV inputs and eight typed gate inputs", () => {
-  assert.match(html, /type:'cvThing',ports:/);
-  assert.match(html, /id:'cv'\+\(i\+1\)/);
-  assert.match(html, /id:'gate'\+\(i\+1\)/);
+test("CV Thing exposes exactly eight physical CV jacks with gate-capable signal typing", () => {
+  assert.match(html, /type:'cvThing',ports:Array\.from\(\{length:8\}/);
+  assert.match(html, /id:'cv'\+\(i\+1\),direction:'input',signal:'cv',channels:1,accepts:\['cv','gate','trigger'\]/);
   assert.match(html, /id\+'\.cv'\+\(i\+1\)/);
-  assert.match(html, /id\+'\.gate'\+\(i\+1\)/);
+  assert.doesNotMatch(html, /id:'gate'\+\(i\+1\)/);
+  assert.doesNotMatch(html, /id\+'\.gate'\+\(i\+1\)/);
 });
-test("CV Thing routes CC, note, program, clock and transport events through the MIDI queue", () => {
+test("CV Thing maps CC, paired V/Oct Note, Program Change, Clock and Start/Stop to MIDI", () => {
   for (const status of ["176|(ch&15)", "144|(ch&15)", "128|(ch&15)", "192|(ch&15)", "mq(248", "mq(250", "mq(252"]) assert.ok(html.includes(status), "missing MIDI route " + status);
   assert.match(html, /function midiFlat\(a\)/);
   assert.match(html, /NAT\.midiOutBatch/);
   assert.match(html, /if\(st>=248\)o\.send\(\[st\]\)/);
 });
-test("CV Thing exposes channel, threshold, mapping mode, CC and note controls", () => {
-  assert.match(html, /Sel\('channel','MIDI CHANNEL'/);
-  assert.match(html, /R\('threshold','CHANGE THRESHOLD'/);
+test("CV Thing faceplate includes OLED performance display, encoder and eight mapping rows", () => {
+  assert.match(html, /cvthing-oled/);
+  assert.match(html, /PERFORMANCE \/ 8 INPUTS/);
+  assert.match(html, /◉ ENCODER/);
+  assert.match(html, /Array\.from\(\{length:8\}/);
   assert.match(html, /Sel\('maps\.'\+i\+'\.mode'/);
   assert.match(html, /data-k="maps\.'\+i\+'\.cc"/);
   assert.match(html, /data-k="maps\.'\+i\+'\.note"/);
