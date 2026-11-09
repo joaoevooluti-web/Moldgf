@@ -23,7 +23,7 @@
   const trigger=finite(i.trigger),high=trigger>=GATE,edge=high&&!s.triggerHigh;s.triggerHigh=high;
   const triggered=edge||!!p.manualTrigger;
   if(triggered){s.volumeEnvelope=1;s.pitchEnvelope=1;s.triggerCount++}
-  const tuneCV=clamp(i.tune,-5,5,0),baseTune=clamp(p.tune,0,1,.5);
+  const tuneCV=clamp(i.tune,0,10,0),baseTune=clamp(p.tune,0,1,.5);
   const baseFrequency=27.5*Math.pow(123.47/27.5,baseTune)*Math.pow(2,tuneCV);
   const pitchTime=envelopeTime(p.time,.008,3.5),volumeTime=envelopeTime(clamp(p.decay+finite(i.decay)/10,0,1,.5),.025,6);
   const pitchSemitones=clamp(p.bend,0,1,.5)*60*s.pitchEnvelope;
