@@ -46,7 +46,7 @@
   else if(pan>=0){outL=left*Math.cos(pan*Math.PI*.5);outR=right}
   else{outL=left;outR=right*Math.cos(-pan*Math.PI*.5)}
   const rawPeak=Math.max(Math.abs(outL),Math.abs(outR)),limiter=x=>Math.tanh(x*1.15);
-  const outputGain=Math.round(clamp(p.outputLevel,0,1,0))?.2:1;
+  const outputGain=Math.round(clamp(p.outputLevel,0,1,0))?0.2:1;
   outL=limiter(outL)*outputGain;outR=limiter(outR)*outputGain;
   const r=s.result;r.left=outL;r.right=outR;r.peak=rawPeak;r.clipping=rawPeak>1;r.pan=pan;r.level=vca;
   return r;
