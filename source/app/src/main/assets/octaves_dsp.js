@@ -10,9 +10,17 @@
   const outputs=new Float32Array(6),result={outputs,frequency:261.625565,phase:0,pulseWidth:.5};
   return{phase:0,syncHigh:false,frequency:261.625565,pulseWidth:.5,outputs,result};
  }
- function pulseAtPhase(phase,width){
-  const p=((phase%1)+1)%1,w=clamp(width,.05,.95,.5),start=(1-w)*.5,end=(1+w)*.5;
-  return p>=start&&p<end?1:-1;
+ function polyBlep(t,dt){
+  if(!(dt>0))return 0;
+  if(t<dt){const x=t/dt;return x+x-x*x-1}
+  if(t>1-dt){const x=(t-1)/dt;return x*x+x+x+1}
+  return 0;
+ }
+ function pulseAtPhase(phase,width,dt){
+  const p=((phase%1)+1)%1,w=clamp(width,.05,.95,.5),start=(1-w)*.5,t=(p-start+1)%1;
+  const raw=t<w?1:-1;
+  if(!(dt>0))return raw;
+  return raw+polyBlep(t,dt)-polyBlep((t-w+1)%1,dt);
  }
  function process(params,inputs,state,sampleRate,outputPatched){
   const p=params||{},i=inputs||{},s=state||createState(),sr=clamp(sampleRate,8000,192000,48000);
@@ -29,7 +37,7 @@
   s.phase+=frequency/sr;if(s.phase>=1)s.phase-=Math.floor(s.phase);
   let sum=0;
   for(let n=0;n<6;n++){
-   const phase=(s.phase*Math.pow(2,n))%1,pulse=pulseAtPhase(phase,width);
+   const ratio=Math.pow(2,n),phase=(s.phase*ratio)%1,pulse=pulseAtPhase(phase,width,Math.min(.49,frequency*ratio/sr));
    const manual=clamp(Array.isArray(p.level)?p.level[n]:1,0,1,1);
    const cv=i.levelCV&&i.levelCV[n]!==undefined?i.levelCV[n]:i["levelCV"+(n+1)];
    const gain=cv===null||cv===undefined?manual:manual*clamp(finite(cv)/10,0,1,0);
