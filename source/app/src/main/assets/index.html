@@ -292,7 +292,8 @@ function plW(m){const Z=m.s,Q=m.q,R=m.r,ti=inp(K(m,'t')),vi=Q.vi;if(ti!==null&&t
  V[K(m,'o')]=5*(Q.ro[a0]*(1-fr)+Q.ro[a1]*fr);V[K(m,'x')]=5*(Q.ra[a0]*(1-fr)+Q.ra[a1]*fr)}
 // ---- Mixer
 function atteF(m){const P=m.s,R=m.r;let previous=MoldgfAtteDSP.normalledVoltage(P.normalledVoltage);const names=['A','B','C','D'],outs=['a','b','c','d'];for(let n=0;n<4;n++){const input=MoldgfAtteDSP.resolveInput(inp(K(m,'in'+names[n])),previous);const output=MoldgfAtteDSP.applyGain(input,P.gain[n],P.mode[n]===1);V[K(m,outs[n])]=output;R.out[n]=output;previous=input}}
-function dualAtenuverterF(m){const P=m.s,R=m.r;const inputA=inp(K(m,'inA'));const inputB=MoldgfDualAtenuverterDSP.resolveInput(inp(K(m,'inB')),inputA);const a=MoldgfDualAtenuverterDSP.processChannel(inputA,P.gain[0],P.offset[0]);const b=MoldgfDualAtenuverterDSP.processChannel(inputB,P.gain[1],P.offset[1]);V[K(m,'outA')]=R.out[0]=a;V[K(m,'outB')]=R.out[1]=b;R.led[0]=MoldgfDualAtenuverterDSP.ledPolarity(a);R.led[1]=MoldgfDualAtenuverterDSP.ledPolarity(b)}\nfunction mixF(m){const s=m.s;let L=0,R=0;for(let n=0;n<4;n++){const x=inp(m.ko[n])||0,v=s.mu[n]?0:x*s.l[n]*1.2,a=(s.p[n]+1)*Math.PI/4;L+=v*Math.cos(a);R+=v*Math.sin(a);{const pk=Math.max(Math.abs(v)/5,m.r.pk[n]*.9995);m.r.pk[n]=pk<1e-5?0:pk}}V[K(m,'L')]=L*s.ms;V[K(m,'R')]=R*s.ms}
+function dualAtenuverterF(m){const P=m.s,R=m.r;const inputA=inp(K(m,'inA'));const inputB=MoldgfDualAtenuverterDSP.resolveInput(inp(K(m,'inB')),inputA);const a=MoldgfDualAtenuverterDSP.processChannel(inputA,P.gain[0],P.offset[0]);const b=MoldgfDualAtenuverterDSP.processChannel(inputB,P.gain[1],P.offset[1]);V[K(m,'outA')]=R.out[0]=a;V[K(m,'outB')]=R.out[1]=b;R.led[0]=MoldgfDualAtenuverterDSP.ledPolarity(a);R.led[1]=MoldgfDualAtenuverterDSP.ledPolarity(b)}
+function mixF(m){const s=m.s;let L=0,R=0;for(let n=0;n<4;n++){const x=inp(m.ko[n])||0,v=s.mu[n]?0:x*s.l[n]*1.2,a=(s.p[n]+1)*Math.PI/4;L+=v*Math.cos(a);R+=v*Math.sin(a);{const pk=Math.max(Math.abs(v)/5,m.r.pk[n]*.9995);m.r.pk[n]=pk<1e-5?0:pk}}V[K(m,'L')]=L*s.ms;V[K(m,'R')]=R*s.ms}
 let OL=0,OR=0;
 // ---- Intellijel Polaris (VCF multimodo de 4 estágios OTA / phaser).
 // Modelo: 4 integradores TPT em cascata, realimentação k*y4 (resolvida sem atraso) e limitador suave na entrada do laço.
@@ -676,7 +677,8 @@ mix:{n:'Mixer 4→2',html:id=>`<div class="row">${[0,1,2,3].map(n=>`<div class="
 const rk=$('#rack'),cnt={};let jk={},sel=null,kd=null,kbd=null,mdv=[],jd=null,sup=0,lt=null,pkT=null,node=null,ac=null,needDr=1,ledEls=[],abt=null,taps=[],lastSel={m:'',i:-1,t:0},lastK=null,lastR=null,kmoved=false;
 const dirty=new Set(),post=d=>{if(node)node.port.postMessage(d)};
 const PORT_REGISTRY=MoldgfModuleGraph.createRegistry();
-PORT_REGISTRY.register({type:'dualAt',ports:[{id:'inA',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'inB',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'outA',direction:'output',signal:'cv',channels:1},{id:'outB',direction:'output',signal:'cv',channels:1}]});\nPORT_REGISTRY.register({type:'atte',ports:[
+PORT_REGISTRY.register({type:'dualAt',ports:[{id:'inA',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'inB',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'outA',direction:'output',signal:'cv',channels:1},{id:'outB',direction:'output',signal:'cv',channels:1}]});
+PORT_REGISTRY.register({type:'atte',ports:[
  {id:'inA',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},
  {id:'inB',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},
  {id:'inC',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},
@@ -887,7 +889,8 @@ const UI={pam(m){const P=m.s,R=m.r,o=P.o[P.sel],ext=!!cs[sig(m.id+'.clk')]&&P.ck
   lf(ce(m,'.clip'),R.cl>.15,'#ff3434','#5c0f15');const sw=ce(m,'.swl');if(sw&&sw._d!==P.di){sw._d=P.di;sw.setAttribute('transform','translate(311 935) scale(1 '+(P.di?1:-1)+')')}
   st_(ce(m,'.pi'),PLN[PIDX(P)]+(P.di?' · DIST':''))},
  out(m){cl(m,'[data-pk]').forEach(e=>{const h=Math.round(cp(m.r.pk[+e.dataset.pk])*50)*2+'%';if(e._h!==h){e._h=h;e.style.height=h}});cl(m,'[data-a=omu]').forEach(e=>tg_(e,'on',m.s.mu))},
- atte(m){cl(m,'.att-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')})},\n dualAt(m){cl(m,'.dual-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')});cl(m,'.dual-led').forEach(e=>{const state=m.r.led[+e.dataset.led]||'off';e.classList.toggle('positive',state==='positive');e.classList.toggle('negative',state==='negative')})},
+ atte(m){cl(m,'.att-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')})},
+ dualAt(m){cl(m,'.dual-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')});cl(m,'.dual-led').forEach(e=>{const state=m.r.led[+e.dataset.led]||'off';e.classList.toggle('positive',state==='positive');e.classList.toggle('negative',state==='negative')})},
  mix(m){cl(m,'[data-pk]').forEach(e=>{const h=Math.round(cp(m.r.pk[+e.dataset.pk])*50)*2+'%';if(e._h!==h){e._h=h;e.style.height=h}});cl(m,'[data-a=mu]').forEach(e=>tg_(e,'on',m.s.mu[+e.dataset.i]))}};
 let lastT=0;
 function ui(t){requestAnimationFrame(ui);if(t-lastT<33)return;lastT=t;flush();if(!node){for(let i=0;i<SN.length;i++)Vn[SN[i]]=V[i];for(const id in I){const m=I[id];if(m.t==='pam')m.r.st=m.r.o.map(q=>q.st)}}for(const id in I){const m=I[id];if(UI[m.t])UI[m.t](m)}
