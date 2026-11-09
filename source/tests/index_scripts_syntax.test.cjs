@@ -183,5 +183,5 @@ test("IROI panel exposes the stereo FX chain, CV mapping, modulation and randomi
   assert.match(html,/MoldgfIroiDSP\.process/);
   assert.match(html,/randomUndo/);
   assert.match(html,/randomRedo/);
-  assert.match(html,/mapMode\?Math\.round/);
+  assert.match(html,/m\.s\.mapMode=!m\.s\.mapMode/);
 });
