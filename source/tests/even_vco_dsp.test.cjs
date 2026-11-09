@@ -24,9 +24,14 @@ test("five waveform outputs remain finite and within the five-volt nominal range
 
 test("even output has twice the fundamental cycle rate",()=>{
  const state=Even.createState(),params={octave:-5,tune:0,pwm:0,limitPW:true,removePulseDC:true};
- const values=[];for(let i=0;i<48000;i++)values.push(Even.process(params,{pitch1:0,pitch2:0,fm:0,sync:0,pwm:0},state,48000,1/48000).outputs[2]);
- const transitions=values.slice(1).filter((v,i)=>Math.sign(v)!==Math.sign(values[i])).length;
- assert.ok(transitions>=3&&transitions<=5);
+ let evenCrossings=0,sawCrossings=0,previousEven=0,previousSaw=0;
+ for(let i=0;i<48000;i++){
+  const out=Even.process(params,{pitch1:0,pitch2:0,fm:0,sync:0,pwm:0},state,48000,1/48000).outputs;
+  if(i&&Math.sign(out[2])!==Math.sign(previousEven))evenCrossings++;
+  if(i&&Math.sign(out[3])!==Math.sign(previousSaw))sawCrossings++;
+  previousEven=out[2];previousSaw=out[3];
+ }
+ assert.ok(evenCrossings>sawCrossings*1.8&&evenCrossings<sawCrossings*2.2);
 });
 
 test("hard sync resets phase on a rising edge",()=>{
