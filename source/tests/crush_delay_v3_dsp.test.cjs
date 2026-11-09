@@ -120,3 +120,5 @@ test("wet and output peak meters follow signal and decay",()=>{
  const p=params({dryWet:1}),s=Crush.createState(),x=inputs({input:1});
  tick(p,x,s,300);assert.ok(s.peakWet>0);x.input=0;tick(p,x,s,1000);assert.ok(s.peakWet>=0&&s.peakOutput>=0);
 });
+
+// Re-run the Android packaging gate after sample-hold regression correction.
