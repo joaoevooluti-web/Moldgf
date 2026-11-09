@@ -3,7 +3,7 @@ const assert=require("node:assert/strict");
 const Mux=require("../app/src/main/assets/muxlicer_dsp.js");
 
 test("Muxlicer initializes stopped at step one",()=>{
- const s=Mux.createState(),r=Mux.process({bpm:120,speed:.5,gateMode:0},{},s,48000);
+ const s=Mux.createState(),r=Mux.process({bpm:120,speed:.5,gateMode:0,cvRange:0},{},s,48000);
  assert.equal(r.step,1);assert.equal(r.playing,false);assert.equal(r.commonOutCV,5);
 });
 test("speed encoder spans divide-by-16 through multiply-by-16",()=>{
@@ -45,12 +45,12 @@ test("one-shot playback stops after step eight and emits one EOC pulse",()=>{
  assert.equal(r.playing,false);assert.equal(r.step,8);assert.equal(pulses,1);
 });
 test("normal playback wraps after step eight and emits EOC",()=>{
- const s=Mux.createState();s.playing=true;s.step=7;
+ const s=Mux.createState();s.playing=true;s.step=7;s.clockPhase=.99999;
  const r=Mux.process({bpm:120,speed:.5,gateMode:0},{},s,48000);
  assert.equal(r.step,1);assert.equal(r.eoc,10);
 });
 test("addressed jumps do not emit EOC",()=>{
- const s=Mux.createState();s.playing=true;s.step=7;
+ const s=Mux.createState();s.playing=true;s.step=7;s.clockPhase=.99999;
  const r=Mux.process({bpm:120,speed:.5,address:.5,gateMode:0},{},s,48000);
  assert.equal(r.step,5);assert.equal(r.eoc,0);
 });
