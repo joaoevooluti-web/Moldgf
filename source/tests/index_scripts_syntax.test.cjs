@@ -246,7 +246,9 @@ test("MIDI Thing V2 panel exposes twelve assignable outputs, voice controls and 
   const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
   const html=fs.readFileSync(htmlPath,"utf8");
   const panel=html.slice(html.indexOf("midiThingV2:{n:"),html.indexOf("stereoStrip:{n:"));
-  for(const label of ["MIDI THING V2","12 ASSIGNABLE PORTS","MIDI CH","VOICES","PRIORITY","CV RANGE","GLIDE","VOICE GENERATORS","NEW VOICE","ALL NOTES OFF","NOTE CV","PITCH BEND","CHANNEL PRESSURE","PROGRAM CHANGE","CLOCK","OSCILLATOR","RPN","NRPN"])assert.ok(panel.includes(label),"missing MIDI Thing V2 control "+label);
+  for(const label of ["MIDI THING V2","12 ASSIGNABLE PORTS","MIDI CH","VOICES","PRIORITY","CV RANGE","GLIDE","VOICE GENERATORS","NEW VOICE","ALL NOTES OFF","NOTE CV","DRUM TRIGGER","NOTE","PITCH BEND","CHANNEL PRESSURE","PROGRAM CHANGE","CLOCK","OSCILLATOR","RPN","NRPN"])assert.ok(panel.includes(label),"missing MIDI Thing V2 control "+label);
+  assert.match(panel,/data-k="ports\.'\+i\+'\.note"/);
+  assert.match(html,/MIDI_THING_RANGES=\['0–5 V','−5\/\+5 V','0–10 V','0–8 V'\]/);
   assert.match(panel,/Array\.from\(\{length:12\}/);
   assert.match(html,/MoldgfMidiThingV2DSP\.process/);
   assert.match(html,/MoldgfMidiThingV2DSP\.handleMidi/);
