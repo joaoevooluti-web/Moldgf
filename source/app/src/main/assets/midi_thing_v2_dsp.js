@@ -274,7 +274,15 @@
     let active = 0;
     for (let i = 0; i < PORTS; i++) {
       const voice = voices[i];
-      if (voice.active) { envelopeStep(voice, params, sr); if (voice.active) active++; }
+      if (voice.active) {
+        envelopeStep(voice, params, sr);
+        if (voice.active) {
+          active++;
+          const hz = 440 * Math.pow(2, (voice.note - 69) / 12);
+          voice.phase += hz / sr;
+          if (voice.phase >= 1) voice.phase -= Math.floor(voice.phase);
+        }
+      }
     }
     state.activeVoices = active;
     if (state.clockPulseSamples > 0) state.clockPulseSamples--;
@@ -306,9 +314,6 @@
       else if (mode === "START/STOP") value = state.running ? 5 : 0;
       else if (mode === "ADSR" && voice) value = voice.envelope * max;
       else if (mode === "OSCILLATOR" && voice) {
-        const hz = 440 * Math.pow(2, (voice.note - 69) / 12);
-        voice.phase += hz / sr;
-        if (voice.phase >= 1) voice.phase -= Math.floor(voice.phase);
         value = Math.sin(voice.phase * Math.PI * 2) * 5 * voice.envelope;
       } else if (mode === "LFO") value = range === 1 ? lfo * 5 : (lfo + 1) * max * 0.5;
       else if (mode === "RPN") value = state.rpnValue[channel] * max;
