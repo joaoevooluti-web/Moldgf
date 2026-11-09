@@ -16,10 +16,10 @@ test("four Mutes channels are dispatched through the shared audio engine", () =>
 });
 test("Mutes has four typed audio inputs and four audio outputs", () => {
   assert.match(html, /type:'divkidMutesMk2',ports:/);
-  for (let i = 1; i <= 4; i++) {
-    assert.ok(html.includes("id+'.in" + i + "'"), "missing input jack " + i);
-    assert.ok(html.includes("id+'.out" + i + "'"), "missing output jack " + i);
-  }
+  assert.match(html, /\['in1','in2','in3','in4'\]/);
+  assert.match(html, /\['out1','out2','out3','out4'\]/);
+  assert.match(html, /id\+'\.in'\+\(i\+1\)/);
+  assert.match(html, /id\+'\.out'\+\(i\+1\)/);
 });
 test("momentary hold releases on pointer up or cancellation", () => {
   assert.match(html, /data-mute-hold=/);
