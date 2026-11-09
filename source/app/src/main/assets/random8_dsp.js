@@ -17,7 +17,9 @@
  function createChannel(seed){return{rng:(seed>>>0)||1,gate:0,dividerCount:0,phrase:new Float32Array(32),phraseLength:0,phrasePos:0,target:0,current:0,lastRaw:0,alternating:0,wander:0,initialized:false,triggerCount:0}}
  function createState(seed){
   seed=(Number.isFinite(seed)?seed:0x4d4f4c44)>>>0;
-  return{channels:Array.from({length:8},(_,i)=>createChannel((seed+Math.imul(i+1,0x9e3779b9))>>>0)),sampleRate:48000}
+  const channels=Array.from({length:8},(_,i)=>createChannel((seed+Math.imul(i+1,0x9e3779b9))>>>0));
+  const outputs=new Float32Array(8),readout=Array.from({length:8},()=>({value:0,target:0,mode:0,phraseLength:0,phrasePos:0,triggerCount:0}));
+  return{channels,outputs,readout,result:{outputs,channels:readout},sampleRate:48000}
  }
  function randomValue(c,distribution){
   const r=()=>rngNext(c);
@@ -70,7 +72,7 @@
  }
  function process(params,inputs,state,sampleRate){
   const p=params||{},ins=inputs||{},s=state||createState(),sr=clamp(sampleRate,8000,192000,48000),dt=1/sr;
-  const outputs=new Float32Array(8),channels=s.channels;
+  const outputs=s.outputs,readout=s.readout,channels=s.channels;
   let inherited=0;
   for(let i=0;i<8;i++){
    const c=channels[i],key='trigger'+(i+1);
@@ -98,8 +100,9 @@
    const offset=clamp(Array.isArray(p.offset)?p.offset[i]:p.offset,0,10,0);
    const gain=clamp(Array.isArray(p.level)?p.level[i]:level,0,1,1);
    outputs[i]=clamp(Math.min(10,c.current+offset)*gain,0,10);
+   const view=readout[i];view.value=outputs[i];view.target=c.target;view.mode=Math.round(clamp(Array.isArray(p.mode)?p.mode[i]:p.mode,0,3,0));view.phraseLength=c.phraseLength;view.phrasePos=c.phrasePos;view.triggerCount=c.triggerCount;
   }
-  return{outputs,channels:channels.map((c,i)=>({value:outputs[i],target:c.target,mode:Math.round(clamp(Array.isArray(p.mode)?p.mode[i]:p.mode,0,3,0)),phraseLength:c.phraseLength,phrasePos:c.phrasePos,triggerCount:c.triggerCount}))};
+  return s.result;
  }
  return{createState,process,quantize,randomValue};
 });
