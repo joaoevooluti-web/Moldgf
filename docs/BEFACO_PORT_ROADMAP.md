@@ -447,3 +447,13 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [ ] Rack integration remains open: add the 12 HP XY touch surface, mode/range/offset controls, two gate buttons, four typed graph endpoints, engine dispatch, persisted state and panel interaction tests. The DSP tests have been authored but not run; no workflow was triggered.
 - Current Joystick DSP commit: c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; tests: 6a8461a65116e26c4b02ce12574622c2f1bfc4c8.
 - Next: complete Joystick rack and graph integration, then DivKid Mutes mk2. Keep the five-module Phase 8 batch CI-gated until all five implementations and tests are authored.
+
+
+### Phase 8 progress — DivKid Mutes mk2 (DSP prototype only)
+
+- [~] **DivKid Mutes mk2 DSP prototype:** isolated four-channel signal pass/mute model with three-position switch semantics (momentary / off / on), click-free VCA-style smoothing, and cascading input normalisation. Added 11 focused regression tests for switch positions, momentary release, cascaded inputs, smoothing, finite inputs and state reuse.
+- [ ] **Not integrated into the rack:** no panel, 4HP/1U presentation, physical switch interaction, graph ports, audio engine dispatch, or persistence yet. The official Befaco specification confirms four-channel use, 3-position momentary/off/on switching, buffered cascading normalisation, VCA-based click-free muting, LEDs, and 4HP width. DSP prototype remains an approximation pending schematic/manual-level verification.
+- [ ] Tests are authored but not executed in CI. Do not count the module as ported.
+- Commits: DSP prototype 9823ab0beae54368efc784c981dc46304d86618d; tests 5bf56992bdf2a9c390340d4b31df6bbed5bc0ba4.
+- Reference: https://www.befaco.org/divkid_mutes_mk2/ (official product features/specification).
+- Next: finish Joystick rack integration and validate its typed ports; then integrate DivKid Mutes mk2 and CV Thing. Keep CI deferred until the five-module Phase 8 batch is implementation- and test-ready.
