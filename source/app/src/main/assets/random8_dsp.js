@@ -50,8 +50,8 @@
    return c.phrase[c.phrasePos];
   }
   if(mode===2&&c.initialized){
-   c.wander=clamp(c.target+(rngNext(c)-.5)*.16,0,1);
-   return c.wander;
+   c.target=quantize(clamp(c.target+(rngNext(c)-.5)*1.6,0,10),p.scale);
+   return c.target;
   }
   const raw=randomValue(c,p.distribution);
   c.lastRaw=raw;
