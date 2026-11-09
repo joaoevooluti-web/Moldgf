@@ -298,7 +298,8 @@ test("manual jack patching uses live rack IDs, typed BF-22 ports and persists ca
   assert.match(html, /cab\.push\(\{a,b\}\);rb\(\);return true/);
   assert.match(html, /post\(\{t:'cab',cab:cab\.map\(c=>\[c\.a,c\.b\]\)\}\)/);
   const descriptor = html.slice(html.indexOf("PORT_REGISTRY.register({type:'bf22'"), html.indexOf("PORT_REGISTRY.register({type:'midiThingV2'"));
-  for (const id of ["in", "cv1", "cv2", "resCV", "out"]) assert.ok(descriptor.includes("id:'" + id + "'"), "BF-22 descriptor missing " + id);
+  assert.ok(descriptor.includes("id:'in'") && descriptor.includes("id:'out'"), "BF-22 audio ports missing");
+  assert.match(descriptor, /\['cv1','cv2','resCV'\]\.map\(id=>\(\{id,direction:'input',signal:'cv'/);
   assert.doesNotMatch(descriptor, /id:'(?:inA|inB|outA|outB|cv1A|cv2A|resCVA|cv1B|cv2B|resCVB)'/);
 });
 
