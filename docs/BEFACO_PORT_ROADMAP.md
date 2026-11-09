@@ -73,7 +73,8 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [ ] Migrate existing module types through adapters; keep Worklet and ScriptProcessor paths behaviorally aligned.
 
 ### Phase 2 — Utility and routing modules
-- [ ] Atte, Dual Atenuverter, Voltio, A*B+C, AxBC, Bypass, both Mixer variants, STMix, Morphader, Hex Mix VCA, and Motion MTR.
+- [x] Atte — four attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, individual outputs, and saved control state; dedicated DSP tests pass.
+- [ ] Dual Atenuverter, Voltio, A*B+C, AxBC, Bypass, both Mixer variants, STMix, Morphader, Hex Mix VCA, and Motion MTR.
 - [ ] Validate gain staging, polarity, summing, stereo routing, and clipping.
 
 ### Phase 3 — Modulation, envelopes, and timing
@@ -106,7 +107,7 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 - Existing engine audit: the 129 KB `index.html` embeds the engine, has AudioWorklet and ScriptProcessor fallback, a string-keyed signal store, summed input lookup, cable list, and hard-coded `step()` processing order. Current module registration and UI are distributed across `INIT`, `INITR`, `byT`, `mkInst`, `idxE`, `step`, `TY`, and handlers.
 - Existing rack types: MIDI→CV, Pamela PRO, Scales, Plaits, Mixer 4→2, Axon-2, PPEXP1, PPEXP2, Polaris, CV→MIDI, BBD, Beads, and Audio Out. None of the 34 requested Befaco modules is implemented as a dedicated type.
 - The new graph contract validates live jack endpoints and output-to-input direction. Legacy ports are mapped to the engine's actual mono channel model and permissive signal compatibility; typed audio/CV/gate semantics and cycle scheduling will be enabled module-by-module.
-- Befaco Atte has been added as the first utility module: four independent attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, per-channel gain/mode controls, and a voltage readout. Its dedicated DSP tests exposed a signed-zero edge case; a fix is committed, and the full CI validation is pending.
+- Befaco Atte is implemented in the rack and audio engine: four independent attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, per-channel gain/mode controls, independent outputs, and voltage readouts. Five dedicated DSP tests pass, and the inline WebView/AudioWorklet scripts are now syntax-checked in CI. The full APK build for this state is still running; this engine currently processes mono signals, so polyphonic parity remains future work.
 - Android host uses WebViewAssetLoader, Android MIDI APIs, SharedPreferences bridge, and document picker. Plaits and Beads have optional WASM builds with JS fallbacks; Beads also has a native self-test in the build script.
 
 ## Immediate next steps
