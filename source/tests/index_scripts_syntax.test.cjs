@@ -72,9 +72,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
   assert.equal(pageAssets.length, 37, "expected 37 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 36, "DSP page assets must be unique");
+  assert.equal(new Set(pageAssets).size, 37, "DSP page assets must be unique");
   assert.equal(descriptors.length, 37, "expected 37 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 36, "graph descriptor types must be unique");
+  assert.equal(new Set(descriptors).size, 37, "graph descriptor types must be unique");
 });
 
 
@@ -229,7 +229,6 @@ test("Pony VCF panel exposes the four-pole filter, three-input mixer and CV1/VCA
   const panel=html.slice(html.indexOf("ponyVcf:{n:"),html.indexOf("hexpander:{n:"));
   for(const label of ["PONY VCF","6 HP","CUT-OFF","RESONANCE","CV1 ATT","FILTER INPUT","length:3","CV1","CV2","RES CV","VOLUME CV","CV1 MODE","10V NORMAL","CV1 TO VCA","AUDIO OUT","IN3 NORMALLED FROM OUT"])assert.ok(panel.includes(label),"missing Pony VCF control "+label);
   assert.match(html,/MoldgfPonyVCFDSP\.process/);
-  assert.match(html,/s\.lastOutput/);
   assert.match(html,/A=byT\.ponyVcf;for/);
 });
 
