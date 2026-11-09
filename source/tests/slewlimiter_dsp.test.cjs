@@ -27,8 +27,8 @@ test("fall time is independent from rise time", () => {
 });
 
 test("shape blends constant-rate and delta-proportional response", () => {
-  const a = Slew.process(10, 5, 5, { rise: 0, fall: 0, shape: 0 }, { out: 0 }, 0.0001).output;
-  const b = Slew.process(10, 5, 5, { rise: 0, fall: 0, shape: 1 }, { out: 0 }, 0.0001).output;
+  const a = Slew.process(20, 5, 5, { rise: 0, fall: 0, shape: 0 }, { out: 0 }, 0.0001).output;
+  const b = Slew.process(20, 5, 5, { rise: 0, fall: 0, shape: 1 }, { out: 0 }, 0.0001).output;
   assert.ok(b > a);
 });
 
