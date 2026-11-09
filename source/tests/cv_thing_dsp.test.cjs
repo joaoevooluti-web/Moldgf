@@ -17,9 +17,9 @@ test("maps positive full scale to MIDI value 127", () => {
 });
 test("suppresses small CC movements using threshold", () => {
   const s = DSP.createState(), p = { threshold: .05, maps: [{ mode: DSP.modes.CC }] };
-  DSP.process(p, { cv1: 0 }, s);
-  assert.equal(DSP.process(p, { cv1: .1 }, s).length, 0);
-  assert.equal(DSP.process(p, { cv1: 1 }, s).length, 1);
+  DSP.process(p, { cv1: 0 }, s, 1);
+  assert.equal(DSP.process(p, { cv1: .1 }, s, 1).length, 0);
+  assert.equal(DSP.process(p, { cv1: 1 }, s, 1).length, 1);
 });
 test("supports independent CC mappings across all eight physical inputs", () => {
   const maps = Array.from({ length: 8 }, (_, i) => ({ mode: DSP.modes.CC, cc: i + 10 }));
@@ -85,9 +85,9 @@ test("unpatched inputs emit no startup MIDI events", () => {
 });
 test("CC mapping rearms after its CV cable is removed and reconnected", () => {
   const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.CC, cc: 12 }] };
-  assert.equal(DSP.process(p, { cv1: 0 }, s).length, 1);
-  assert.equal(DSP.process(p, {}, s).length, 0);
-  assert.equal(DSP.process(p, { cv1: 0 }, s).length, 1);
+  assert.equal(DSP.process(p, { cv1: 0 }, s, 1).length, 1);
+  assert.equal(DSP.process(p, {}, s, 1).length, 0);
+  assert.equal(DSP.process(p, { cv1: 0 }, s, 1).length, 1);
 });
 test("event array is reused between processing calls", () => {
   const s = DSP.createState(), a = DSP.process({ maps: [{ mode: 0 }] }, { cv1: 0 }, s);
@@ -100,4 +100,20 @@ test("Start/Stop mode does not send a spurious STOP when first connected low", (
   assert.equal(DSP.process(p, { cv1: 0 }, s).length, 0);
   assert.equal(DSP.process(p, { cv1: 5 }, s)[0].type, "start");
   assert.equal(DSP.process(p, { cv1: 0 }, s)[0].type, "stop");
+});
+
+test("CC and Program Change outputs are rate-limited to four milliseconds", () => {
+  const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.CC, cc: 1 }] };
+  assert.equal(DSP.process(p, { cv1: 0 }, s, 48000).length, 1);
+  for (let i = 0; i < 191; i++) assert.equal(DSP.process(p, { cv1: 5 }, s, 48000).length, 0);
+  assert.equal(DSP.process(p, { cv1: 5 }, s, 48000).length, 1);
+});
+test("V/Oct pitch changes while Gate is high retrigger without leaving the old note held", () => {
+  const s = DSP.createState(), p = { maps: [{ mode: DSP.modes.NOTE, note: 60 }] };
+  const first = DSP.process(p, { cv1: 0, cv2: 10 }, s);
+  assert.equal(first[0].type, "noteOn");
+  const changed = DSP.process(p, { cv1: 1, cv2: 10 }, s);
+  assert.deepEqual(changed.map(e => e.type), ["noteOff", "noteOn"]);
+  assert.equal(changed[0].note, 60);
+  assert.equal(changed[1].note, 72);
 });
