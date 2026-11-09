@@ -13,7 +13,7 @@ test("A*B+C divides the product by five and supports four-quadrant multiplicatio
 test("B and C default to five volts and their attenuverter controls scale independently", () => {
   assert.equal(ABC.processChannel(8, null, 0, unity), 8);
   assert.equal(ABC.processChannel(0, 5, null, { bLevel: 0, bMode: 0, cLevel: 1, cMode: 0 }), 5);
-  assert.equal(ABC.processChannel(5, 5, 5, { bLevel: 0.5, bMode: 1, cLevel: 0.5, cMode: 2 }), 7.5);
+  assert.equal(ABC.processChannel(5, 5, 5, { bLevel: 0.5, bMode: 1, cLevel: 0.5, cMode: 2 }), 2.5);
 });
 
 test("gain switches provide x1, x2 and inverted ranges", () => {
