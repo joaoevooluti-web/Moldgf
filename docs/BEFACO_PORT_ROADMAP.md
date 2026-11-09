@@ -457,5 +457,17 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
   - [x] Added `divkid_mutes_mk2_runtime_integration.test.cjs` covering loading, dispatch, typed jack declarations, momentary release and inline script syntax. Test authored; not executed.
   - [ ] Validate the real hardware switch feel, LED behavior, patch normalization through the graph, parameter save/restore, and audio transitions. The current DSP is a smoothed VCA model; it still requires manual/schematic verification against the module.
   - Commits: runtime/graph/panel integration fa8ea3195f20b824b0a467d4b35ec2a72aafb273; panel styling and momentary interaction 76dd9be2f2f29a633e5c472377f9ba3419587bfc; runtime tests f95c2ef9830355bec5e29002db0f2fe63cbf26b8.
-- [ ] No workflow has been triggered. The five-module batch gate remains in force.
-- Next: complete the Mutes validation hooks and integrate CV Thing into the live engine and rack UI; then revalidate BF-22 and Crush Delay V3.
+- **CV Thing — live rack integration in progress:**
+  - [x] Added DSP to page and AudioWorklet loading; created per-instance state and an eight-channel processor in the shared sample engine.
+  - [x] Registered eight CV inputs and eight gate inputs with explicit signal types. Added a dedicated compact 6 HP-style faceplate with global MIDI channel/threshold and eight independently configurable mapping rows (CC, Note, Program Change, Clock, Start/Stop; CC and base-note values).
+  - [x] Converted DSP events into MIDI 1.0 status/data messages and routed them through the existing MQ queue, native NAT.midiOutBatch bridge and existing Web MIDI outputs. No separate MIDI output path was introduced.
+  - [x] Added cv_thing_runtime_integration.test.cjs for DSP loading, state, dispatch, 16 typed input endpoints, MIDI event routing, UI controls and inline engine syntax. Unit and integration tests are authored, not executed.
+  - [ ] Verify one-byte real-time MIDI message framing end-to-end (the current shared queue transports fixed three-byte tuples), event-rate behavior, mapping persistence, and physical MIDI reception. This is not yet device-validated.
+  - Commits: engine/graph/panel/MIDI integration 8b0664189c27a0ceea75fa8f22025b6234abebcb; faceplate refinements fa2ae89e2f0a73e4a968e18d27f832c9d27fa2f9 and 89cb684accc7a7f72f14211f76592f4f7a332ee5; runtime state e818485e0d9162460182d6aadabeb846dce734c1; runtime tests d0636148ee7d7e862440c65750fdd53fe0e41244.
+- **BF-22 / Crush Delay V3 — revalidation:**
+  - [x] Reconciled BF-22's live graph descriptor with its real two-channel DSP and panel endpoints: inA/inB, six CV inputs, outA/outB. The old live descriptor exposed generic in/cv1/cv2/resCV/out names that did not match the module's actual jacks, which could make patch connections fail. The corrected descriptor preserves existing audio/CV compatibility for the two audio inputs.
+  - [x] Confirmed Crush Delay V3's live descriptor, panel jack IDs and DSP dispatch agree: IN, RETURN, five CV controls, crush gate, OUT and SEND.
+  - [x] Existing BF-22 and Crush Delay V3 DSP/graph test files are present; the existing BF-22 graph test describes the corrected ten-port topology, and Crush Delay graph tests cover its ten endpoints. They still need execution against the current branch.
+  - [ ] Add current-index runtime assertions and run all module DSP/graph/integration tests, then inspect workflow output and APK artifacts.
+- [ ] No workflow has been triggered. The five-module batch gate remains in force until all module tests and runtime checks are ready.
+- Next: add combined current-source integration tests for all five modules, audit MIDI real-time byte framing and save/restore, then launch CI once the batch is ready.
