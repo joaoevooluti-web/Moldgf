@@ -12,8 +12,9 @@ test("external clock advances the eight-step sequencer and emits a trigger on ac
 
 test("OFF steps advance without triggering or updating sample hold",()=>{
  const s=Sampling.createState(),p={...base,steps:[2,1,2,2,2,2,2,2]};
- Sampling.process({...inputs,sync:5,raw:2},p,s,48000,1/48000);
- const off=Sampling.process({...inputs,sync:0,raw:9},p,s,48000,1/48000);
+ const off=Sampling.process({...inputs,sync:5,raw:2},p,s,48000,1/48000);
+ assert.equal(off.step,1);assert.equal(off.trigger,0);assert.equal(off.sampled,0);
+ Sampling.process({...inputs,sync:0,raw:9},p,s,48000,1/48000);
  const next=Sampling.process({...inputs,sync:5,raw:9},p,s,48000,1/48000);
  assert.equal(next.step,2);assert.equal(next.sampled,9);
 });
