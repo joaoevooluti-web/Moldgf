@@ -20,11 +20,16 @@
     for (let i = 0; i < 8; i++) {
       const cfg = maps[i] || {};
       const mode = clamp(Math.round(finite(cfg.mode, MODES.CC)), 0, 4);
-      const raw = finite(x["cv" + (i + 1)], 0);
+      const cvInput = x["cv" + (i + 1)];
+      const gateInput = x["gate" + (i + 1)];
+      // An unpatched input must be silent: do not emit startup CC/program/transport events.
+      if (cvInput == null && gateInput == null) continue;
+      const raw = finite(cvInput, 0);
       const normalized = clamp((raw + 5) / 10, 0, 1);
       const value = clamp(Math.round(normalized * 127), 0, 127);
       const prev = s.previous[i];
       if (mode === MODES.CC) {
+        if (cvInput == null) continue;
         const cc = clamp(Math.round(finite(cfg.cc, i)), 0, 127);
         if (prev === null || Math.abs(normalized - prev) >= threshold) {
           events.push({ type: "cc", channel: channels, controller: cc, value, input: i });
@@ -33,24 +38,25 @@
       } else if (mode === MODES.NOTE) {
         const base = clamp(Math.round(finite(cfg.note, 60)), 0, 127);
         const note = clamp(base + Math.round(raw * finite(cfg.octaveScale, 12)), 0, 127);
-        const gate = finite(x["gate" + (i + 1)], 0) > 1;
+        const gate = finite(gateInput, 0) > 1;
         const wasGate = s.clockHigh[i];
         if (gate && !wasGate) events.push({ type: "noteOn", channel: channels, note, velocity: clamp(Math.round(finite(cfg.velocity, 100)), 1, 127), input: i });
         if (!gate && wasGate) events.push({ type: "noteOff", channel: channels, note: prev === null ? note : prev, velocity: 0, input: i });
         s.clockHigh[i] = gate;
         s.previous[i] = note;
       } else if (mode === MODES.PROGRAM) {
+        if (cvInput == null) continue;
         const program = clamp(Math.round(normalized * 127), 0, 127);
         if (prev === null || Math.abs(normalized - prev) >= threshold) {
           events.push({ type: "programChange", channel: channels, program, input: i });
           s.previous[i] = normalized;
         }
       } else if (mode === MODES.CLOCK) {
-        const high = finite(x["gate" + (i + 1)], raw) > 1;
+        const high = finite(gateInput, raw) > 1;
         if (high && !s.clockHigh[i]) events.push({ type: "clock", input: i });
         s.clockHigh[i] = high;
       } else {
-        const run = finite(x["gate" + (i + 1)], raw) > 1;
+        const run = finite(gateInput, raw) > 1;
         if (s.previous[i] === null || run !== !!s.previous[i]) {
           events.push({ type: run ? "start" : "stop", input: i });
           s.previous[i] = run ? 1 : 0;
