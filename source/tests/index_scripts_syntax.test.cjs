@@ -52,12 +52,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "octaves_dsp.js",
     "iroi_dsp.js",
     "bandit_dsp.js",
-    "hexmix_dsp.js"
+    "hexmix_dsp.js",
+    "hexpander_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -67,10 +68,10 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 33, "expected 33 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 33, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 33, "expected 33 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 33, "graph descriptor types must be unique");
+  assert.equal(pageAssets.length, 34, "expected 34 module DSP assets in the page");
+  assert.equal(new Set(pageAssets).size, 34, "DSP page assets must be unique");
+  assert.equal(descriptors.length, 34, "expected 34 explicit graph descriptors");
+  assert.equal(new Set(descriptors).size, 34, "graph descriptor types must be unique");
 });
 
 
@@ -207,4 +208,14 @@ test("Hexmix panel exposes six channel strips, VCA host normalization and stereo
   assert.match(html,/MoldgfHexmixDSP\.process/);
   assert.match(html,/byT\.hexmixvca/);
   assert.match(html,/A=byT\.hexmix;for/);
+});
+
+test("Hexpander panel exposes three pre/post aux buses, stereo returns, PFL and direct outs",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("hexpander:{n:"),html.indexOf("hexmix:{n:"));
+  for(const label of ["HEXPANDER","28 HP","HEXMIX HOST","AUX 1","AUX 2","AUX 3","PRE OUT","POST OUT","STEREO RETURN","RETURN L","RETURN R","PFL","DIRECT OUT","BALANCED L","BALANCED R","HEADPHONE L","HEADPHONE R"])assert.ok(panel.includes(label),"missing Hexpander control "+label);
+  assert.match(html,/MoldgfHexpanderDSP\.process/);
+  assert.match(html,/byT\.hexmix/);
+  assert.match(html,/A=byT\.hexpander;for/);
 });
