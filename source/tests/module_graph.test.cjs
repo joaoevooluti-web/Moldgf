@@ -119,21 +119,23 @@ test("graph reports missing endpoints, unknown modules and duplicate cables", ()
 });
 
 test("BF-22 runtime jack IDs match the typed graph descriptor used by manual patching", () => {
-  const registry = createRegistry([{
-    type: "bf22",
+  const registry = createRegistry([
+    { type: "source", ports: [{ id: "out", direction: "output", signal: "cv" }] },
+    { type: "bf22",
     ports: [
       { id: "in", direction: "input", signal: "audio", accepts: ["audio", "cv"] },
       { id: "cv1", direction: "input", signal: "cv" },
       { id: "cv2", direction: "input", signal: "cv" },
       { id: "resCV", direction: "input", signal: "cv" },
       { id: "out", direction: "output", signal: "audio" }
-    ]
-  }]);
+    ] },
+    { type: "sink", ports: [{ id: "in", direction: "input", signal: "audio", accepts: ["audio", "cv"] }] }
+  ]);
   const module = { id: "bf22-1", t: "bf22" };
   for (const port of ["cv1", "cv2", "resCV"]) {
     assert.equal(canConnect(registry, { id: "source", t: "source" }, "out",
       { id: module.id, t: module.t }, port).ok, true);
   }
   assert.equal(canConnect(registry, module, "out",
-    { id: "sink", t: "sink" }, "in").code, "unknown-module");
+    { id: "sink", t: "sink" }, "in").ok, true);
 });
