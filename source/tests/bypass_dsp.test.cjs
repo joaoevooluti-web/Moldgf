@@ -31,7 +31,7 @@ test("soft bypass preserves FX tails while restoring the dry signal", () => {
 
 test("right input normals to left and send outputs follow the smoothed active state", () => {
   const state = Bypass.createState(true);
-  const result = Bypass.process(params(), inputs({ inL: 4, inR: null }), state, 0.2);
+  const result = Bypass.process(params({ active: true }), inputs({ inL: 4, inR: null }), state, 0.2);
   assert.equal(result.sendLeft, 4);
   assert.equal(result.sendRight, 4);
   assert.equal(result.outRight, 5);
@@ -73,7 +73,7 @@ test("slew time ramps the send state instead of switching abruptly", () => {
 });
 
 test("optional saturation soft-limits the stereo output", () => {
-  const result = Bypass.process(params({ saturation: true }), inputs({ fxL: 100, fxR: -100 }), Bypass.createState(true), 0.2);
+  const result = Bypass.process(params({ active: true, saturation: true }), inputs({ fxL: 100, fxR: -100 }), Bypass.createState(false), 0.2);
   assert.ok(result.outLeft < 10 && result.outLeft > 9.9);
   assert.ok(result.outRight > -10 && result.outRight < -9.9);
 });
