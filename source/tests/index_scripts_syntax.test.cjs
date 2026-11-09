@@ -46,12 +46,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "spring_reverb_dsp.js",
     "kickall_dsp.js",
     "noise_plethora_dsp.js",
-    "muxlicer_dsp.js"
+    "muxlicer_dsp.js",
+    "random8_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -61,9 +62,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 27, "expected 27 module DSP assets in the page");
+  assert.equal(pageAssets.length, 28, "expected 28 module DSP assets in the page");
   assert.equal(new Set(pageAssets).size, 27, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 27, "expected 27 explicit graph descriptors");
+  assert.equal(descriptors.length, 28, "expected 28 explicit graph descriptors");
   assert.equal(new Set(descriptors).size, 27, "graph descriptor types must be unique");
 });
 
@@ -116,4 +117,20 @@ test("Muxlicer engine preserves zero-based state while displaying one-based step
   assert.ok(!html.includes("m.r.step=o.step"));
   assert.ok(html.includes("m.r.step===n-1"));
   assert.ok(html.includes("STEP '+((m.r.step||0)+1)"));
+});
+
+test("Random8 panel exposes eight hardware-style channels and the documented menu functions",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("random8:{n:"),html.indexOf("atte:{n:"));
+  assert.match(panel,/RANDOM8/);
+  assert.match(panel,/8 HP/);
+  assert.match(panel,/trigger/);
+  assert.match(panel,/CV OUT/);
+  assert.match(panel,/LOOP LENGTH/);
+  assert.match(panel,/PROBABILITY/);
+  assert.match(panel,/TRIGGER DIV/);
+  assert.match(panel,/SLIDE/);
+  assert.match(panel,/QUANTIZER/);
+  assert.match(panel,/RANDOM TYPE/);
 });
