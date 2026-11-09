@@ -43,6 +43,7 @@ if [ ! -f "$USER_DATA_HEADER" ]; then
   exit 1
 fi
 sed -i 's/^#ifdef TEST[[:space:]]*$/#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)/' "$USER_DATA_HEADER"
+sed -i '/#include "stmlib\/stmlib.h"/a #include <stdio.h>' "$USER_DATA_HEADER"
 USER_PATCHED="$(grep -Fc '#if defined(TEST) || defined(__EMSCRIPTEN__) || !defined(__arm__)' "$USER_DATA_HEADER" || true)"
 say "Plaits UserData portable branches patched: $USER_PATCHED"
 if [ "$USER_PATCHED" -lt 2 ]; then
