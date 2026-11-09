@@ -17,6 +17,10 @@ test("note CV follows one volt per octave with configurable unipolar and bipolar
  assert.equal(MIDIThing.noteVoltage(36,2),2);assert.equal(MIDIThing.noteVoltage(72,1),0);
  assert.equal(MIDIThing.noteVoltage(127,0),5);
 });
+test("numeric port mode values from the rack selector resolve to the documented function map",()=>{
+ const s=MIDIThing.createState(),p=params({ports:[port(1)]});
+ send(s,p,0x90,72,100);assert.equal(tick(p,s)[0],5);
+});
 test("note-on allocates a voice and maps pitch to the configured port",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("NOTE CV")]});
  send(s,p,0x90,72,100);const out=tick(p,s);
