@@ -317,3 +317,20 @@ The five-module Phase 7 batch is now implemented on `feature/befaco-modules`. Th
 - The Phase 7 module-specific tests now total **100 DSP tests + 25 graph tests**: Hexmix 18+5, Hexpander 15+5, Pony VCF 17+5, Stereo Strip 19+5, MIDI Thing V2 31+5. The repository-wide Node suite reported 554 tests in run #29.
 - Workflow #29 failed one assertion: the second voice's gate was expected to be 5 V while its configured range was 0–10 V. The expectation was corrected to 10 V in `0383e7ceccb1e1d07e8e03ba9aa44c11dc3e52c3`. No APK was produced because the Node failure stopped the build steps.
 - [~] Workflow #30 (`42631339976`) is in progress on `d8fc256fed489c490d6380e9301ee029966739f0`; Node and WASM steps are success, Gradle APK assembly is running. The current branch HEAD `dce4767851246bc287adead2f1f364d285b54152` adds `gradle testDebugUnitTest --no-daemon`; run #31 must validate that step and the current source before CI validation is complete.
+
+
+## Phase 7 CI validation — workflow #30
+
+<badge>Success</badge>
+
+- Workflow: https://github.com/joaoevooluti-web/Moldgf/actions/runs/42631339976
+- Validated source snapshot: `d8fc256fed489c490d6380e9301ee029966739f0`.
+- Node suite: **554 tests passed, 0 failed**.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both wrappers passed the final base64/magic check and `WebAssembly.compile`.
+- Beads native selftest: passed all media/mode cases, Synth energy and 44.1 kHz host + 24 kHz media resampling.
+- Gradle: `assembleDebug` — `BUILD SUCCESSFUL`.
+- APK artifact: `eurorack-study-debug-apk`, ID `13680782195`, archive size 1,656,971 bytes. Inner `app-debug.apk`: 1,691,305 bytes.
+- APK SHA-256: `4687575d039d97e81f5edce09f6048e0ac59f580039bc380a8ec0349a17b6a0`.
+- APK inspection confirms the five Phase 7 DSP assets, all 37 DSP assets, `index.html`, Plaits WASM and Beads WASM are packaged.
+- The latest branch commit after the validated snapshot only adds the Android `testDebugUnitTest` step to the workflow. Workflow #31 will validate that additional Kotlin unit-test gate along with the same full build.
+- Physical Android MIDI, touch and audio verification remain pending. `main` remains at `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
