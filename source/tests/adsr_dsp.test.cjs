@@ -8,6 +8,7 @@ const inputs = { gate: 0, trigger: 0, attackCV: 0, decayCV: 0, sustainCV: 0, rel
 test("stage time controls map exponentially between minimum and ten seconds", () => {
   assert.equal(ADSR.stageTime(0, 0, 0.003), 0.003);
   assert.ok(Math.abs(ADSR.stageTime(1, 0, 0.003) - 10) < 1e-9);
+  assert.ok(Math.abs(ADSR.stageTime(0, -10, 0.003, 0.0002) - 0.0002) < 1e-12);
 });
 
 test("attack rises to ten volts and exposes the attack gate", () => {
