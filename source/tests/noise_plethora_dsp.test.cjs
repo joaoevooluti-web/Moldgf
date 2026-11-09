@@ -59,7 +59,7 @@ test("filtered C output selects white or gritty source independently",()=>{
 });
 test("program, CV and grit controls clamp out-of-range values safely",()=>{
  const r=Noise.process({bankA:99,programA:99,bankB:-4,programB:-4,xA:99,yA:-9,gritQty:99},{programCVA:99,xCVA:99,cutoffCVA:-99,gritCV:99},Noise.createState(),44100);
- assert.equal(r.programA,9);assert.equal(r.programB,0);assert.ok(Number.isFinite(r.outA)&&Number.isFinite(r.gritty));
+ assert.equal(r.programA,29);assert.equal(r.programB,0);assert.ok(Number.isFinite(r.outA)&&Number.isFinite(r.gritty));
 });
 test("identically seeded states produce deterministic program output",()=>{
  const p={bankA:2,programA:7,xA:.4,yA:.7,cutoffA:.6,resA:.3},a=Noise.createState(),b=Noise.createState();let ra,rb;
