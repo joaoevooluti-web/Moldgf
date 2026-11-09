@@ -22,7 +22,7 @@
 
   function createState(sampleRate) {
     const voices = Array.from({ length: PORTS }, () => ({
-      active: 0, gate: 0, note: 60, channel: 0, velocity: 0, age: 0,
+      active: 0, gate: 0, note: 60, frequency: 440, channel: 0, velocity: 0, age: 0,
       pendingRelease: 0, envelope: 0, stage: 0, releaseStart: 0,
       currentCV: new Float32Array(PORTS), phase: 0
     }));
@@ -51,6 +51,7 @@
       lastNote: -1,
       lastVelocity: 0,
       lastMessage: "NO MIDI",
+      glideTimeCache: -1, glideModeCache: -1, glideCoefCache: 1,
       peak: 0,
       droppedNotes: 0
     };
@@ -96,6 +97,7 @@
     v.active = 1;
     v.gate = 1;
     v.note = note;
+    v.frequency = 440 * Math.pow(2, (note - 69) / 12);
     v.channel = channel;
     v.velocity = velocity / 127;
     v.age = ++state.age;
@@ -265,7 +267,11 @@
     if (state.sampleRate !== sr) state.sampleRate = sr;
     const ports = Array.isArray(params.ports) ? params.ports : [];
     const glideTime = Math.max(0, finite(params.glideTime, 0.03)) / 1000;
-    const glideCoef = glideTime <= 0 ? 1 : (params.glideMode === 1 ? 1 - Math.exp(-1 / (glideTime * sr)) : 1 / Math.max(1, glideTime * sr));
+    if (state.glideTimeCache !== glideTime || state.glideModeCache !== params.glideMode || state.sampleRate !== sr) {
+      state.glideTimeCache = glideTime; state.glideModeCache = params.glideMode;
+      state.glideCoefCache = glideTime <= 0 ? 1 : (params.glideMode === 1 ? 1 - Math.exp(-1 / (glideTime * sr)) : 1 / Math.max(1, glideTime * sr));
+    }
+    const glideCoef = state.glideCoefCache;
     const lfoRate = clamp(finite(params.lfoRate, 1), 0.01, 40);
     state.lfoPhase += lfoRate / sr;
     if (state.lfoPhase >= 1) state.lfoPhase -= Math.floor(state.lfoPhase);
@@ -278,8 +284,7 @@
         envelopeStep(voice, params, sr);
         if (voice.active) {
           active++;
-          const hz = 440 * Math.pow(2, (voice.note - 69) / 12);
-          voice.phase += hz / sr;
+          voice.phase += voice.frequency / sr;
           if (voice.phase >= 1) voice.phase -= Math.floor(voice.phase);
         }
       }
