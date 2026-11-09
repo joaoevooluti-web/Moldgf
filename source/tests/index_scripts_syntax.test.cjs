@@ -48,12 +48,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "noise_plethora_dsp.js",
     "muxlicer_dsp.js",
     "random8_dsp.js",
-    "mex_dsp.js"
+    "mex_dsp.js",
+    "octaves_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -63,9 +64,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 29, "expected 29 module DSP assets in the page");
+  assert.equal(pageAssets.length, 30, "expected 30 module DSP assets in the page");
   assert.equal(new Set(pageAssets).size, 27, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 29, "expected 29 explicit graph descriptors");
+  assert.equal(descriptors.length, 30, "expected 30 explicit graph descriptors");
   assert.equal(new Set(descriptors).size, 27, "graph descriptor types must be unique");
 });
 
@@ -154,4 +155,21 @@ test("MEX panel exposes the eight three-position gate switches and Muxlicer host
   assert.match(panel,/GATE OUT/);
   assert.match(html,/byT\.muxlicer\[\(P\.host\|0\)-1\]/);
   assert.match(html,/gateInput===null\?clock:gateInput/);
+});
+
+test("Octaves VCO panel exposes six octave VCAs, CV jacks and cascade mix outputs",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("octaves:{n:"),html.indexOf("mex:{n:"));
+  assert.match(panel,/OCTAVES VCO/);
+  assert.match(panel,/12 HP/);
+  assert.match(panel,/TUNE RANGE/);
+  assert.match(panel,/BASE OCTAVE/);
+  assert.match(panel,/PULSE WIDTH/);
+  assert.match(panel,/HARD SYNC/);
+  assert.match(panel,/PITCH CV 1/);
+  assert.match(panel,/LEVEL CV/);
+  assert.match(panel,/CASCADED MULTI-MIX OUTPUTS/);
+  assert.match(html,/MoldgfOctavesDSP\.process/);
+  assert.match(html,/SU\[K\(m,'out6'\)\]/);
 });
