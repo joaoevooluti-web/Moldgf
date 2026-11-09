@@ -7,7 +7,7 @@
  const GATE=2.5;
  const clamp=(v,a,b,d=0)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:d));
  const finite=v=>Number.isFinite(v)?v:0;
- function createState(){return{step:0,playing:false,oneShot:false,clockHigh:false,resetHigh:false,clockPhase:0,clockOutPhase:0,stepPhase:0,stepDuration:.5,timeSinceClock:0,dividerCount:0,eocPulse:0,clockOutPulse:0,gates:new Float32Array(8),stepOutputs:new Float32Array(8),commonOutput:0,lastClockInterval:.5,activeGateMode:0}}
+ function createState(){return{step:0,playing:false,oneShot:false,clockHigh:false,clockConnected:false,hasClock:false,resetHigh:false,clockPhase:0,clockOutPhase:0,stepPhase:0,stepDuration:.5,timeSinceClock:0,dividerCount:0,eocPulse:0,clockOutPulse:0,gates:new Float32Array(8),stepOutputs:new Float32Array(8),commonOutput:0,lastClockInterval:.5,activeGateMode:0}}
  function cvRangeValue(step,range){
   const v=clamp(step,0,1,0),mode=Math.round(clamp(range,0,2,1));
   return mode===0?v*5:mode===2?(v*2-1)*5:v*10;
@@ -34,15 +34,16 @@
   s.eocPulse=0;s.clockOutPulse=0;
   const reset=finite(i.reset)>=GATE,resetEdge=reset&&!s.resetHigh;s.resetHigh=reset;
   if(resetEdge){if(s.playing){s.step=0;s.stepPhase=0;s.oneShot=false}else{s.step=0;s.stepPhase=0;s.playing=true;s.oneShot=true}}
-  const clockConnected=i.clockIn!==null&&i.clockIn!==undefined,clockHigh=finite(i.clockIn)>=GATE,clockFall=clockConnected&&s.clockHigh&&!clockHigh;
-  s.clockHigh=clockHigh;
+  const clockConnected=i.clockIn!==null&&i.clockIn!==undefined,clockHigh=finite(i.clockIn)>=GATE;
+  if(clockConnected!==s.clockConnected){s.clockConnected=clockConnected;s.clockHigh=clockHigh;s.timeSinceClock=0;s.hasClock=false}
+  const clockFall=clockConnected&&s.clockHigh&&!clockHigh;s.clockHigh=clockHigh;
   const ratio=speedRatio(p.speed),bpm=clamp(p.bpm,30,300,120);
   const internalHz=bpm/60*ratio;
   let tickCount=0;
   s.timeSinceClock+=dt;
   if(clockConnected){
    if(clockFall&&s.playing){
-    const period=s.timeSinceClock>dt?s.timeSinceClock:s.lastClockInterval;s.timeSinceClock=0;s.lastClockInterval=period;
+    const period=s.hasClock&&s.timeSinceClock>dt?s.timeSinceClock:s.lastClockInterval;s.timeSinceClock=0;s.lastClockInterval=period;s.hasClock=true;
     if(ratio>=1){tickCount=Math.max(1,Math.round(ratio));s.stepDuration=period/ratio}
     else{const divisor=Math.max(1,Math.round(1/ratio));s.dividerCount++;if(s.dividerCount>=divisor){tickCount=1;s.dividerCount=0;s.stepDuration=period*divisor}}
     for(let n=0;n<tickCount;n++){advanceStep(s,clamp(p.address+finite(i.addressCV)/10,0,1,0));s.stepPhase=0}
@@ -67,7 +68,7 @@
   let commonOutput=0;
   if(switchMode===0){
    const stepInput=i["stepIn"+(s.step+1)];
-   const raw=stepInput!==null&&stepInput!==undefined?finite(stepInput):allIn!==null?allIn:cvRangeValue(p["level"+(s.step+1)],p.cvRange);
+   const raw=stepInput!==null&&stepInput!==undefined?finite(stepInput):allIn!==null?allIn:cvRangeValue(1,p.cvRange);
    commonOutput=clamp(raw*clamp(p["level"+(s.step+1)],0,1,1),-10,10,0);
    for(let n=0;n<8;n++)s.stepOutputs[n]=0;
   }else{
