@@ -60,3 +60,28 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   assert.equal(descriptors.length, 21, "expected 21 explicit graph descriptors");
   assert.equal(new Set(descriptors).size, 21, "graph descriptor types must be unique");
 });
+
+
+test("hardware-faithful panels expose the correct Atte, A*B+C and Voltio controls", () => {
+  const htmlPath = path.join(__dirname, "../app/src/main/assets/index.html");
+  const html = fs.readFileSync(htmlPath, "utf8");
+  const atte = html.slice(html.indexOf("atte:{n:"), html.indexOf("dualAt:{n:"));
+  const currentAbc = html.slice(html.indexOf("axbc:{n:"), html.indexOf("abc:{n:"));
+  const legacyAbc = html.slice(html.indexOf("abc:{n:"), html.indexOf("bypass:{n:"));
+  const voltio = html.slice(html.indexOf("voltio:{n:"), html.indexOf("axbc:{n:"));
+  assert.match(atte, /ATTE/);
+  assert.match(atte, /CASCADED INPUTS/);
+  assert.match(atte, /\+10 V NORMAL/);
+  assert.match(atte, /POLARITY',\['−','\+'\]/);
+  assert.doesNotMatch(atte, /normalledVoltage/);
+  assert.match(currentAbc, /CURRENT REVISION/);
+  assert.match(currentAbc, /CHANNEL /);
+  assert.match(currentAbc, /MULT · A1/);
+  assert.match(currentAbc, /B AND C INPUTS NORMALLED TO \+5 V/);
+  assert.match(legacyAbc, /LEGACY REVISION/);
+  assert.match(legacyAbc, /C normalizado para \+10 V/);
+  assert.match(voltio, /SK\('octave'/);
+  assert.match(voltio, /SK\('semitone'/);
+  assert.match(voltio, /SUM IN/);
+  assert.match(voltio, /DMM TEST/);
+});
