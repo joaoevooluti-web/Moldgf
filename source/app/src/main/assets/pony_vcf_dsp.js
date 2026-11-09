@@ -16,7 +16,7 @@
   const level=p.inputLevel||[1,1,1],mix=in1*clamp(level[0],0,1,1)+in2*clamp(level[1],0,1,1)+in3*clamp(level[2],0,1,1);
   const peak=Math.abs(mix),cv1=i.cv1===null||i.cv1===undefined?0:finite(i.cv1),cv2=i.cv2===null||i.cv2===undefined?0:finite(i.cv2);
   const cv1Att=clamp(p.cv1Att,0,1,0),base=20*Math.pow(2,clamp(p.cutoff,0,1,.6)*10);
-  const cutoff=clamp(base*Math.pow(2,(cv1/10)*cv1Att+cv2/10),10,sr*.45,1000);
+  const cutoff=clamp(base*Math.pow(2,cv1*cv1Att+cv2),10,sr*.45,1000);
   const resonance=clamp(p.resonance+(i.resCV===null||i.resCV===undefined?0:finite(i.resCV)/10),0,1,0);
   const g=cutoff===s.lastCutoff?s.g:Math.tan(Math.PI*cutoff/sr)/(1+Math.tan(Math.PI*cutoff/sr));
   s.g=g;s.lastCutoff=cutoff;
