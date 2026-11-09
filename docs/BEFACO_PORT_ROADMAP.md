@@ -345,6 +345,15 @@ The five-module Phase 7 batch is now implemented on `feature/befaco-modules`. Th
 - This proves CI build/package contents only. No APK installation, Android MIDI hardware, touch, or audio-output test was performed. The run predates the Gradle/JUnit test step added in `dce4767851246bc287adead2f1f364d285b54152`; run #31 is required for the nine MIDI decoder unit tests.
 
 
+## Regression report — manual patch cables and module panel fidelity
+
+- User reported that manual patching by dragging from one jack to another is rejected, and that module panels look generic rather than matching the physical Befaco references. Treat this as a release-blocking UI/graph regression. Pause additional module expansion until the rack's patch interaction and panel fidelity are restored.
+- Root cause found in the live rack adapter: rack instances are stored as `{ id, t, s, ... }`, but `MoldgfModuleGraph.canConnect()` previously read only `.type`. The manual jack path passed the live instance, so validation received an undefined module type and returned `unknown-module`.
+- Fixed `canConnect()` to normalize either the canonical `.type` field or the rack runtime's `.t` field. Added a regression test using live rack-shaped instances to prove output-to-input validation succeeds. Commits: `8ae3c0db7e1c2d9d5cb0c95fe5b6fdd138cccc34` (graph fix), `74bf8e6593116fd0ffc9c21a83305895d10b352d` (test).
+- No workflow, APK build, or changes to `main` were made for this fix. The new regression test has been authored but not yet executed in CI.
+- Visual audit confirms the current Random8, MEX, Octaves, IROI and Bandit implementations use simplified horizontal CSS cards (e.g. 340px Random8, 190px MEX, 360px Octaves, 440px IROI and 270px Bandit) rather than convincing Eurorack faceplates with the documented HP proportions, vertical jack/control layout, original control groupings and hardware-style labels. Having dedicated CSS classes is not sufficient to claim hardware-faithful panels.
+- Next corrective work: (1) validate and test manual cable drag, tap-to-connect, reconnect/replace, cable rendering and graph-to-DSP signal delivery; (2) redesign the five panels from official product photos/manuals with correct vertical HP proportions, jack locations, knobs/switches/LEDs and module-specific visual hierarchy; (3) add DOM/UI regression tests and verify panel geometry at phone and desktop widths. Do not resume module expansion or dispatch CI until these regressions are resolved and reviewed.
+
 ## Phase 8 — next five Befaco modules selected (implementation not yet started)
 
 The official Befaco catalogue lists these five products, and the current rack registry / DSP asset list does not contain them. They form the next batch after the Phase 7 validation gate:
