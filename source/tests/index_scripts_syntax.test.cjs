@@ -40,12 +40,18 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "mudi_dsp.js",
     "burst_dsp.js",
     "sampling_modulator_dsp.js",
-    "chopping_kinky_dsp.js"
+    "chopping_kinky_dsp.js",
+    "even_vco_dsp.js",
+    "rampage_dsp.js",
+    "spring_reverb_dsp.js",
+    "kickall_dsp.js",
+    "noise_plethora_dsp.js",
+    "muxlicer_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -55,10 +61,10 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 21, "expected 21 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 21, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 21, "expected 21 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 21, "graph descriptor types must be unique");
+  assert.equal(pageAssets.length, 27, "expected 27 module DSP assets in the page");
+  assert.equal(new Set(pageAssets).size, 27, "DSP page assets must be unique");
+  assert.equal(descriptors.length, 27, "expected 27 explicit graph descriptors");
+  assert.equal(new Set(descriptors).size, 27, "graph descriptor types must be unique");
 });
 
 
@@ -80,9 +86,26 @@ test("hardware-faithful panels expose the correct Atte, A*B+C and Voltio control
   assert.match(currentAbc, /B AND C INPUTS NORMALLED TO \+5 V/);
   assert.match(legacyAbc, /C NORMALLED \+10 V/);
   assert.match(legacyAbc, /OUT1 → OUT2 MIX/);
-  assert.match(legacyAbc, /B1 ATTENUVERTER/);
+  assert.match(legacyAbc, /B'\\+ch\\+' ATTENUVERTER/);
   assert.match(voltio, /SK\('octave'/);
   assert.match(voltio, /SK\('semitone'/);
   assert.match(voltio, /SUM IN/);
   assert.match(voltio, /DMM TEST/);
+});
+
+test("five-module Befaco batch exposes dedicated hardware-inspired panels and live controls",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=(name,next)=>html.slice(html.indexOf(name+" :{n:"),html.indexOf(next+" :{n:"));
+  const rampage=html.slice(html.indexOf("rampage:{n:"),html.indexOf("springReverb:{n:"));
+  const spring=html.slice(html.indexOf("springReverb:{n:"),html.indexOf("kickall:{n:"));
+  const kickall=html.slice(html.indexOf("kickall:{n:"),html.indexOf("noisePlethora:{n:"));
+  const noise=html.slice(html.indexOf("noisePlethora:{n:"),html.indexOf("muxlicer:{n:"));
+  const mux=html.slice(html.indexOf("muxlicer:{n:"),html.indexOf("mid:{n:"));
+  assert.match(rampage,/RISE \/ FALL|RISE \/ FALL INTEGRATOR|RISE \/ FALL INTEGRATORS/);
+  assert.match(rampage,/TRIG/);assert.match(rampage,/EOC/);assert.match(rampage,/BALANCE/);
+  assert.match(spring,/SPRING REVERB/);assert.match(spring,/WET/);assert.match(spring,/DRY \/ WET/);assert.match(spring,/HPF/);
+  assert.match(kickall,/KICKALL/);assert.match(kickall,/SHAPE/);assert.match(kickall,/TUNE CV/);assert.match(kickall,/DECAY/);
+  assert.match(noise,/NOISE PLETHORA/);assert.match(noise,/GENERATOR C/);assert.match(noise,/GRITTY/);assert.match(noise,/FILTERED/);
+  assert.match(mux,/MUXLICER/);assert.match(mux,/mux-in-group/);assert.match(mux,/mux-out-group/);assert.match(mux,/ALL GATES/);assert.match(mux,/TAP TEMPO/);
 });
