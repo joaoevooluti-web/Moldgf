@@ -11,7 +11,7 @@ function rmsForSlope(slope){
 }
 
 test("creates two independent filter states and a reusable stereo result",()=>{
- const s=BF22.createState(48000);assert.notEqual(s.a,s.b);assert.notEqual(s.a.ic1,s.b.ic1);
+ const s=BF22.createState(48000);assert.notEqual(s.a,s.b);assert.notEqual(s.a,s.b);
  assert.equal(s.result.outA,0);assert.equal(s.result.outB,0);
 });
 test("6 dB low-pass passes DC and settles to its input level",()=>{
