@@ -3,6 +3,7 @@ Rack modular de estudo: Pamela's PRO Workout (+ Axon-2, PPEXP1/2), Intellijel Sc
 
 - Interface e motor: `app/src/main/assets/index.html` (motor em AudioWorklet, thread de áudio própria).
 - **Befaco Random8 (branch `feature/befaco-modules`, próximo lote em andamento):** oito saídas CV independentes de 0–10 V, triggers normalizados em cascata, looping/evolução/lock, quantização, distribuição, probabilidade, divisor de trigger, slide e offset. A integração e os testes automatizados estão sendo preparados; a validação Node/CI/APK aguarda o fechamento dos cinco módulos do lote. Referência de comportamento: [manual e recursos oficiais Random8](https://www.befaco.org/random8/).
+- **Befaco MEX (branch `feature/befaco-modules`, próximo lote em andamento):** expansor de oito etapas para Muxlicer com modos PASS IN, NO GATES e ALL GATES por etapa, Gate In com normalização para Clock Out e seletor de host interno. DSP, painel e testes estão preparados; a cadeia traseira THRU ainda não foi modelada e a validação Node/CI aguarda os cinco módulos do lote.
 - **Polaris:** filtro multimodo de 4 estágios (26 tipos no MULTI + saídas LP/BP/HP), phaser, drive com clip, MULTI DISTORT, FM1 (1 V/oit) e FM2.
   Os coeficientes de cada tipo foram ajustados às curvas do PDF `polaris_frequency-responses` (erro ~0,3 dB); a ressonância de 90% do PDF corresponde a k=3,25.
 - **Audio Out:** única saída para o alto-falante. O Mixer só mistura (saídas L/R em jacks) e não toca sozinho: ligue `Mixer L/R → Audio Out L/R`.
