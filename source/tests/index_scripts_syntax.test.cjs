@@ -285,3 +285,19 @@ test("Crush Delay V3 panel exposes time, feedback, VCA, three crush modifiers an
   assert.match(html,/crush_delay_v3_dsp\.js/);
   assert.match(html,/A=byT\.crushDelayV3/);
 });
+
+test("manual jack patching uses live rack IDs, typed BF-22 ports and persists cable endpoints", () => {
+  const htmlPath = path.join(__dirname, "../app/src/main/assets/index.html");
+  const html = fs.readFileSync(htmlPath, "utf8");
+  const graphPath = path.join(__dirname, "../app/src/main/assets/module_graph.js");
+  const graph = fs.readFileSync(graphPath, "utf8");
+  assert.match(graph, /typeof module\.t === "string" \? module\.t/);
+  assert.match(html, /function endpointOfJack\(jackId\)/);
+  assert.match(html, /MoldgfModuleGraph\.canConnect\(PORT_REGISTRY,from\.module,from\.port,to\.module,to\.port\)/);
+  assert.match(html, /function connect\(x,y\)/);
+  assert.match(html, /cab\.push\(\{a,b\}\);rb\(\);return true/);
+  assert.match(html, /post\(\{t:'cab',cab:cab\.map\(c=>\[c\.a,c\.b\]\)\}\)/);
+  const descriptor = html.slice(html.indexOf("PORT_REGISTRY.register({type:'bf22'"), html.indexOf("PORT_REGISTRY.register({type:'midiThingV2'"));
+  for (const id of ["in", "cv1", "cv2", "resCV", "out"]) assert.ok(descriptor.includes("id:'" + id + "'"), "BF-22 descriptor missing " + id);
+  assert.doesNotMatch(descriptor, /id:'(?:inA|inB|outA|outB|cv1A|cv2A|resCVA|cv1B|cv2B|resCVB)'/);
+});
