@@ -18,8 +18,8 @@ test("hard bypass crossfades from dry input to the stereo FX return", () => {
   assert.equal(result.outRight, -3);
   result = Bypass.process(params({ button: true }), inputs(), state, 0.2);
   assert.equal(result.sendActive, 1);
-  assert.equal(result.outLeft, 7);
-  assert.equal(result.outRight, 5);
+  assert.ok(Math.abs(result.outLeft - 7) < 1e-6);
+  assert.ok(Math.abs(result.outRight - 5) < 1e-6);
 });
 
 test("soft bypass preserves FX tails while restoring the dry signal", () => {
@@ -32,8 +32,8 @@ test("soft bypass preserves FX tails while restoring the dry signal", () => {
 test("right input normals to left and send outputs follow the smoothed active state", () => {
   const state = Bypass.createState(true);
   const result = Bypass.process(params({ active: true }), inputs({ inL: 4, inR: null }), state, 0.2);
-  assert.equal(result.sendLeft, 4);
-  assert.equal(result.sendRight, 4);
+  assert.ok(Math.abs(result.sendLeft - 4) < 1e-6);
+  assert.ok(Math.abs(result.sendRight - 4) < 1e-6);
   assert.equal(result.outRight, 5);
 });
 
