@@ -64,13 +64,14 @@
  }
  function process(params,inputs,state,sampleRate){
   const p=params||{},i=inputs||{},s=state||createState(sampleRate),sr=clamp(sampleRate,8000,192000,s.sampleRate);
+  if(s.sampleRate!==sr){const fresh=createState(sr);s.sampleRate=sr;s.channels=fresh.channels;s.echoPos=0;s.syncCounter=0;s.syncPeriodSamples=0;s.modPhase=0;s.modHold=0;s.modChaos=0;s.modEnvelope=0;s.result=fresh.result;s.syncHigh=false;s.randomHigh=false}
   const left=finite(i.left),right=i.right===null||i.right===undefined?left:finite(i.right);
   const sync=finite(i.sync)>=1,random=finite(i.random)>=1;
   if(sync&&!s.syncHigh){if(s.syncCounter>0)s.syncPeriodSamples=s.syncCounter;s.syncCounter=0;s.modPhase=0}
   s.syncHigh=sync;s.syncCounter++;
   if(random&&!s.randomHigh)s.randomValue=rngNext(s)*2-1;
   s.randomHigh=random;
-  const modFreq=clamp(p.modFreq,.01,80,.2),oldPhase=s.modPhase;s.modPhase+=modFreq/sr;
+  const modFreq=clamp(p.modFreq,.01,80,.2);s.modPhase+=modFreq/sr;
   if(s.modPhase>=1){s.modPhase-=Math.floor(s.modPhase);s.modHold=rngNext(s)*2-1}
   const inputEnv=(Math.abs(left)+Math.abs(right))*.5;
   s.modEnvelope+=(inputEnv-s.modEnvelope)*.002;
