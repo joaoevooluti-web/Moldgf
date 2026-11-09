@@ -54,7 +54,7 @@ test("note-off releases the matching voice without releasing other notes",()=>{
  send(s,p,0x90,60,100);send(s,p,0x90,67,90);tick(p,s);
  assert.equal(s.outputs[0],10);assert.equal(s.outputs[1],10);
  send(s,p,0x80,60,0);tick(p,s);
- assert.equal(s.outputs[0],0);assert.equal(s.outputs[1],5);
+ assert.equal(s.outputs[0],0);assert.equal(s.outputs[1],10);
 });
 test("zero-velocity note-on is treated as note-off",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("GATE")]});
