@@ -78,8 +78,8 @@ test("Gate Mode three produces two retrigger pulses per step",()=>{
 });
 test("Gate Mode CV scales the knob and controls the gate pattern",()=>{
  const s=Mux.createState();s.playing=true;s.step=0;s.stepPhase=.1;
- const off=Mux.process({gateMode:1},{gateModeCV:0},s,48000);
- const on=Mux.process({gateMode:1},{gateModeCV:10},s,48000);
+ const off=Mux.process({gateMode:1/9},{gateModeCV:0},s,48000);
+ const on=Mux.process({gateMode:1/9},{gateModeCV:10},s,48000);
  assert.equal(off.gate1,0);assert.equal(on.gate1,10);
 });
 test("MUX mode selects the active input and applies its step fader",()=>{
