@@ -25,6 +25,9 @@
     const s = state || createState(params.active);
     if (!s.initialized) {
       s.active = !!params.active;
+      s.gateHigh = false;
+      s.buttonHigh = false;
+      s.sendActive = 0;
       s.initialized = true;
     }
     const gate = finite(inputs.launch);
