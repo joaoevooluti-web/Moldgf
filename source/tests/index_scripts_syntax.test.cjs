@@ -86,7 +86,7 @@ test("hardware-faithful panels expose the correct Atte, A*B+C and Voltio control
   assert.match(currentAbc, /B AND C INPUTS NORMALLED TO \+5 V/);
   assert.match(legacyAbc, /C NORMALLED \+10 V/);
   assert.match(legacyAbc, /OUT1 → OUT2 MIX/);
-  assert.match(legacyAbc, /B'\\+ch\\+' ATTENUVERTER/);
+  assert.match(legacyAbc, /B'\+ch\+' ATTENUVERTER/);
   assert.match(voltio, /SK\('octave'/);
   assert.match(voltio, /SK\('semitone'/);
   assert.match(voltio, /SUM IN/);
@@ -96,7 +96,6 @@ test("hardware-faithful panels expose the correct Atte, A*B+C and Voltio control
 test("five-module Befaco batch exposes dedicated hardware-inspired panels and live controls",()=>{
   const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
   const html=fs.readFileSync(htmlPath,"utf8");
-  const panel=(name,next)=>html.slice(html.indexOf(name+" :{n:"),html.indexOf(next+" :{n:"));
   const rampage=html.slice(html.indexOf("rampage:{n:"),html.indexOf("springReverb:{n:"));
   const spring=html.slice(html.indexOf("springReverb:{n:"),html.indexOf("kickall:{n:"));
   const kickall=html.slice(html.indexOf("kickall:{n:"),html.indexOf("noisePlethora:{n:"));
