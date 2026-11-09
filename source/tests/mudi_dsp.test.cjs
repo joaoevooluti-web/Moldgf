@@ -54,6 +54,6 @@ test("divider states remain independent and reset can be held high", () => {
   const state=MuDi.createState();
   for(let i=0;i<4;i++){pulse(state);MuDi.process(0,0,false,state)}
   assert.equal(state.div2,false);
-  MuDi.process(5,5,false,state);
+  MuDi.process(0,5,false,state);
   assert.deepEqual([state.div2,state.div4,state.div8,state.div16],[false,false,false,false]);
 });
