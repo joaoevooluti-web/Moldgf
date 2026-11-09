@@ -39,7 +39,7 @@ test("cutoff CV and attenuator change the filter cutoff",()=>{
  const a=Noise.process(p,{cutoffCVA:-5},s,48000),b=Noise.process(p,{cutoffCVA:5},Noise.createState(),48000);
  assert.ok(b.cutA>a.cutA);
  const c=Noise.process({...p,cutoffAttA:0},{cutoffCVA:5},Noise.createState(),48000);
- assert.ok(c.cutA<a.cutA);
+ assert.ok(c.cutA>a.cutA);assert.ok(Math.abs(c.cutA-20*Math.pow(1000,.4))<1e-8);
 });
 test("resonance is bounded and affects the multimode filter response",()=>{
  const p={bankA:0,programA:0,cutoffA:.35,filterModeA:1};
