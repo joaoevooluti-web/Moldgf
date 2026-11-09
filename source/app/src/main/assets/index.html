@@ -317,6 +317,53 @@ label{display:flex;flex-direction:column;font-size:10px;min-width:84px;flex:1}la
 .mod .jk i{width:21px;height:21px}
 .mod .faceplate,.mod [class$="-face"],.mod [class$="-panel"]{box-sizing:border-box;max-width:100%}
 @media(max-width:560px){.mod{transform-origin:top left}.mod .row{gap:3px}.mod .row .jk{flex-basis:34px}.mod .row label{font-size:7px}}
+
+/* Befaco reference pass 01 — black anodized faceplates, hardware accents and true HP widths */
+.mod.random8,.mod.mex,.mod.octaves,.mod.bandit{color:#f3f3ef;background:#101113;border:1px solid #45484b}
+.mod.random8 .r8-face,.mod.mex .mex-face,.mod.octaves .oct-face,.mod.bandit .bandit-face{background:linear-gradient(145deg,#202326 0%,#090a0b 72%);color:#f4f4ef;border:1px solid #55595d;box-shadow:inset 0 0 0 2px #050607}
+.mod.random8 .r8-head,.mod.mex .mex-head,.mod.octaves .oct-head,.mod.bandit .bandit-head{border-color:#62666a;color:#f5f5f0}
+.mod.random8 .r8-head strong,.mod.mex .mex-head strong,.mod.octaves .oct-head strong,.mod.bandit .bandit-head strong{color:#f6f6f2}
+.mod.random8 .r8-channel,.mod.mex .mex-step,.mod.octaves .oct-channel,.mod.bandit .bandit-band{border-color:#45494d}
+.mod.random8 .r8-channel>b,.mod.random8 .r8-value,.mod.mex .mex-host,.mod.mex .mex-step small,.mod.octaves .oct-channel>b,.mod.octaves .oct-channel label,.mod.octaves .oct-value,.mod.bandit .bandit-band>b,.mod.bandit .bandit-band label,.mod.bandit .bandit-foot{color:#e7e7e1}
+.mod.random8 .r8-channel .jk i,.mod.mex .mex-jacks .jk i,.mod.octaves .oct-inputs .jk i,.mod.octaves .oct-channel .jk i,.mod.bandit .jk i{background:radial-gradient(circle at 35% 28%,#55595d,#08090a 68%);border-color:#8a8e91}
+.mod.random8 .r8-channel .jk.o i,.mod.octaves .oct-channel .jk.o i,.mod.bandit .bandit-band .jk.o i{border-color:#c62e35}
+.mod.random8 .r8-mode,.mod.random8 .r8-edit{border:1px solid #9b9da0;background:#202326;color:#fff}
+.mod.random8 .r8-channel:nth-child(4n+1) .r8-mode{border-color:#e34c57}
+.mod.random8 .r8-channel:nth-child(4n+2) .r8-mode{border-color:#e0b94d}
+.mod.random8 .r8-channel:nth-child(4n+3) .r8-mode{border-color:#4d9bd7}
+.mod.random8 .r8-channel:nth-child(4n) .r8-mode{border-color:#79a96b}
+.mod.random8 .r8-foot,.mod.mex .mex-foot,.mod.octaves .oct-foot{color:#d7d8d2;border-color:#55595d}
+.mod.mex .mex-mode{background:#262a2d;color:#eee;border-color:#888}
+.mod.mex .mex-mode.pass{background:#c79c36;color:#171717}
+.mod.mex .mex-mode.all{background:#b83235;color:#fff}
+.mod.mex .mex-step{background:linear-gradient(90deg,#181a1c,#0d0e0f)}
+.mod.mex .mex-jacks{border-color:#55595d}
+.mod.octaves .oct-controls,.mod.octaves .oct-inputs,.mod.octaves .oct-channels{border-color:#55595d}
+.mod.octaves .oct-controls svg text{fill:#f0f0eb}
+.mod.octaves .oct-channel{background:#17191b}
+.mod.octaves .oct-channel input[type=range]{accent-color:#d7353d;writing-mode:vertical-lr;direction:rtl;height:62px;width:16px;justify-self:center}
+.mod.octaves .oct-head small{color:#c9cbc5}
+.mod.bandit{width:156px;min-width:156px;max-width:156px}
+.mod.bandit .bandit-face{min-height:570px}
+.mod.bandit .bandit-common{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px}
+.mod.bandit .bandit-common .jk{width:100%;min-width:0;font-size:5px;color:#e9e9e3}
+.mod.bandit .bandit-common .jk i{width:17px;height:17px;border-width:3px}
+.mod.bandit .bandit-bands{grid-template-columns:repeat(4,minmax(0,1fr));gap:1px}
+.mod.bandit .bandit-band{padding:3px 0;background:linear-gradient(#17191b,#0c0d0e)}
+.mod.bandit .bandit-band .jk{width:100%;min-width:0;font-size:4px;color:#e9e9e3}
+.mod.bandit .bandit-band .jk i{width:15px;height:15px;border-width:3px}
+.mod.bandit .bandit-band input[type=range]{writing-mode:vertical-lr;direction:rtl;height:108px;width:14px;min-width:14px;align-self:center;accent-color:#d72f36}
+.mod.bandit .bandit-mix{border-color:#55595d}
+.mod.bandit .bandit-mix .jk{width:44px;color:#e9e9e3}
+.mod.bandit .bandit-meter{background:#080b0a;color:#a9e9ae}
+.mod.bandit .bandit-meter.clip{background:#a22;color:#fff}
+.mod.iroi{background:#090a0b;color:#f0f0eb;border-color:#55595d}
+.mod.iroi .iroi-face{background:linear-gradient(145deg,#292c30,#090a0b 75%);border-color:#55595d;box-shadow:inset 0 0 0 2px #050607}
+.mod.iroi .iroi-head,.mod.iroi .iroi-io,.mod.iroi .iroi-main,.mod.iroi .iroi-mod,.mod.iroi .iroi-secondary,.mod.iroi .iroi-actions{border-color:#55595d}
+.mod.iroi .iroi-section{background:#17191b;border-color:#55595d}
+.mod.iroi .iroi-head strong,.mod.iroi .iroi-head small,.mod.iroi label,.mod.iroi .jk{color:#eee}
+.mod.iroi .iroi-section label input[type=range],.mod.iroi .iroi-mod input[type=range],.mod.iroi .iroi-secondary input[type=range]{accent-color:#d3ad55}
+
 </style></head><body>
 <header><b>Eurorack Study Rack</b><button id="au">▶ Áudio</button><button id="mi">MIDI</button><select id="lat" title="Latência do áudio"><option value="0.01">Latência baixa</option><option value="0.04">Latência média</option><option value="0.1">Latência alta</option></select><button id="cx">Limpar cabos</button><button id="undo" title="Desfazer (Ctrl+Z)" disabled>↶ Desfazer</button><button id="redo" title="Refazer (Ctrl+Y)" disabled>↷ Refazer</button><button id="pt">Patches</button><span>+</span><button data-add="pam">Pamela</button><button data-add="sc">Scales</button><button data-add="pl">Plaits</button><button data-add="po">Polaris</button><button data-add="bbd">BBD</button><button data-add="bds">Beads</button><button data-add="mix">Mixer</button><button data-add="out">Audio Out</button><button data-add="mid">MIDI→CV</button><button data-add="crushDelayV3">Crush Delay V3</button><button data-add="bf22">BF-22</button><button data-add="midiThingV2">MIDI Thing V2</button><button data-add="atte">Atte</button><button data-add="dualAt">Dual Atenuverter</button><button data-add="voltio">Voltio</button><button data-add="abc">A*B+C</button><button data-add="axbc">AxBC</button><button data-add="bypass">Molten Bypass</button><button data-add="mixer2">Mixer2</button><button data-add="mixer">Befaco Mixer</button><button data-add="stmix">STMix</button><button data-add="morphader">Morphader</button><button data-add="hexmixvca">Hexmix VCA</button><button data-add="motionmtr">Motion MTR</button><button data-add="slewlimiter">Slew Limiter</button><button data-add="ponyVco">Pony VCO</button><button data-add="adsr">ADSR</button><button data-add="percall">Percall</button><button data-add="mudi">MuDi</button><button data-add="slew">Slew</button><button data-add="burst">Burst</button><button data-add="samplingModulator">Sampling Modulator</button><button data-add="choppingKinky">Chopping Kinky</button><button data-add="evenVco">Even VCO</button><button data-add="rampage">Rampage</button><button data-add="springReverb">Spring Reverb</button><button data-add="kickall">Kickall</button><button data-add="noisePlethora">Noise Plethora</button><button data-add="muxlicer">Muxlicer</button><button data-add="random8">Random8</button><button data-add="mex">MEX</button><button data-add="octaves">Octaves VCO</button><button data-add="iroi">IROI</button><button data-add="bandit">Bandit</button><button data-add="hexmix">Hexmix</button><button data-add="hexpander">Hexpander</button><button data-add="ponyVcf">Pony VCF</button><button data-add="stereoStrip">Stereo Strip</button><button data-add="bypass">Molten Bypass</button><button data-add="mout">CV→MIDI</button><button data-add="axn">Axon-2</button><button data-add="ex1">PPEXP1</button><button data-add="ex2">PPEXP2</button><span id="ms"></span><span id="as"></span></header>
 <div id="wrap"><div id="rack"><svg id="cv"></svg></div></div>
