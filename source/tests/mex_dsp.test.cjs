@@ -1,0 +1,14 @@
+const test=require("node:test");
+const assert=require("node:assert/strict");
+const Mex=require("../app/src/main/assets/mex_dsp.js");
+const params=(mode=Array(8).fill(1))=>({host:1,mode});
+test("MEX defaults to no-gates mode on all eight steps",()=>{const s=Mex.createState(),p=params();const r=Mex.process(p,{hostPresent:true,step:0,gateIn:10,muxGate:10},s);assert.equal(r.out,0);assert.equal(r.mode,1)});
+test("pass-in mode converts a high input signal into a 10 V gate",()=>{const s=Mex.createState(),p=params([0,1,1,1,1,1,1,1]);const r=Mex.process(p,{hostPresent:true,step:0,gateIn:5,muxGate:0},s);assert.equal(r.out,10)});
+test("pass-in mode rejects a low comparator input",()=>{const s=Mex.createState(),p=params([0,1,1,1,1,1,1,1]);assert.equal(Mex.process(p,{hostPresent:true,step:0,gateIn:2.49,muxGate:10},s).out,0)});
+test("no-gates mode suppresses both Muxlicer gates and Gate In",()=>{const s=Mex.createState(),p=params();assert.equal(Mex.process(p,{hostPresent:true,step:4,gateIn:10,muxGate:10},s).out,0)});
+test("all-gates mode copies the selected Muxlicer step gate",()=>{const s=Mex.createState(),p=params([2,1,1,1,1,1,1,1]);assert.equal(Mex.process(p,{hostPresent:true,step:0,gateIn:0,muxGate:10},s).out,10);assert.equal(Mex.process(p,{hostPresent:true,step:0,gateIn:0,muxGate:0},s).out,0)});
+test("the selected switch mode follows the active Muxlicer step",()=>{const s=Mex.createState(),p=params([1,1,1,1,2,1,1,1]);const r=Mex.process(p,{hostPresent:true,step:4,gateIn:0,muxGate:10},s);assert.equal(r.step,4);assert.equal(r.mode,2);assert.equal(r.out,10)});
+test("MEX output remains low without a selected Muxlicer expansion host",()=>{const s=Mex.createState(),p=params([0,0,0,0,0,0,0,0]);assert.equal(Mex.process(p,{hostPresent:false,step:0,gateIn:10,muxGate:10},s).out,0)});
+test("Gate In can be used as a comparator for positive and negative signals",()=>{const s=Mex.createState(),p=params([0,0,0,0,0,0,0,0]);assert.equal(Mex.process(p,{hostPresent:true,step:0,gateIn:-5},s).out,0);assert.equal(Mex.process(p,{hostPresent:true,step:0,gateIn:8},s).out,10)});
+test("invalid mode, step and signal values remain safe",()=>{const s=Mex.createState(),r=Mex.process({mode:[NaN]}, {hostPresent:true,step:NaN,gateIn:NaN,muxGate:NaN},s);assert.equal(r.step,0);assert.equal(r.out,0);assert.ok(Number.isFinite(r.out))});
+test("process reuses its result object in the audio callback",()=>{const s=Mex.createState(),p=params([0,0,0,0,0,0,0,0]);const a=Mex.process(p,{hostPresent:true,step:0,gateIn:10},s),b=Mex.process(p,{hostPresent:true,step:1,gateIn:10},s);assert.equal(a,b);assert.equal(a.step,1)});
