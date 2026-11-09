@@ -90,8 +90,9 @@
         errors.push({ code: "duplicate-module-id", module: module.id }); return;
       }
       seenIds.add(module.id);
-      if (!registry.has(module.type)) {
-        errors.push({ code: "unknown-module", module: module.id, type: module.type }); return;
+      const type = moduleTypeOf(module);
+      if (!type || !registry.has(type)) {
+        errors.push({ code: "unknown-module", module: module.id, type }); return;
       }
       byId.set(module.id, module);
     });
@@ -115,7 +116,7 @@
       }
       edgeKeys.add(key);
       const feedback = cable.feedback === true;
-      if (feedback && !registry.get(sourceModule.type).feedbackSafe) {
+      if (feedback && !registry.get(moduleTypeOf(sourceModule)).feedbackSafe) {
         errors.push({ code: "unsafe-feedback", from, to }); return;
       }
       edges.push({ from: from.module, to: to.module, feedback });

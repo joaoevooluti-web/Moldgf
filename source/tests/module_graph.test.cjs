@@ -82,6 +82,24 @@ test("graph rejects cycles unless an explicit feedback-safe edge breaks the cycl
   assert.equal(delayed.valid, true);
 });
 
+test("graph validation accepts live rack instances using the runtime t field", () => {
+  const registry = fixture();
+  const result = validateGraph(registry,
+    [{ id: "cv1", t: "source" }, { id: "proc1", t: "processor" }],
+    [{ from: { module: "cv1", port: "out" }, to: { module: "proc1", port: "in" } }]);
+  assert.equal(result.valid, true);
+  assert.deepEqual(result.order, ["cv1", "proc1"]);
+
+  const feedback = validateGraph(registry,
+    [{ id: "proc", t: "audioProcessor" }, { id: "delay", t: "delay" }],
+    [
+      { from: { module: "proc", port: "out" }, to: { module: "delay", port: "in" } },
+      { from: { module: "delay", port: "out" }, to: { module: "proc", port: "in" }, feedback: true }
+    ]);
+  assert.equal(feedback.valid, true);
+  assert.deepEqual(feedback.order, ["proc", "delay"]);
+});
+
 test("graph reports missing endpoints, unknown modules and duplicate cables", () => {
   const registry = fixture();
   const result = validateGraph(registry,
