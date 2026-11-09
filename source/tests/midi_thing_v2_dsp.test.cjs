@@ -117,6 +117,17 @@ test("oscillator output follows note pitch and envelope",()=>{
  send(s,p,0x90,69,127);tick(p,s,1);const phase=s.voices[0].phase;
  tick(p,s,100);assert.ok(s.voices[0].phase>phase);assert.ok(Number.isFinite(s.outputs[0]));
 });
+
+test("V/Oct glide smooths note transitions instead of stepping immediately",()=>{
+ const s=MIDIThing.createState(),p=params({glideTime:100,ports:[port("NOTE CV")]});
+ send(s,p,0x90,72,100);const first=tick(p,s,1)[0];assert.ok(first>0&&first<.02);
+ const later=tick(p,s,4800)[0];assert.ok(later>2.5&&later<5);
+});
+test("glide coefficients are recalculated when the audio sample rate changes",()=>{
+ const s=MIDIThing.createState(48000),p=params({glideTime:100,glideMode:1,ports:[port("NOTE CV")]});
+ send(s,p,0x90,72,100);const a=tick(p,s,1,48000)[0];const b=tick(p,s,1,24000)[0];
+ assert.ok(b>a);assert.equal(s.glideSampleRateCache,24000);
+});
 test("all notes off releases every active voice without changing transport",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("GATE")]});
  send(s,p,0x90,60,100);send(s,p,0x90,64,100);send(s,p,0xFA);MIDIThing.allNotesOff(s);tick(p,s);
