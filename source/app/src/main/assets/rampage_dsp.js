@@ -4,11 +4,11 @@
  if(root)root.MoldgfRampageDSP=api;
 })(typeof globalThis!=="undefined"?globalThis:this,function(){
  "use strict";
+ const GATE=2.5;
  const clamp=(v,a,b,d=0)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:d));
  const finite=v=>Number.isFinite(v)?v:0;
- const GATE=2.5;
- function createChannelState(){return{value:0,phase:0,stage:0,triggerHigh:false,signalHigh:false,cycleHigh:false,gateHigh:false,eoc:0,rising:0,falling:0,lastValue:0,initialized:false}}
- function createState(){return{a:createChannelState(),b:createChannelState(),previousA:0,previousB:0}}
+ function createChannelState(){return{value:0,phase:0,stage:0,triggerHigh:false,signalHigh:false,eoc:0,rising:0,falling:0,lastValue:0,initialized:false}}
+ function createState(){return{a:createChannelState(),b:createChannelState()}}
  function timeSeconds(control,cv,exp,range){
   const knob=clamp(control,0,1,.25),mod=clamp(cv,-5,5,0);
   const normalized=clamp(knob+mod/10-(clamp(exp,0,5,0)/5)*.8,0,1);
@@ -23,8 +23,8 @@
   return shape>0?Math.pow(x,1/curve):1-Math.pow(1-x,1/curve);
  }
  function channel(params,input,state,sampleRate){
-  const sr=clamp(sampleRate,8000,384000,48000),dt=1/sr,s=state||createChannelState(),p=params||{};
-  const signal=finite(input.signal),trigger=finite(input.trigger),riseCV=finite(input.riseCV),fallCV=finite(input.fallCV),expCV=finite(input.expCV),cycleCV=finite(input.cycleCV);
+  const sr=clamp(sampleRate,8000,384000,48000),dt=1/sr,s=state||createChannelState(),p=params||{},i=input||{};
+  const signal=finite(i.signal),trigger=finite(i.trigger),riseCV=finite(i.riseCV),fallCV=finite(i.fallCV),expCV=finite(i.expCV),cycleCV=finite(i.cycleCV);
   const cycle=!!p.cycle !== (cycleCV>=GATE);
   const triggerHigh=trigger>=GATE,triggerEdge=triggerHigh&&!s.triggerHigh;s.triggerHigh=triggerHigh;
   const signalHigh=signal>=GATE,signalEdge=signalHigh&&!s.signalHigh;s.signalHigh=signalHigh;
@@ -33,36 +33,40 @@
   const fallingTime=timeSeconds(p.fall,fallCV,expCV,p.range);
   const triggered=triggerEdge||signalEdge||!!p.manualTrigger;
   if(triggered&&(s.stage===0||s.stage===2)){s.stage=1;s.phase=0;s.value=0;s.eoc=0}
-  let previous=s.value;
+  const previous=s.value;
   if(external){
-   const target=clamp(signal,-10,10);
-   const tau=target>s.value?riseTime:fallingTime;
-   const coeff=1-Math.exp(-dt/Math.max(.0001,tau));
-   s.value+= (target-s.value)*coeff;
-   s.stage=Math.abs(target-s.value)<.0001?0:(target>s.value?1:2);
+   const target=clamp(signal,-10,10),delta=target-s.value,tau=delta>=0?risingTime:fallingTime;
+   let coeff=1-Math.exp(-dt/Math.max(.0001,tau));
+   const shape=clamp(p.shape,-1,1,0);
+   if(shape>0)coeff=Math.pow(coeff,1/(1+4*shape));
+   else if(shape<0)coeff=Math.pow(coeff,1+4*Math.abs(shape));
+   s.value+=delta*coeff;
+   s.stage=Math.abs(target-s.value)<.0001?0:(delta>0?1:2);
   }else if(s.stage===1){
-   const delta=dt/Math.max(.0001,risingTime);
-   s.value=Math.min(10,s.value+delta*10);
-   if(s.value>=10){s.value=10;s.stage=2}
+   s.phase=Math.min(1,s.phase+dt/Math.max(.0001,risingTime));
+   s.value=10*shapeValue(s.phase,p.shape);
+   if(s.phase>=1){s.value=10;s.phase=0;s.stage=2}
   }else if(s.stage===2){
-   const delta=dt/Math.max(.0001,fallingTime);
-   s.value=Math.max(0,s.value-delta*10);
-   if(s.value<=0){s.value=0;s.stage=cycle?1:0;if(cycle)s.eoc=1}
+   s.phase=Math.min(1,s.phase+dt/Math.max(.0001,fallingTime));
+   s.value=10*(1-shapeValue(s.phase,p.shape));
+   if(s.phase>=1){s.value=0;s.phase=0;s.eoc=1;s.stage=cycle?1:0}
   }else if(cycle){
-   s.stage=1;s.phase=Math.min(1,s.phase+dt/Math.max(.0001,risingTime));s.value=10*shapeValue(s.phase,p.shape);if(s.phase>=1){s.value=10;s.phase=0;s.stage=2}
+   s.stage=1;s.phase=Math.min(1,s.phase+dt/Math.max(.0001,risingTime));
+   s.value=10*shapeValue(s.phase,p.shape);
+   if(s.phase>=1){s.value=10;s.phase=0;s.stage=2}
   }
-  const delta=s.value-previous;
-  s.rising=delta>1e-5?10:0;s.falling=delta< -1e-5?10:0;
+  const change=s.value-previous;
+  s.rising=change>1e-5?10:0;s.falling=change< -1e-5?10:0;
   const eoc=s.eoc?10:0;s.eoc=0;
   s.lastValue=s.value;s.initialized=true;
   return{out:s.value,rising:s.rising,falling:s.falling,eoc,stage:s.stage,value:s.value,state:s};
  }
  function process(params,inputs,state,sampleRate){
   const p=params||{},i=inputs||{},s=state||createState();
-  const a=channel({rise:p.riseA,fall:p.fallA,shape:p.shapeA,range:p.rangeA,cycle:p.cycleA,external:p.externalA}, {
+  const a=channel({rise:p.riseA,fall:p.fallA,shape:p.shapeA,range:p.rangeA,cycle:p.cycleA,external:i.signalA!==null&&i.signalA!==undefined,manualTrigger:p.manualTriggerA},{
    signal:i.signalA,trigger:i.triggerA,riseCV:i.riseCVA,fallCV:i.fallCVA,expCV:i.expCVA,cycleCV:i.cycleCVA
   },s.a,sampleRate);
-  const b=channel({rise:p.riseB,fall:p.fallB,shape:p.shapeB,range:p.rangeB,cycle:p.cycleB,external:p.externalB}, {
+  const b=channel({rise:p.riseB,fall:p.fallB,shape:p.shapeB,range:p.rangeB,cycle:p.cycleB,external:i.signalB!==null&&i.signalB!==undefined,manualTrigger:p.manualTriggerB},{
    signal:i.signalB,trigger:i.triggerB,riseCV:i.riseCVB,fallCV:i.fallCVB,expCV:i.expCVB,cycleCV:i.cycleCVB
   },s.b,sampleRate);
   const balance=clamp(p.balance,0,1,.5),av=a.out*(1-balance),bv=b.out*balance;
