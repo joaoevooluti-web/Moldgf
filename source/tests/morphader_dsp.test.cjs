@@ -25,6 +25,7 @@ test("audio mode uses an equal-power crossfade curve", () => {
 
 test("master fader lag moves toward its target without an abrupt jump", () => {
   const state = Morphader.createState();
+  Morphader.process(inputs, { ...base, fader: 0, lag: 1 }, state, 0.01);
   const first = Morphader.process(inputs, { ...base, fader: 1, lag: 1 }, state, 0.01);
   assert.ok(first.fader > 0 && first.fader < 1);
   let result = first;
