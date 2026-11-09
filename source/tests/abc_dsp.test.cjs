@@ -41,3 +41,9 @@ test("all inputs and resulting outputs are bounded to the ten-volt operating ran
   assert.equal(ABC.clipVoltage(-25), -10);
   assert.equal(ABC.processChannel(10, 10, 10, { bLevel: 1, bMode: 1, cLevel: 1, cMode: 1 }), 10);
 });
+
+test("bipolar output indicator follows the output voltage sign", () => {
+  assert.equal(ABC.ledPolarity(3), "positive");
+  assert.equal(ABC.ledPolarity(-3), "negative");
+  assert.equal(ABC.ledPolarity(0.001), "off");
+});
