@@ -476,3 +476,16 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [x] Combined current-source integration test `phase8_live_integration.test.cjs` added for all five module assets, state initialization, sample dispatch, BF-22 and Crush Delay port/panel agreement, Joystick gates and Mutes momentary controls. All individual runtime integration suites and the Kotlin MIDI encoder tests are now present.
 - [ ] CI not yet run on this final batch. The five-module implementation is ready for the branch workflow; success still requires Node tests, Kotlin/JUnit, WASM validation, Gradle APK assembly and artifact checks. Physical Android/MIDI/audio validation remains separate.
 - Next: run the feature-branch workflow, fix any failures, then audit its APK and test artifacts before calling Phase 8 CI-validated.
+
+### Phase 8 — Five-module batch CI evidence (2026-11-09)
+
+- **CI success:** [Workflow #71 / 42676962627](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42676962627) completed successfully on feature commit `e9222815cefe78ed33fcdc708787e57b6d4137ec`.
+- Node module graph, DSP and live integration suite: **686 passed, 0 failed**.
+- Emscripten build: Plaits WASM **185,636 bytes**; Beads WASM **196,726 bytes**. Both wrappers passed WebAssembly compilation and magic/size validation.
+- Android unit tests (including MIDI batch encoder tests): Gradle task completed successfully; report artifact ID **13700641671**.
+- Debug APK: Gradle `assembleDebug` completed successfully and artifact uploaded, ID **13700657045** (artifact ZIP 1,674,518 bytes).
+- WASM build log artifact ID **13700972279**.
+- All workflow jobs completed with success. This validates the repository test/build pipeline, not installation, audio quality, touch behavior, MIDI reception or hardware visual fidelity on a physical Android device.
+- Branch protection: `main` remains unchanged at `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`. No merge to main was performed.
+
+**Phase 8 status:** five-module implementation and CI build/test gate passed. Remaining work is separate hardware/device validation and any follow-up fixes discovered there; do not call the modules physically validated yet.
