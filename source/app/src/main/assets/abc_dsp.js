@@ -28,12 +28,12 @@
     const scaledC = clipVoltage(c * gainFactor(controls.cMode) * cLevel);
     return clipVoltage((a * scaledB) / 5 + scaledC);
   }
-  function processPair(inputs, controls, mode, out2Patched) {
+  function ledPolarity(output, threshold = 0.01) {\n    if (!Number.isFinite(output) || Math.abs(output) < Math.max(0, threshold)) return \"off\";\n    return output > 0 ? \"positive\" : \"negative\";\n  }\n  function processPair(inputs, controls, mode, out2Patched) {
     const a1 = clipVoltage(inputs.a1);
     const a2 = mode === 0 ? clipVoltage(resolveInput(inputs.a2, a1)) : clipVoltage(inputs.a2);
     const out1 = processChannel(a1, inputs.b1, inputs.c1, controls[0]);
     const out2 = processChannel(a2, inputs.b2, inputs.c2, controls[1]);
     return [out1, mode === 1 && !out2Patched ? clipVoltage(out1 + out2) : out2];
   }
-  return Object.freeze({ clamp, clipVoltage, resolveInput, gainFactor, processChannel, processPair });
+  return Object.freeze({ clamp, clipVoltage, resolveInput, gainFactor, processChannel, processPair, ledPolarity });
 });
