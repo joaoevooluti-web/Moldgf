@@ -55,3 +55,11 @@ gradle assembleDebug --no-daemon
 \`\`\`
 
 Workflow #22 (run 42557029992) completed successfully on code commit c24cf7f07acdf193f4322cd1374b309b6294f811: the repository Node suite passed 308/308, Plaits and Beads generated real WebAssembly payloads (185,636 and 196,726 bytes), Beads native selftests passed, the final CI step validated both payloads with WebAssembly.compile, and Gradle produced the debug APK. The APK SHA-256 is 217e71cf119ae417b7d0fb2abfb603f991f8cbd5f070035afb98d410302bbbb1. Physical-device audio/UI testing remains pending.
+
+### Befaco port status — 2026-11-09
+
+The second five-module implementation batch is now complete on `feature/befaco-modules`: Random8, MEX, Octaves VCO, IROI and Bandit. Each module has a DSP asset, engine dispatch, dedicated front panel, typed graph descriptor and dedicated tests. The batch adds **104 DSP/graph test cases** and five static panel/integration assertions; the page now loads 32 DSP assets and registers 32 graph module types.
+
+The consolidated Node/Android CI gate is now being opened for this batch. Its run must confirm the actual `node --test tests/*.test.cjs` suite, Plaits/Beads WebAssembly validation, Gradle debug APK assembly and uploaded artifacts before this batch is called CI-validated. No physical-device audio or touch validation is claimed.
+
+Known limitations: IROI exposes left/right as two independent mono paths rather than a native stereo bus; MEX's rear THRU daisy-chain expander is not modeled. The new DSP algorithms are clean-room behavioral approximations, not firmware or circuit-level clones. All work remains on `feature/befaco-modules`; `main` is protected.
