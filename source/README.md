@@ -137,3 +137,6 @@ Phase 7 validation run #30: this commit triggers the full Node test suite, Plait
 - APK inspection confirms the five Phase 7 DSP assets, all 37 DSP assets, `index.html`, Plaits WASM and Beads WASM are packaged.
 - The latest branch commit after the validated snapshot only adds the Android `testDebugUnitTest` step to the workflow. Workflow #31 will validate that additional Kotlin unit-test gate along with the same full build.
 - Physical Android MIDI, touch and audio verification remain pending. `main` remains at `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+
+
+Workflow #31 trigger: validate the new Android testDebugUnitTest step added to the consolidated build workflow, in addition to the 554 Node tests, Plaits/Beads WASM and debug APK.
