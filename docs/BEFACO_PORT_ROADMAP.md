@@ -295,3 +295,9 @@ The five-module Phase 7 batch is now implemented on `feature/befaco-modules`. Th
 
 - Workflow #27 ran all **551 Node tests: 550 passed, one failed**. The only remaining failure was a static UI label assertion: the MIDI Thing V2 footer shortened PROGRAM CHANGE to PROGRAM. The full label is now displayed. No DSP or graph test failed in this run.
 - Workflow #28 is the final full-suite/WASM/Gradle/APK rerun. The module batch remains unvalidated until it completes successfully.
+
+
+### Phase 7 CI correction log — run #28
+
+- Workflow #28 again ran 551 Node tests: 550 passed and one static panel assertion failed because the faceplate footer abbreviated OSCILLATOR as OSC. The faceplate now spells out OSCILLATOR. The regression assertion continues to check the full visible label and the panel's selector controls.
+- Workflow #29 will rerun the complete Node/WASM/Gradle/APK gate. No APK was produced by #28.
