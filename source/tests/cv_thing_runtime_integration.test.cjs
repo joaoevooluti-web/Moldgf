@@ -31,6 +31,8 @@ test("CV Thing maps CC, paired V/Oct Note, Program Change, Clock and Start/Stop 
 test("CV Thing faceplate includes OLED performance display, encoder and eight mapping rows", () => {
   assert.match(html, /cvthing-oled/);
   assert.match(html, /PERFORMANCE \/ 8 INPUTS/);
+  assert.match(html, /function cvThing\(m\)/);
+  assert.match(html, /row\.classList\.toggle\('paired-gate'/);
   assert.match(html, /◉ ENCODER/);
   assert.match(html, /Array\.from\(\{length:8\}/);
   assert.match(html, /Sel\('maps\.'\+i\+'\.mode'/);
