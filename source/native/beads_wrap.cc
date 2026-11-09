@@ -142,7 +142,7 @@ void Reconfigure(Inst& s, int media, int mono, bool synth) {
   bool changed = (media != s.media) || (mono != s.mono) || (synth != s.synth_mode);
   if (!changed) return;
   if (synth && !s.synth_mode) {
-    s.synth.Reset();
+    s.synth.Init(s.reverb);
   } else if (!synth) {
     s.processor.Configure(Processor::Media(media), mono != 0);
   }
