@@ -787,6 +787,9 @@ function openPk(b,m){const t=b.querySelector('text'),op=t.dataset.opts,items=op?
  $('#pk .pkb').className='pkb pk-'+m.t;$('#pk .pkh').textContent=t.dataset.l;
  $('#pk .pkl').innerHTML=items.map((s,i)=>`<div data-i="${i}" class="${i===cur?'sel2':''}">${s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`).join('');$('#pk').hidden=false;const c=$('#pk .sel2');if(c)c.scrollIntoView({block:'center'})}
 $('#pk').addEventListener('click',e=>{const d=e.target.closest('[data-i]');if(d&&pkT){const i=+d.dataset.i;pkT.o[pkT.k]=pkT.vals?+pkT.items[i]:i;dirty.add(pkT.id);sync()}if(d||e.target.id==='pk')$('#pk').hidden=true});
+rk.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-a=bypass-launch]');if(!b)return;const m=I[b.closest('.mod').dataset.id];if(!m)return;m.s.button=1;dirty.add(m.id);bypassPressed=m;sync();e.preventDefault()});
+addEventListener('pointerup',()=>{if(bypassPressed){bypassPressed.s.button=0;dirty.add(bypassPressed.id);sync();bypassPressed=null}});
+addEventListener('pointercancel',()=>{if(bypassPressed){bypassPressed.s.button=0;dirty.add(bypassPressed.id);sync();bypassPressed=null}});
 rk.addEventListener('click',e=>{const j=e.target.closest('.jk');
  if(j){if(Date.now()-sup<400)return;const id=j.dataset.id,out=j.classList.contains('o');
   if(sel===null){const ex=cab.findIndex(c=>c.b===id);if(!out&&ex>=0){cab.splice(ex,1);rb()}else sel=id}
