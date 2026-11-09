@@ -82,3 +82,10 @@ Dedicated tests for the five-module batch currently cover 97 DSP cases and 25 gr
 
 
 Phase 7 CI validation snapshot: this commit closes the five-module implementation gate and triggers the consolidated Node, Plaits/Beads WebAssembly, Gradle debug APK and artifact checks. Physical-device validation remains a separate pending step.
+
+
+### Phase 7 CI correction log — run #26
+
+- Workflow #26 executed the full Node suite: **551 tests, 545 passed, 6 failed**. The six failures were isolated to one Float32 exact-equality assertion in Hexpander, stale 36-vs-37 asset/registry uniqueness expectations, an outdated Pony VCF panel assertion, a missing explicit CHANNEL PRESSURE label, a MIDI Thing voice-count assertion checked before process(), and Pony VCF CV2 scaling that was not 1 V/oct.
+- Corrected the Float32 assertion to use tolerance, updated uniqueness counts to 37, aligned the Pony VCF UI assertion with the actual DSP contract, clarified the MIDI Thing label, advanced the MIDI voice allocator before checking active voice count, and corrected Pony VCF cutoff CV scaling to true 1 V/oct.
+- All corrections are committed on `feature/befaco-modules` with `[skip ci]`. Workflow #27 will rerun the full suite and continue to WASM/Gradle only if Node passes. No APK from #26 was produced; `main` remains untouched.
