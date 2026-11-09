@@ -120,3 +120,20 @@ Phase 7 final rerun: the MIDI Thing V2 faceplate now displays the full OSCILLATO
 
 
 Phase 7 validation run #30: this commit triggers the full Node test suite, Plaits/Beads WASM build and validation, Android debug APK assembly and artifact checks on the latest five-module implementation.
+
+
+## Phase 7 CI validation — workflow #30
+
+<badge>Success</badge>
+
+- Workflow: https://github.com/joaoevooluti-web/Moldgf/actions/runs/42631339976
+- Validated source snapshot: `d8fc256fed489c490d6380e9301ee029966739f0`.
+- Node suite: **554 tests passed, 0 failed**.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both wrappers passed the final base64/magic check and `WebAssembly.compile`.
+- Beads native selftest: passed all media/mode cases, Synth energy and 44.1 kHz host + 24 kHz media resampling.
+- Gradle: `assembleDebug` — `BUILD SUCCESSFUL`.
+- APK artifact: `eurorack-study-debug-apk`, ID `13680782195`, archive size 1,656,971 bytes. Inner `app-debug.apk`: 1,691,305 bytes.
+- APK SHA-256: `4687575d039d97e81f5edce09f6048e0ac59f580039bc380a8ec0349a17b6a0`.
+- APK inspection confirms the five Phase 7 DSP assets, all 37 DSP assets, `index.html`, Plaits WASM and Beads WASM are packaged.
+- The latest branch commit after the validated snapshot only adds the Android `testDebugUnitTest` step to the workflow. Workflow #31 will validate that additional Kotlin unit-test gate along with the same full build.
+- Physical Android MIDI, touch and audio verification remain pending. `main` remains at `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
