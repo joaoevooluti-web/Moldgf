@@ -12,7 +12,7 @@
  ];
  const clamp=(v,a,b,d=0)=>Math.max(a,Math.min(b,Number.isFinite(v)?v:d));
  const finite=v=>Number.isFinite(v)?v:0;
- function makeGenerator(seed){return{phase:new Float64Array(16),walk:new Float64Array(16),bandLow:new Float64Array(4),bandBand:new Float64Array(4),delay:new Float32Array(2048),delayIndex:0,held:0,grainPhase:0,counter:0,seed:seed>>>0||1}}
+ function makeGenerator(seed){return{phase:new Float64Array(16),walk:new Float64Array(16),bandLow:new Float64Array(4),bandBand:new Float64Array(4),bandFilters:Array.from({length:4},()=>({ic1:0,ic2:0})),delay:new Float32Array(2048),delayIndex:0,held:0,grainPhase:0,counter:0,seed:seed>>>0||1}}
  function createState(){return{a:makeGenerator(0x1234567),b:makeGenerator(0x7654321),c:makeGenerator(0x2468ace),filterA:{ic1:0,ic2:0},filterB:{ic1:0,ic2:0},filterC1:{ic1:0,ic2:0},filterC2:{ic1:0,ic2:0},gritEnvelope:0,gritCount:0,white:0,gritty:0,filtered:0,outA:0,outB:0,programA:0,programB:0}}
  function random(s){let x=s.seed|0;x^=x<<13;x^=x>>>17;x^=x<<5;s.seed=x>>>0||1;return (s.seed/2147483648)-1}
  function osc(s,index,freq,sr,type,pw){
@@ -80,7 +80,7 @@
    case 19:
     for(i=0;i<16;i++){m=osc(s,i+0,base*(.22+i*.027),sr,"square",.08+y*.84);out+=m/16}return out;
    case 20:
-    v=random(s);m=osc(s,0,base*.1,sr,"sine");return delayMix(Math.tanh(v*2+m*mod*.2),.8);
+    v=random(s);m=osc(s,0,base*.1,sr,"sine");return delayMix(s,Math.tanh(v*2+m*mod*.2),.8);
    case 21:
     v=osc(s,0,base,sr,"square",.15+y*.7);m=osc(s,1,base*1.31+v*mod,sr,"square",.2+x*.6);return v*m;
    case 22:
@@ -92,7 +92,7 @@
     v=osc(s,0,base+m*mod*.5,sr,"sine");return Math.tanh(v+(s.held*.4));
    case 25:case 26:
     v=slot===25?random(s):osc(s,0,base,sr,"square");
-    for(i=0;i<4;i++){f=80+Math.abs(osc(s,i+8,1+i*.7,sr,"tri"))*(base*.5);out+=svf(v,f,.72,1,{get ic1(){return s.bandLow[i]},set ic1(q){s.bandLow[i]=q},get ic2(){return s.bandBand[i]},set ic2(q){s.bandBand[i]=q}},sr)*.25}return out;
+    for(i=0;i<4;i++){f=80+Math.abs(osc(s,i+8,1+i*.7,sr,"tri"))*(base*.5);out+=svf(v,f,.72,1,s.bandFilters[i],sr)*.25}return out;
    case 27:
     s.counter++;if(s.counter%Math.max(1,Math.floor(1+y*64))===0)s.held=random(s);m=osc(s,0,base*.2,sr,"sine");return Math.tanh(Math.round((s.held+m*mod*.15)*(4+x*60))/(4+x*60)*2);
    case 28:
@@ -102,7 +102,7 @@
    default:return random(s);
   }
  }
- function filterCutoff(knob,cv,atten,sr){const norm=clamp(knob,0,1,.5)+clamp(cv,-5,5,0)/10*clamp(atten,0,1,0);return 20*Math.pow(Math.max(1,Math.min(900,norm*900)),1)*Math.pow(1000,clamp(norm,0,1,.5))}
+ function filterCutoff(knob,cv,atten){const norm=clamp(knob,0,1,.5)+clamp(cv,-5,5,0)/10*clamp(atten,0,1,0);return 20*Math.pow(1000,clamp(norm,0,1,.5))}
  function process(params,inputs,state,sampleRate){
   const p=params||{},i=inputs||{},s=state||createState(),sr=clamp(sampleRate,8000,192000,48000),dt=1/sr;
   const bankA=Math.round(clamp(p.bankA,0,2,0)),bankB=Math.round(clamp(p.bankB,0,2,0));
