@@ -1292,7 +1292,7 @@ function dr(){const rr=rk.getBoundingClientRect();let h='';const ctr=e=>{const r
  if(jd&&jd.on&&jk[jd.id]){const A=ctr(jk[jd.id]),x2=jd.px-rr.left,y2=jd.py-rr.top;h+=`<path d="M${A[0]} ${A[1]}C${A[0]} ${A[1]+70} ${x2} ${y2+70} ${x2} ${y2}" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="2 9" stroke-linecap="round"/>`}
  $('#cv').innerHTML=h}
 addEventListener('resize',()=>needDr=1);
-const UI={crushDelayV3(m){const r=m.r;st_(ce(m,'.cd3-delay'),'DELAY '+(r.delayMs||5).toFixed(1)+' ms');st_(ce(m,'.cd3-wet'),'WET '+(r.peakWet||0).toFixed(2));st_(ce(m,'.cd3-output'),'OUT '+(r.peakOutput||0).toFixed(2));st_(ce(m,'.cd3-mods'),'CRUSH '+(r.activeModifiers||0).toString(2).padStart(3,'0'));ce(m,'.cd3-screen').classList.toggle('active',(r.activeModifiers||0)>0)},
+const UI={joystick(m){const pad=ce(m,'.joystick-pad'),dot=ce(m,'.joystick-dot');if(dot){dot.style.left=((m.s.x+1)*50)+'%';dot.style.top=((1-m.s.y)*50)+'%'}if(pad){pad.setAttribute('aria-label','Joystick X '+m.s.x.toFixed(2)+' Y '+m.s.y.toFixed(2))}},crushDelayV3(m){const r=m.r;st_(ce(m,'.cd3-delay'),'DELAY '+(r.delayMs||5).toFixed(1)+' ms');st_(ce(m,'.cd3-wet'),'WET '+(r.peakWet||0).toFixed(2));st_(ce(m,'.cd3-output'),'OUT '+(r.peakOutput||0).toFixed(2));st_(ce(m,'.cd3-mods'),'CRUSH '+(r.activeModifiers||0).toString(2).padStart(3,'0'));ce(m,'.cd3-screen').classList.toggle('active',(r.activeModifiers||0)>0)},
 bf22(m){const r=m.r;['A','B'].forEach(ch=>{const el=ce(m,'.bf22-meter-'+ch);st_(el,'CUTOFF '+Math.round(r['cutoff'+ch]||0)+' Hz · RES '+(r['resonance'+ch]||0).toFixed(2)+' · PEAK '+(r['peak'+ch]||0).toFixed(2));el.classList.toggle('active',(r['peak'+ch]||0)>1)})},
 midiThingV2(m){const r=m.r;st_(ce(m,'.mt2-message'),r.lastMessage||'NO MIDI');st_(ce(m,'.mt2-active'),(r.activeVoices||0)+' VOICES');st_(ce(m,'.mt2-peak'),'PEAK '+(r.peak||0).toFixed(2)+' V · '+(m.s.midiChannel?'CH '+m.s.midiChannel:'CH OMNI'));ce(m,'.mt2-led').classList.toggle('active',(r.activeVoices||0)>0);cl(m,'.mt2-port-row').forEach((e,i)=>{const v=Vn[m.id+'.out'+(i+1)]||0;st_(ce({el:e,u:{}},'.mt2-output'),v.toFixed(2));e.classList.toggle('active',Math.abs(v)>.01)})},
 pam(m){const P=m.s,R=m.r,o=P.o[P.sel],ext=!!cs[sig(m.id+'.clk')]&&P.ck===0,sp=R.st?R.st[P.sel]:0;st_(ce(m,'.bp'),Math.round(ext?R.eb:P.bpm)+(R.rn||P.run?'':' ■'));
@@ -1440,6 +1440,12 @@ window.saveAuto=saveAuto;setInterval(saveAuto,2500);document.addEventListener('v
 // ---- reordenar módulos: segure a alça ⠿ e arraste (rola sozinho nas bordas; os cabos acompanham)
 var md=null;
 const mods_=()=>[...rk.children].filter(e=>e.classList&&e.classList.contains('mod'));
+let joyDrag=null;
+function joySet(e){if(!joyDrag)return;const r=joyDrag.pad.getBoundingClientRect(),x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)),m=joyDrag.m;m.s.x=x*2-1;m.s.y=1-y*2;dirty.add(m.id);const dot=joyDrag.pad.querySelector('.joystick-dot');if(dot){dot.style.left=(x*100)+'%';dot.style.top=(y*100)+'%'}}
+rk.addEventListener('pointerdown',e=>{const pad=e.target.closest('.joystick-pad');if(!pad)return;const m=I[pad.closest('.mod')?.dataset.id];if(!m)return;e.preventDefault();joyDrag={pad,m,pid:e.pointerId};try{pad.setPointerCapture(e.pointerId)}catch(_){}joySet(e)});
+addEventListener('pointermove',e=>{if(joyDrag&&e.pointerId===joyDrag.pid)joySet(e)});
+function joyEnd(e){if(joyDrag&&(!e||e.pointerId===joyDrag.pid)){joySet(e||{});joyDrag=null}}
+addEventListener('pointerup',joyEnd);addEventListener('pointercancel',joyEnd);
 rk.addEventListener('pointerdown',e=>{if(md)return;const h=e.target.closest('.dh');if(!h)return;const el=h.closest('.mod');if(!el)return;e.preventDefault();
  const r=el.getBoundingClientRect();md={el,pid:e.pointerId,gx:e.clientX-r.left,tx:0,lx:e.clientX,raf:0};try{h.setPointerCapture(e.pointerId)}catch(x){}
  el.classList.add('drag');document.body.classList.add('dragging');mdMove();md.raf=requestAnimationFrame(mdTick)});
