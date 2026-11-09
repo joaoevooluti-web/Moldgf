@@ -18,14 +18,16 @@ test("all five modules have persistent DSP state and live sample dispatch", () =
     assert.ok(html.includes("A=byT."+type+";for(i=0;i<A.length;i++"), "missing dispatch " + type);
   }
 });
-test("BF-22 live descriptor exactly names its dual-channel panel endpoints", () => {
-  const ports = ["inA","inB","cv1A","cv2A","resCVA","cv1B","cv2B","resCVB","outA","outB"];
-  for (const port of ports) assert.ok(html.includes("id:'" + port + "'") || html.includes("id:'" + port + "',"), "missing BF-22 graph port " + port);
-  for (const port of ports) assert.ok(html.includes("id+'." + port + "'"), "missing BF-22 panel jack " + port);
+test("BF-22 live descriptor matches the dual-channel panel endpoint scheme", () => {
+  for (const port of ["inA","inB","cv1A","cv2A","resCVA","cv1B","cv2B","resCVB","outA","outB"]) {
+    assert.ok(html.includes("id:'" + port + "'"), "missing BF-22 graph port " + port);
+  }
+  assert.match(html, /J\(id\+'\.in'\+ch/);
+  assert.match(html, /J\(id\+'\.out'\+ch/);
 });
 test("Crush Delay V3 descriptor, panel and processor expose the same ten endpoints", () => {
   for (const port of ["in","return","timeCV","feedbackCV","inVolCV","dryWetCV","returnVolCV","crushGate","out","send"]) {
-    assert.ok(html.includes("id:'" + port + "'") || html.includes("id:'" + port + "',"), "missing Crush Delay graph port " + port);
+    assert.ok(html.includes("id:'" + port + "'"), "missing Crush Delay graph port " + port);
     assert.ok(html.includes("id+'." + port + "'"), "missing Crush Delay panel jack " + port);
   }
   assert.match(html, /function crushDelayV3F\(m\)/);
