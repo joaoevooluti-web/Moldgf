@@ -19,7 +19,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -133,19 +132,7 @@ class MainActivity : Activity() {
         /** "status,d1,d2;status,d1,d2;..." */
         @JavascriptInterface
         fun midiOutBatch(s: String) {
-            val out = ByteArrayOutputStream()
-            for (part in s.split(';')) {
-                val p = part.split(',')
-                if (p.size < 3) continue
-                val st = p[0].toIntOrNull() ?: continue
-                val a = p[1].toIntOrNull() ?: continue
-                val b = p[2].toIntOrNull() ?: continue
-                out.write(st and 255)
-                out.write(a and 127)
-                val hi = st and 0xF0
-                if (hi != 0xC0 && hi != 0xD0) out.write(b and 127)
-            }
-            sendMidi(out.toByteArray())
+            sendMidi(encodeMidiBatch(s))
         }
 
         @JavascriptInterface fun midiOutCount(): Int = outs.size + (if (EurorackMidiService.inst != null) 1 else 0)
