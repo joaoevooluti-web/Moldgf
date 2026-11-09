@@ -13,23 +13,46 @@ test("creates twelve independent assignable outputs and fixed polyphonic voice s
  assert.notEqual(s.voices[0],s.voices[1]);assert.notEqual(s.voices[0].currentCV,s.voices[1].currentCV);
 });
 test("note CV follows one volt per octave with configurable unipolar and bipolar ranges",()=>{
- assert.equal(MIDIThing.noteVoltage(12,2),0);assert.equal(MIDIThing.noteVoltage(24,2),1);
- assert.equal(MIDIThing.noteVoltage(36,2),2);assert.equal(MIDIThing.noteVoltage(72,1),0);
- assert.equal(MIDIThing.noteVoltage(127,0),5);
+ assert.equal(MIDIThing.noteVoltage(0,2),0);assert.equal(MIDIThing.noteVoltage(12,2),1);
+ assert.equal(MIDIThing.noteVoltage(60,2),5);assert.equal(MIDIThing.noteVoltage(120,2),10);
+ assert.equal(MIDIThing.noteVoltage(0,1),-5);assert.equal(MIDIThing.noteVoltage(60,1),0);
+ assert.equal(MIDIThing.noteVoltage(120,1),5);assert.equal(MIDIThing.noteVoltage(127,0),5);
+ assert.equal(MIDIThing.noteVoltage(96,3),8);assert.equal(MIDIThing.noteVoltage(120,3),8);
+});
+test("the 0/+8 V range is supported and bipolar controller CV spans -5 to +5 V",()=>{
+ const s=MIDIThing.createState(),p=params({ports:[port("CC",{cc:74,range:3}),port("CC",{cc:74,range:1})]});
+ send(s,p,0xB0,74,127);tick(p,s);
+ assert.equal(s.outputs[0],8);assert.equal(s.outputs[1],5);
+ send(s,p,0xB0,74,0);tick(p,s);
+ assert.equal(s.outputs[0],0);assert.equal(s.outputs[1],-5);
+});
+test("gate outputs follow the selected 0/5 V, 0/10 V and 0/8 V levels",()=>{
+ const s=MIDIThing.createState(),p=params({ports:[
+  port("GATE",{range:0}),port("GATE",{range:2}),port("GATE",{range:3})
+ ]});
+ send(s,p,0x90,60,100);tick(p,s);
+ assert.deepEqual([...s.outputs.slice(0,3)],[5,10,8]);
+});
+test("drum trigger only asserts for its selected MIDI note",()=>{
+ const s=MIDIThing.createState(),p=params({ports:[port("DRUM TRIGGER",{note:36,range:2})]});
+ assert.ok(MIDIThing.MODES.includes("DRUM TRIGGER"));
+ send(s,p,0x90,60,100);assert.equal(tick(p,s)[0],0);
+ p.ports[0].note=60;assert.equal(tick(p,s)[0],10);
+ send(s,p,0x80,60,0);assert.equal(tick(p,s)[0],0);
 });
 test("numeric port mode values from the rack selector resolve to the documented function map",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port(1)]});
- send(s,p,0x90,72,100);assert.equal(tick(p,s)[0],5);
+ send(s,p,0x90,72,100);assert.equal(tick(p,s)[0],6);
 });
 test("note-on allocates a voice and maps pitch to the configured port",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("NOTE CV")]});
  send(s,p,0x90,72,100);const out=tick(p,s);
- assert.equal(out[0],5);assert.equal(s.activeVoices,1);assert.equal(s.voices[0].gate,1);
+ assert.equal(out[0],6);assert.equal(s.activeVoices,1);assert.equal(s.voices[0].gate,1);
 });
 test("note-off releases the matching voice without releasing other notes",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("GATE",{voice:1}),port("GATE",{voice:2})]});
  send(s,p,0x90,60,100);send(s,p,0x90,67,90);tick(p,s);
- assert.equal(s.outputs[0],5);assert.equal(s.outputs[1],5);
+ assert.equal(s.outputs[0],10);assert.equal(s.outputs[1],10);
  send(s,p,0x80,60,0);tick(p,s);
  assert.equal(s.outputs[0],0);assert.equal(s.outputs[1],5);
 });
@@ -59,7 +82,7 @@ test("channel pressure and program change are independently mapped",()=>{
 test("MIDI channel filter blocks events from other channels",()=>{
  const s=MIDIThing.createState(),p=params({midiChannel:2,ports:[port("GATE")]});
  send(s,p,0x90,60,100);assert.equal(tick(p,s)[0],0);
- send(s,p,0x91,60,100);assert.equal(tick(p,s)[0],5);
+ send(s,p,0x91,60,100);assert.equal(tick(p,s)[0],10);
 });
 test("per-port channel selection filters voice and controller outputs",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("GATE",{channel:2}),port("CC",{channel:1,cc:1})]});
@@ -99,12 +122,12 @@ test("ADSR rises, decays to sustain, and releases to zero",()=>{
 });
 test("clock messages create a bounded 10 ms gate pulse",()=>{
  const s=MIDIThing.createState(48000),p=params({ports:[port("CLOCK")]});
- send(s,p,0xF8,0,0);assert.equal(tick(p,s,1,48000)[0],5);
+ send(s,p,0xF8,0,0);assert.equal(tick(p,s,1,48000)[0],10);
  tick(p,s,600,48000);assert.equal(s.outputs[0],0);assert.equal(s.clockCount,1);
 });
 test("start, continue and stop map to the transport gate",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("START/STOP")]});
- send(s,p,0xFA);assert.equal(tick(p,s)[0],5);send(s,p,0xFC);assert.equal(tick(p,s)[0],0);
+ send(s,p,0xFA);assert.equal(tick(p,s)[0],10);send(s,p,0xFC);assert.equal(tick(p,s)[0],0);
 });
 test("RPN and NRPN data entry map 14-bit parameter values",()=>{
  const s=MIDIThing.createState(),p=params({ports:[port("RPN"),port("NRPN")]});
