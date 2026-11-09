@@ -56,6 +56,9 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "hexpander_dsp.js",
     "pony_vcf_dsp.js",
     "stereo_strip_dsp.js",
+    "joystick_dsp.js",
+    "divkid_mutes_mk2_dsp.js",
+    "cv_thing_dsp.js",
     "crush_delay_v3_dsp.js",
     "bf22_dsp.js",
     "midi_thing_v2_dsp.js"
@@ -63,7 +66,7 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander", "ponyVcf", "stereoStrip", "midiThingV2", "bf22", "crushDelayV3"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit", "hexmix", "hexpander", "ponyVcf", "stereoStrip", "joystick", "divkidMutesMk2", "cvThing", "midiThingV2", "bf22", "crushDelayV3"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
