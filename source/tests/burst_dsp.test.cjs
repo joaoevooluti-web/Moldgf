@@ -22,8 +22,8 @@ test("trigger immediately emits the first burst pulse and completes the requeste
   const first=Burst.process({...inputs,trigger:5},{...params,quantity:3},state,.0005);
   assert.equal(first.outputs[2],10);
   assert.equal(first.triggersRequested,3);
-  let pulses=1;
-  for(let i=0;i<5000&&state.burstActive;i++){const r=Burst.process(inputs,params,state,.001);if(r.outputs[2]===10)pulses++}
+  let pulses=1,previousHigh=true;
+  for(let i=0;i<5000&&state.burstActive;i++){const r=Burst.process(inputs,params,state,.001);const high=r.outputs[2]===10;if(high&&!previousHigh)pulses++;previousHigh=high}
   assert.equal(pulses,3);
   assert.equal(state.burstActive,false);
 });
