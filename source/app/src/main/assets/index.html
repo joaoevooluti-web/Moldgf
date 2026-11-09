@@ -890,7 +890,7 @@ const UI={pam(m){const P=m.s,R=m.r,o=P.o[P.sel],ext=!!cs[sig(m.id+'.clk')]&&P.ck
   st_(ce(m,'.pi'),PLN[PIDX(P)]+(P.di?' · DIST':''))},
  out(m){cl(m,'[data-pk]').forEach(e=>{const h=Math.round(cp(m.r.pk[+e.dataset.pk])*50)*2+'%';if(e._h!==h){e._h=h;e.style.height=h}});cl(m,'[data-a=omu]').forEach(e=>tg_(e,'on',m.s.mu))},
  atte(m){cl(m,'.att-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')})},
- dualAt(m){cl(m,'.dual-value').forEach(e=>{const v=m.r.out[+e.dataset.i]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')});cl(m,'.dual-led').forEach(e=>{const state=m.r.led[+e.dataset.led]||'off';e.classList.toggle('positive',state==='positive');e.classList.toggle('negative',state==='negative')})},
+ dualAt(m){cl(m,'.dual-value').forEach(e=>{const v=Vn[m.id+'.out'+(e.dataset.i==='0'?'A':'B')]||0;st_(e,(v>0?'+':'')+v.toFixed(2)+' V')});cl(m,'.dual-led').forEach(e=>{const v=Vn[m.id+'.out'+(e.dataset.led==='0'?'A':'B')]||0,state=MoldgfDualAtenuverterDSP.ledPolarity(v);e.classList.toggle('positive',state==='positive');e.classList.toggle('negative',state==='negative')})},
  mix(m){cl(m,'[data-pk]').forEach(e=>{const h=Math.round(cp(m.r.pk[+e.dataset.pk])*50)*2+'%';if(e._h!==h){e._h=h;e.style.height=h}});cl(m,'[data-a=mu]').forEach(e=>tg_(e,'on',m.s.mu[+e.dataset.i]))}};
 let lastT=0;
 function ui(t){requestAnimationFrame(ui);if(t-lastT<33)return;lastT=t;flush();if(!node){for(let i=0;i<SN.length;i++)Vn[SN[i]]=V[i];for(const id in I){const m=I[id];if(m.t==='pam')m.r.st=m.r.o.map(q=>q.st)}}for(const id in I){const m=I[id];if(UI[m.t])UI[m.t](m)}
