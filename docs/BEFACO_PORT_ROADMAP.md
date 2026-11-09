@@ -165,10 +165,10 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 ### Immediate continuation
 
-1. Complete the A*B+C/AxBC identity audit against the official manual and remove the duplicate product presentation without breaking legacy patch keys or cable IDs.
-2. Redesign the A*B+C panel to expose the real two-channel A×B+C layout, B/C normaling to +5 V, gain switches and signal indicators.
-3. Redesign Voltio around its real two-knob note/octave workflow, precision adder input, output, and measurement terminals; verify the DSP state model before changing controls.
-4. Apply the same hardware-faithful panel standard to the remaining already-ported modules, then port the next five distinct catalog modules with DSP/graph tests.
+1. Finish the legacy A*B+C V4 panel and verify its distinct +5 V B / +10 V C normaling and OUT1-to-OUT2 sum behavior; keep it separate from the current A*B+C revision.
+2. Validate the three completed panel passes (Atte, current A*B+C, Voltio) in WebView and add targeted static/UI regression assertions.
+3. Redesign the remaining already-ported modules to the same hardware-faithful panel standard.
+4. Port the next five distinct current-catalog modules with DSP and graph tests.
 5. Keep the Android build gate closed until the five additional modules and their tests are complete.
 
 
