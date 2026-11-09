@@ -78,7 +78,7 @@ test("hardware-faithful panels expose the correct Atte, A*B+C and Voltio control
   assert.match(currentAbc, /CHANNEL /);
   assert.match(currentAbc, /MULT · A1/);
   assert.match(currentAbc, /B AND C INPUTS NORMALLED TO \+5 V/);
-  assert.match(legacyAbc, /C NORMALLED \\+10 V/);
+  assert.match(legacyAbc, /C NORMALLED \+10 V/);
   assert.match(legacyAbc, /OUT1 → OUT2 MIX/);
   assert.match(legacyAbc, /B1 ATTENUVERTER/);
   assert.match(voltio, /SK\('octave'/);
