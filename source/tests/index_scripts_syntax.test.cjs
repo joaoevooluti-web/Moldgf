@@ -67,9 +67,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
   assert.equal(pageAssets.length, 32, "expected 32 module DSP assets in the page");
-  assert.equal(new Set(pageAssets).size, 27, "DSP page assets must be unique");
+  assert.equal(new Set(pageAssets).size, 32, "DSP page assets must be unique");
   assert.equal(descriptors.length, 32, "expected 32 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 27, "graph descriptor types must be unique");
+  assert.equal(new Set(descriptors).size, 32, "graph descriptor types must be unique");
 });
 
 
