@@ -47,22 +47,22 @@ test("pitch Time changes the pitch envelope decay",()=>{
  assert.ok(b.pitchEnvelope>a.pitchEnvelope);
 });
 test("Decay CV adjusts the main VCA envelope time",()=>{
- const fast=Kickall.envelopeTime(Kickall.clamp(.5-1,0,1),.025,6);
- const slow=Kickall.envelopeTime(Kickall.clamp(.5+1,0,1),.025,6);
- assert.ok(slow>fast);
+ const fast=Kickall.createState(),slow=Kickall.createState(),p={tune:.5,shape:0,time:.5,bend:0,decay:0};
+ let a,b;for(let n=0;n<6000;n++){a=Kickall.process(p,{trigger:n===0?5:0,decay:-10},fast,48000);b=Kickall.process(p,{trigger:n===0?5:0,decay:10},slow,48000)}
+ assert.ok(b.volumeEnvelope>a.volumeEnvelope);
 });
 test("Shape morphs from sine toward a bounded square wave",()=>{
  const p={tune:.5,time:.5,bend:0,decay:1};
- const a=Kickall.process({...p,shape:0},{},Kickall.createState(),48000);
- const b=Kickall.process({...p,shape:1},{},Kickall.createState(),48000);
+ const a=Kickall.process({...p,shape:0},{trigger:5},Kickall.createState(),48000);
+ const b=Kickall.process({...p,shape:1},{trigger:5},Kickall.createState(),48000);
  assert.ok(Math.abs(a.out)<=5&&Math.abs(b.out)<=5);
  assert.ok(Math.abs(a.out-b.out)>.001);
 });
 test("general volume VCA is normalled to full level and responds to CV",()=>{
  const p={tune:.5,shape:0,time:.5,bend:0,decay:1};
- const full=Kickall.process(p,{},Kickall.createState(),48000);
- const half=Kickall.process(p,{volume:5},Kickall.createState(),48000);
- const muted=Kickall.process(p,{volume:0},Kickall.createState(),48000);
+ const full=Kickall.process(p,{trigger:5},Kickall.createState(),48000);
+ const half=Kickall.process(p,{trigger:5,volume:5},Kickall.createState(),48000);
+ const muted=Kickall.process(p,{trigger:5,volume:0},Kickall.createState(),48000);
  assert.ok(Math.abs(full.out-half.out*2)<1e-9);assert.equal(muted.out,0);
 });
 test("Kickall output remains finite and bounded at extreme CV values",()=>{
