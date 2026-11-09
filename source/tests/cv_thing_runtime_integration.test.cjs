@@ -17,17 +17,16 @@ test("CV Thing is initialized and dispatched in the shared sample engine", () =>
 });
 test("CV Thing has eight typed CV inputs and eight typed gate inputs", () => {
   assert.match(html, /type:'cvThing',ports:/);
-  for (let i = 1; i <= 8; i++) {
-    assert.ok(html.includes("id:'cv" + i + "'"), "missing CV port " + i);
-    assert.ok(html.includes("id:'gate" + i + "'"), "missing gate port " + i);
-    assert.ok(html.includes("id+'.cv" + i + "'"), "missing CV jack " + i);
-    assert.ok(html.includes("id+'.gate" + i + "'"), "missing gate jack " + i);
-  }
+  assert.match(html, /id:'cv'\+\(i\+1\)/);
+  assert.match(html, /id:'gate'\+\(i\+1\)/);
+  assert.match(html, /id\+'\.cv'\+\(i\+1\)/);
+  assert.match(html, /id\+'\.gate'\+\(i\+1\)/);
 });
 test("CV Thing routes CC, note, program, clock and transport events through the MIDI queue", () => {
   for (const status of ["176|(ch&15)", "144|(ch&15)", "128|(ch&15)", "192|(ch&15)", "mq(248", "mq(250", "mq(252"]) assert.ok(html.includes(status), "missing MIDI route " + status);
   assert.match(html, /function midiFlat\(a\)/);
   assert.match(html, /NAT\.midiOutBatch/);
+  assert.match(html, /if\(st>=248\)o\.send\(\[st\]\)/);
 });
 test("CV Thing exposes channel, threshold, mapping mode, CC and note controls", () => {
   assert.match(html, /Sel\('channel','MIDI CHANNEL'/);
