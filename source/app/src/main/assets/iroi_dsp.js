@@ -11,7 +11,7 @@
  function channel(sr){
   return{
    filter:{ic1:0,ic2:0,comb:new Float32Array(4096),combPos:0,lastCutoff:-1,lastRes:-1,lastMode:-1,g:0,k:1,a1:1},
-   resonator:Array.from({length:3},()=>({buf:new Float32Array(4096),pos:0})),
+   resonator:Array.from({length:3},()=>({buf:new Float32Array(4096),pos:0})),echoLP:0,
    echoBuf:new Float32Array(Math.ceil(sr*6)+8),
    reverb:REV_DELAYS.map((d)=>({buf:new Float32Array(4096),pos:0,base:d*sr/48000})),
    allpass:AP_DELAYS.map((d)=>({buf:new Float32Array(1024),pos:0,base:d*sr/48000})),
@@ -40,10 +40,10 @@
   const low=v2,band=v1,high=x-f.k*v1-v2;
   return(mode===1?band:mode===2?high:low)*level;
  }
- function resonator(ch,x,frequency,feedback,sr){
+ function resonator(ch,x,frequency,feedback,sr,dissonance){
   let sum=0;
   for(let n=0;n<3;n++){
-   const c=ch.resonator[n],delay=clamp(Math.round(sr/(frequency*RATIOS[n])),4,4094),d=ringRead(c.buf,c.pos,delay);
+   const ratio=RATIOS[n]*(n===0?1:n===1?1+dissonance*.3:1-dissonance*.15),c=ch.resonator[n],delay=clamp(Math.round(sr/(frequency*ratio)),4,4094),d=ringRead(c.buf,c.pos,delay);
    c.buf[c.pos]=x+d*feedback;c.pos=(c.pos+1)&4095;sum+=d;
   }
   return sum/3;
@@ -85,7 +85,7 @@
   else if(wave===4)lfo=s.modPhase<.5?1:-1;
   else if(wave===5)lfo=s.modHold;
   else lfo=clamp(s.modEnvelope*2-1,-1,1);
-  const target=Math.round(clamp(p.modTarget,0,4,0)),source=Math.round(clamp(p.modSource,0,2,0));
+  const target=p.mapMode?Math.round(clamp(p.modTarget,0,4,0)):0,source=Math.round(clamp(p.modSource,0,2,0));
   const cvForTarget=target===1?i.filterCutoffCV:target===2?i.resonatorTuneCV:target===3?i.echoDensityCV:target===4?i.ambienceSpaceCV:null;
   const modSource=source===0?lfo:source===1?clamp(finite(cvForTarget)/10,-1,1):s.randomValue;
   const mod=modSource*clamp(p.modLevel,0,1,0);
@@ -95,7 +95,7 @@
   const cvSpace=i.ambienceSpaceCV===null||i.ambienceSpaceCV===undefined?0:finite(i.ambienceSpaceCV)/10*clamp(p.ambienceSpaceAtt,0,1,0);
   const cutoffNorm=clamp(p.cutoff+cvCut+(target===1?mod*.25:0),0,1,.7);
   const cutoff=20*Math.pow(2,cutoffNorm*10);
-  const resTune=clamp(p.resTune+cvTune+(target===2?mod*.25:0),0,1,.5);
+  const resTune=clamp(p.resTune+cvTune+(target===2?mod*.25:0),0,1,.5),resDissonance=clamp(p.resDissonance,0,1,0);
   const resFreq=60*Math.pow(2,resTune*6);
   const echoDensity=clamp(p.echoDensity+cvEcho+(target===3?mod*.25:0),0,1,.25);
   const space=clamp(p.space+cvSpace+(target===4?mod*.25:0),0,1,.35);
@@ -108,7 +108,7 @@
   const filterMode=Math.round(clamp(p.filterMode,0,3,0)),position=Math.round(clamp(p.filterPosition,0,3,0));
   let xL=left,xR=right;
   if(position===0){xL=filterVca(s.channels[0],xL,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1);xR=filterVca(s.channels[1],xR,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1)}
-  const resL=resonator(s.channels[0],xL,resFreq,resFeedback,sr),resR=resonator(s.channels[1],xR,resFreq,resFeedback,sr);
+  const resL=resonator(s.channels[0],xL,resFreq,resFeedback,sr,resDissonance),resR=resonator(s.channels[1],xR,resFreq,resFeedback,sr,resDissonance);
   xL=xL*(1-resMix)+resL*resMix;xR=xR*(1-resMix)+resR*resMix;
   if(position===1){xL=filterVca(s.channels[0],xL,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1);xR=filterVca(s.channels[1],xR,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1)}
   let delaySeconds=.01+echoDensity*5.99;
@@ -116,13 +116,13 @@
   const delay=clamp(Math.round(delaySeconds*sr),2,s.channels[0].echoBuf.length-4);
   const echoL1=ringRead(s.channels[0].echoBuf,s.echoPos,delay),echoL2=ringRead(s.channels[0].echoBuf,s.echoPos,delay*1.5);
   const echoR1=ringRead(s.channels[1].echoBuf,s.echoPos,delay),echoR2=ringRead(s.channels[1].echoBuf,s.echoPos,delay*1.5);
-  const echoL=echoL1*.65+echoL2*.35,echoR=echoR1*.65+echoR2*.35,feedback=clamp(p.echoRepeats,0,.98,.2);
+  let echoL=echoL1*.65+echoL2*.35,echoR=echoR1*.65+echoR2*.35;const echoTone=clamp(p.echoTone,0,1,.5);s.channels[0].echoLP+=(echoL-s.channels[0].echoLP)*(.01+echoTone*.49);s.channels[1].echoLP+=(echoR-s.channels[1].echoLP)*(.01+echoTone*.49);echoL=s.channels[0].echoLP;echoR=s.channels[1].echoLP;const feedback=clamp(p.echoRepeats,0,.98,.2);
   s.channels[0].echoBuf[s.echoPos]=xL+echoR*feedback;s.channels[1].echoBuf[s.echoPos]=xR+echoL*feedback;
   s.echoPos++;if(s.echoPos>=s.channels[0].echoBuf.length)s.echoPos=0;
   xL=xL*(1-echoMix)+echoL*echoMix;xR=xR*(1-echoMix)+echoR*echoMix;
   if(position===2){xL=filterVca(s.channels[0],xL,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1);xR=filterVca(s.channels[1],xR,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1)}
   let revL=ambience(s.channels[0],xL,space,clamp(p.decay,0,1,.5)),revR=ambience(s.channels[1],xR,space,clamp(p.decay,0,1,.5));
-  const pan=Math.sin(s.modPhase*Math.PI*2)*space*.25,oldL=revL,oldR=revR;
+  const pan=Math.sin(s.modPhase*Math.PI*2)*space*.25*(Math.round(clamp(p.reverbDirection,0,1,0))? -1:1),oldL=revL,oldR=revR;
   revL=oldL*(1-pan)+oldR*pan;revR=oldR*(1-pan)+oldL*pan;
   xL=xL*(1-ambienceMix)+revL*ambienceMix;xR=xR*(1-ambienceMix)+revR*ambienceMix;
   if(position===3){xL=filterVca(s.channels[0],xL,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1);xR=filterVca(s.channels[1],xR,cutoff,resonance,filterMode,vca,sr,rngNext(s)*2-1)}
