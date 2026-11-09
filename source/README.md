@@ -78,7 +78,7 @@ The next modules to port, in order, are Hexmix, Hexpander, Pony VCF, DivKid Ster
 
 The Phase 7 batch is now complete (5/5): Hexmix, Hexpander, Pony VCF, DivKid Stereo Strip and MIDI Thing V2. MIDI Thing V2 adds 12 configurable CV/gate outputs, per-port mapping for note CV, gate, velocity, CC, pitch bend, pressure, program, clock, transport, ADSR, oscillator, LFO, RPN and NRPN; 12-voice allocation/priority, sustain, glide, and 0–5 V / ±5 V / 0–10 V range selection. It receives events from the existing Android MIDI input bridge and AudioWorklet. Its 6 HP-inspired panel includes a 12-port configuration matrix, NEW VOICE macro and ALL NOTES OFF. Physical TRS/USB-host hardware routing and MIDI merge are not emulated.
 
-Dedicated tests for the five-module batch currently cover 97 DSP cases and 25 graph-contract cases, plus inline-script, module-registry, asset-loading and panel assertions. The next consolidated Node/WASM/APK workflow is now permitted and is the first CI run for these five modules; device-level MIDI/audio/touch verification remains pending. All work stays on `feature/befaco-modules`; `main` is preserved.
+Dedicated tests for the five-module batch currently cover 100 DSP cases and 25 graph-contract cases, plus inline-script, module-registry, asset-loading and panel assertions. The next consolidated Node/WASM/APK workflow is now permitted and is the first CI run for these five modules; device-level MIDI/audio/touch verification remains pending. All work stays on `feature/befaco-modules`; `main` is preserved.
 
 
 Phase 7 CI validation snapshot: this commit closes the five-module implementation gate and triggers the consolidated Node, Plaits/Beads WebAssembly, Gradle debug APK and artifact checks. Physical-device validation remains a separate pending step.
@@ -109,3 +109,11 @@ Phase 7 CI rerun: workflow #27 passed 550/551 tests; the final PROGRAM CHANGE pa
 
 
 Phase 7 final rerun: the MIDI Thing V2 faceplate now displays the full OSCILLATOR function label; this commit starts workflow #29.
+
+
+### Phase 7 implementation refinement and CI log — run #29
+
+- The latest branch now includes MIDI Thing V2's additional **0–8 V** range, per-port drum-trigger note selector, and **DRUM TRIGGER** mapping. The compact port matrix was expanded to show PORT / FUNCTION / CHANNEL / VOICE / CC / NOTE / OUTPUT / JACK in a two-row layout.
+- The Phase 7 module-specific tests now total **100 DSP tests + 25 graph tests**: Hexmix 18+5, Hexpander 15+5, Pony VCF 17+5, Stereo Strip 19+5, MIDI Thing V2 31+5. The repository-wide Node suite reported 554 tests in run #29.
+- Workflow #29 failed one assertion: the second voice's gate was expected to be 5 V even though its configured range was 0–10 V. The expected value is now 10 V, consistent with the module's range-aware gate output. This correction is committed on the current branch.
+- [ ] Workflow #30 must run the full Node/WASM/Gradle/APK gate on the current branch HEAD. Do not mark the batch validated until every required step and artifact inspection succeeds.
