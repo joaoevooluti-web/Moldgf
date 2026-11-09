@@ -58,7 +58,7 @@ Workflow #22 (run 42557029992) completed successfully on code commit c24cf7f07ac
 
 ### Befaco port status — 2026-11-09
 
-The second five-module implementation batch is now complete on `feature/befaco-modules`: Random8, MEX, Octaves VCO, IROI and Bandit. Each module has a DSP asset, engine dispatch, dedicated front panel, typed graph descriptor and dedicated tests. The batch adds **104 DSP/graph test cases** and five static panel/integration assertions; the page now loads 32 DSP assets and registers 32 graph module types.
+The second five-module implementation batch is now complete on `feature/befaco-modules`: Random8, MEX, Octaves VCO, IROI and Bandit. Each module has a DSP asset, engine dispatch, dedicated front panel, typed graph descriptor and dedicated tests. The batch adds **105 DSP/graph test cases** and five static panel/integration assertions; the page now loads 32 DSP assets and registers 32 graph module types.
 
 The consolidated Node/Android CI gate is now being opened for this batch. Its run must confirm the actual `node --test tests/*.test.cjs` suite, Plaits/Beads WebAssembly validation, Gradle debug APK assembly and uploaded artifacts before this batch is called CI-validated. No physical-device audio or touch validation is claimed.
 
