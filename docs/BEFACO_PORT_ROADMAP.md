@@ -394,3 +394,13 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [x] **Crush Delay V3:** preallocated 2-second delay buffer, clean 5–400 ms region and crushed extension to 2 seconds, IN/RETURN VCAs with 10 V normaling, TIME/FEEDBACK/DRY-WET CV, three crush modifiers plus 3 V gate input, feedback repeats, fully wet SEND and dry/wet OUT. Added 11 HP-inspired panel, 10 typed ports, 24 DSP + 5 graph tests authored.
 - Combined Phase 8 coverage so far: **46 DSP + 10 graph tests**, all authored but not run in CI. Registry/assets now contain 39 unique entries.
 - Next: Joystick. No workflow until all five Phase 8 modules and tests are complete.
+
+
+### Manual patching regression — BF-22 descriptor mismatch
+
+- [x] Re-audited the live rack adapter and confirmed `module_graph.js` accepts rack instances using the runtime `t` field; a regression test already covers this earlier failure.
+- [x] Found a second concrete blocker in the BF-22 typed graph descriptor: the physical panel renders jacks `in`, `cv1`, `cv2`, `resCV`, `out`, while the descriptor incorrectly declared `inA`, `inB`, `cv1A`, `cv2A`, `resCVA`, `cv1B`, `cv2B`, `resCVB`, `outA`, `outB`. Consequently `canConnect()` returned `unknown-port` for every BF-22 manual patch even though the jack existed in the UI. Replaced the descriptor with the five actual runtime jack IDs in commit `bdd8ebdeb05f22804e8fc4e059feba92a401cb42`.
+- [x] Added graph-level regression coverage for BF-22's three CV inputs and audio input/output, plus rack HTML assertions that the panel jack IDs and typed descriptor stay aligned. Test commits: `313635c023dc08eee1b863c961355c7b45560673` and `c1da0daaf02c3c58c56b307184f7fb056ed20561`; UI assertion commit: `9ca073a209d61b6f2d707cfb6a606a21a01a2921`.
+- [ ] These new tests have been authored but not executed. No workflow or APK build was started, and `main` remains untouched.
+- [ ] The five panels still require a proper hardware-reference redesign. Current CSS uses horizontal card layouts (Random8 8-column strips, MEX 4-column switches, Octaves 3-column groups, IROI 2-column sections, Bandit 4-column bands), which do not reproduce the physical vertical faceplates. Next visual pass must use product-specific HP widths and vertical control/jack placement, not just change colors or labels.
+- Next: audit all 39 registered module descriptors against actual rendered jack IDs; add a generated consistency test so no module can ship a panel jack absent from its descriptor. Then redesign Random8, MEX, Octaves VCO, IROI and Bandit panels from official product images/manuals. Keep CI blocked until the complete regression and visual pass is ready.
