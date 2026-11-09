@@ -106,3 +106,6 @@ Phase 7 CI rerun: workflow #27 passed 550/551 tests; the final PROGRAM CHANGE pa
 
 - Workflow #28 again ran 551 Node tests: 550 passed and one static panel assertion failed because the faceplate footer abbreviated OSCILLATOR as OSC. The faceplate now spells out OSCILLATOR. The regression assertion continues to check the full visible label and the panel's selector controls.
 - Workflow #29 will rerun the complete Node/WASM/Gradle/APK gate. No APK was produced by #28.
+
+
+Phase 7 final rerun: the MIDI Thing V2 faceplate now displays the full OSCILLATOR function label; this commit starts workflow #29.
