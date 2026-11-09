@@ -17,10 +17,12 @@ test("CV Thing is initialized and dispatched in the shared sample engine", () =>
 });
 test("CV Thing exposes exactly eight physical CV jacks with gate-capable signal typing", () => {
   assert.match(html, /type:'cvThing',ports:Array\.from\(\{length:8\}/);
-  assert.match(html, /id:'cv'\+\(i\+1\),direction:'input',signal:'cv',channels:1,accepts:\['cv','gate','trigger'\]/);
-  assert.match(html, /id\+'\.cv'\+\(i\+1\)/);
-  assert.doesNotMatch(html, /id:'gate'\+\(i\+1\)/);
-  assert.doesNotMatch(html, /id\+'\.gate'\+\(i\+1\)/);
+  const descriptor = html.slice(html.indexOf("PORT_REGISTRY.register({type:'cvThing'"), html.indexOf("PORT_REGISTRY.register({type:'divkidMutesMk2'"));
+  const panel = html.slice(html.indexOf("cvThing:{n:'Befaco CV Thing"), html.indexOf("divkidMutesMk2:{n:'DivKid Mutes"));
+  assert.match(descriptor, /id:'cv'\+\(i\+1\),direction:'input',signal:'cv',channels:1,accepts:\['cv','gate','trigger'\]/);
+  assert.match(panel, /id\+'\.cv'\+\(i\+1\)/);
+  assert.doesNotMatch(descriptor, /id:'gate'/);
+  assert.doesNotMatch(panel, /id\+'\.gate/);
 });
 test("CV Thing maps CC, paired V/Oct Note, Program Change, Clock and Start/Stop to MIDI", () => {
   for (const status of ["176|(ch&15)", "144|(ch&15)", "128|(ch&15)", "192|(ch&15)", "mq(248", "mq(250", "mq(252"]) assert.ok(html.includes(status), "missing MIDI route " + status);
