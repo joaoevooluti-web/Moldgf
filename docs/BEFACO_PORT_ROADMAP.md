@@ -150,3 +150,23 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 - Atte official behavior: four cascaded attenuator/inverter channels; first input normalled to +10 V; per-channel inversion; four bipolar level LEDs. Reference: https://www.befaco.org/atte/
 - A*B+C official behavior: two channels, each computes A × B + C; B and C inputs normalled to +5 V; signal LEDs. Reference: https://www.befaco.org/axbc/
 - Voltio official behavior: precision 1 V/oct voltage source spanning ten octaves, two-knob note/octave interface, precision adder input, and front-panel banana measurement connectors. Reference: https://www.befaco.org/voltio/
+
+
+## Production continuation — 2026-11-08
+
+### Visual fidelity pass 1 — Atte
+
+- [x] Replaced the generic Atte rows with a dedicated narrow four-channel front panel: channel A–D identity, paired IN/OUT jacks, individual LEVEL controls, per-channel polarity selector, fixed +10 V normal indication, and cascaded-input labeling.
+- [x] Added per-channel live polarity indicators: green for positive output and red for negative output, driven by the actual DSP output values.
+- [x] Removed the user-selectable +1/+5/+10 V normal control from the front panel. The official Atte specification normalled first input is +10 V; the existing DSP default remains index 2 (+10 V), and no UI control now advertises non-hardware alternatives.
+- [x] Preserved the existing port IDs, parameter keys, DSP function, save-state shape, and cable compatibility.
+- [ ] Run the full Node suite and WebView visual/device validation in the next permitted consolidated CI cycle; no build was started for this visual-only commit.
+- Commit: `dfb4706ea9b8d16202036d827e1ca5fb4dce316d` on `feature/befaco-modules` (`[skip ci]`). `main` was not modified.
+
+### Immediate continuation
+
+1. Complete the A*B+C/AxBC identity audit against the official manual and remove the duplicate product presentation without breaking legacy patch keys or cable IDs.
+2. Redesign the A*B+C panel to expose the real two-channel A×B+C layout, B/C normaling to +5 V, gain switches and signal indicators.
+3. Redesign Voltio around its real two-knob note/octave workflow, precision adder input, output, and measurement terminals; verify the DSP state model before changing controls.
+4. Apply the same hardware-faithful panel standard to the remaining already-ported modules, then port the next five distinct catalog modules with DSP/graph tests.
+5. Keep the Android build gate closed until the five additional modules and their tests are complete.
