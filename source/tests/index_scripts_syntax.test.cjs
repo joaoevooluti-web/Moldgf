@@ -133,4 +133,8 @@ test("Random8 panel exposes eight hardware-style channels and the documented men
   assert.match(panel,/SLIDE/);
   assert.match(panel,/QUANTIZER/);
   assert.match(panel,/RANDOM TYPE/);
+  assert.match(panel,/data-a="random8-mode"/);
+  assert.match(panel,/data-a="random8-edit"/);
+  assert.match(panel,/data-r8-setting="scale"/);
+  assert.match(panel,/data-r8-setting="distribution"/);
 });
