@@ -50,12 +50,13 @@ test("all integrated modules ship their DSP assets and graph registrations", () 
     "random8_dsp.js",
     "mex_dsp.js",
     "octaves_dsp.js",
-    "iroi_dsp.js"
+    "iroi_dsp.js",
+    "bandit_dsp.js"
   ]) {
     assert.ok(html.includes('src="' + asset + '"'), "missing page asset " + asset);
     assert.ok(html.includes("'" + asset + "'"), "missing worklet bundle asset " + asset);
   }
-  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi"]) {
+  for (const type of ["atte", "dualAt", "voltio", "abc", "axbc", "bypass", "mixer2", "mixer", "stmix", "morphader", "hexmixvca", "motionmtr", "slewlimiter", "slew", "ponyVco", "adsr", "percall", "mudi", "burst", "samplingModulator", "choppingKinky", "evenVco", "rampage", "springReverb", "kickall", "noisePlethora", "muxlicer", "random8", "mex", "octaves", "iroi", "bandit"]) {
     assert.ok(html.includes("type:'" + type + "'"), "missing graph descriptor " + type);
   }
 });
@@ -65,9 +66,9 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const html = fs.readFileSync(htmlPath, "utf8");
   const pageAssets = [...html.matchAll(/<script src="([^"]+_dsp\.js)"><\/script>/g)].map((match) => match[1]);
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
-  assert.equal(pageAssets.length, 31, "expected 31 module DSP assets in the page");
+  assert.equal(pageAssets.length, 32, "expected 32 module DSP assets in the page");
   assert.equal(new Set(pageAssets).size, 27, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 31, "expected 31 explicit graph descriptors");
+  assert.equal(descriptors.length, 32, "expected 32 explicit graph descriptors");
   assert.equal(new Set(descriptors).size, 27, "graph descriptor types must be unique");
 });
 
@@ -184,4 +185,14 @@ test("IROI panel exposes the stereo FX chain, CV mapping, modulation and randomi
   assert.match(html,/randomUndo/);
   assert.match(html,/randomRedo/);
   assert.match(html,/m\.s\.mapMode=!m\.s\.mapMode/);
+});
+
+test("Bandit panel exposes four hardware bands, individual inserts, CV faders and limited mix",()=>{
+  const htmlPath=path.join(__dirname,"../app/src/main/assets/index.html");
+  const html=fs.readFileSync(htmlPath,"utf8");
+  const panel=html.slice(html.indexOf("bandit:{n:"),html.indexOf("iroi:{n:"));
+  for(const label of ["BANDIT","8 HP","ALL AUDIO IN","ALL CV IN","LOW 300 Hz","MID LOW 700 Hz","MID HIGH 1.5 kHz","HIGH 5 kHz","BAND IN","LEVEL CV","BAND OUT","RETURN","MIX OUT"])assert.ok(panel.includes(label),"missing Bandit control "+label);
+  assert.match(html,/MoldgfBanditDSP\.process/);
+  assert.match(html,/SU\[K\(m,'bandOut1'\)\]/);
+  assert.match(html,/Math\.tanh\(mix\)/);
 });
