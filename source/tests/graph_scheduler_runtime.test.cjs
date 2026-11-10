@@ -10,7 +10,7 @@ function readScripts() {
   );
   const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
   const engine = scripts.find((m) => /\bid=["']eng["']/.test(m[1]));
-  const ui = scripts.find((m) => /\bid=["']ui["']/.test(m[1]));
+  const ui = scripts.find((m) => /\bid=["']ui["']/.test(m[1])) || scripts[scripts.length - 1];
   assert.ok(engine, "shared audio engine script must exist");
   assert.ok(ui, "rack UI script must exist");
   return { engine: engine[2], ui: ui[2] };

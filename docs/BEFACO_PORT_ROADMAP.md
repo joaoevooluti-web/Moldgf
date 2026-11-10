@@ -113,7 +113,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [x] Exposed a read-only diagnostic snapshot as `window.MoldgfGraphPlan()` containing validity, topological order and graph errors. This is a shadow plan: it does not reject existing patches or change the real-time DSP order.
 - [x] Added `graph_scheduler_runtime.test.cjs` to guard graph-plan refresh on rack/cable changes and prove the shared audio `step()` remains on its existing legacy order.
 - [ ] Active scheduler adoption remains pending. Before any DSP reordering, audit all 34 Befaco descriptors against rendered jack IDs, classify feedback-safe modules, and migrate only adapters whose input/output and state contracts are proven.
-- Commit is grouped with the Phase 0 roadmap correction and will be validated by the next feature-branch CI run.
+- Workflow [#76 / 42829050147](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829050147) exercised the change but stopped at the new test: 690 existing tests passed and the three new assertions failed because the test assumed the UI inline script had an `id=ui`; the current page uses the final inline script instead. The test selector is corrected to use that existing fallback. Emscripten, Gradle/JUnit and APK steps were skipped after the Node gate; the unconditional WASM verifier consequently had no generated wrappers. No existing DSP/graph regression failed.
 
 ### Phase 2 — Utility and routing modules
 - [x] Atte — four attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, individual outputs, and saved control state; dedicated DSP tests pass.
