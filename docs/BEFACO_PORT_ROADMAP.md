@@ -103,8 +103,17 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [x] Add a standalone module descriptor registry and typed-port/graph validation contract.
 - [x] Add automated Node tests for registry validation, signal direction/types, channel compatibility, topological order, and explicit feedback-delay handling (6/6 passed in workflow 42539116720, commit c231aaa4ecb3601f1423c84dbfa0710f7e59edc4).
 - [x] Integrate endpoint/port-direction validation with the existing jack/cable model. Legacy ports retain permissive signal compatibility until their true audio/CV/gate metadata is declared, preserving existing patch behavior.
-- [ ] Add parameter event queue, state schema/versioning, reset/bypass contract, and scheduler integration.
+- [~] Integrate a shadow topological scheduler into rack inventory/cable updates; active audio-order scheduling remains gated on verified per-module adapters. The legacy `step()` order is intentionally unchanged.
+- [ ] Add the parameter event queue, per-module state schema/versioning, and explicit reset/bypass contract.
 - [ ] Migrate existing module types through adapters; keep Worklet and ScriptProcessor paths behaviorally aligned.
+
+#### Phase 1 incremental milestone — shadow scheduler
+
+- [x] The rack now rebuilds a deterministic topological execution plan through the existing typed registry whenever modules are added/removed or cables change. Legacy module descriptors are generated only when actual jack endpoints exist.
+- [x] Exposed a read-only diagnostic snapshot as `window.MoldgfGraphPlan()` containing validity, topological order and graph errors. This is a shadow plan: it does not reject existing patches or change the real-time DSP order.
+- [x] Added `graph_scheduler_runtime.test.cjs` to guard graph-plan refresh on rack/cable changes and prove the shared audio `step()` remains on its existing legacy order.
+- [ ] Active scheduler adoption remains pending. Before any DSP reordering, audit all 34 Befaco descriptors against rendered jack IDs, classify feedback-safe modules, and migrate only adapters whose input/output and state contracts are proven.
+- Commit is grouped with the Phase 0 roadmap correction and will be validated by the next feature-branch CI run.
 
 ### Phase 2 — Utility and routing modules
 - [x] Atte — four attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, individual outputs, and saved control state; dedicated DSP tests pass.

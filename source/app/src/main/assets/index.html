@@ -1139,12 +1139,39 @@ function ensurePortDescriptor(module){
   channels:1,
   accepts:LEGACY_SIGNAL_TYPES
  }));
+ if(!ports.length)return;
  PORT_REGISTRY.register({type:module.t,ports});
 }
+// Shadow graph scheduler: derive a deterministic topological plan whenever the rack
+// inventory or patch cables change. The audio engine deliberately keeps its legacy
+// sample order until every participating module has a verified runtime adapter.
+let graphPlan={valid:true,order:[],errors:[]};
+function refreshGraphPlan(){
+ const modules=[];
+ for(const id of Object.keys(I)){
+  const m=I[id];
+  if(!m)continue;
+  ensurePortDescriptor(m);
+  if(PORT_REGISTRY.has(m.t))modules.push({id:m.id,t:m.t});
+ }
+ const cables=[];
+ for(const c of cab){
+  const from=endpointOfJack(c.a),to=endpointOfJack(c.b);
+  if(!from||!to)continue;
+  cables.push({from:{module:from.module.id,port:from.port},to:{module:to.module.id,port:to.port}});
+ }
+ graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables);
+ return graphPlan;
+}
+window.MoldgfGraphPlan=()=>({
+ valid:graphPlan.valid,
+ order:graphPlan.order.slice(),
+ errors:graphPlan.errors.map(e=>Object.assign({},e))
+});
 const reg=()=>{jk={};document.querySelectorAll('.jk').forEach(e=>jk[e.dataset.id]=e);ledEls=[...document.querySelectorAll('[data-v]')];needDr=1};
-function idx(){idxE();reg()}
+function idx(){idxE();reg();refreshGraphPlan()}
 function postCab(){post({t:'cab',cab:cab.map(c=>[c.a,c.b])})}
-const rb=()=>{rebuild();postCab();needDr=1};
+const rb=()=>{rebuild();postCab();refreshGraphPlan();needDr=1};
 function flush(){dirty.forEach(id=>{const m=I[id];if(m&&node)node.port.postMessage({t:'sync',id,ty:m.t,s:m.s})});dirty.clear()}
 const ce=(m,s)=>(m.u=m.u||{})[s]||(m.u[s]=m.el.querySelector(s)),cl=(m,s)=>(m.u=m.u||{})['*'+s]||(m.u['*'+s]=[...m.el.querySelectorAll(s)]);
 const st_=(e,t)=>{if(e&&e._t!==t){e._t=t;e.textContent=t}},tg_=(e,c,on)=>{on=!!on;const k=e._c||(e._c={});if(k[c]!==on){k[c]=on;e.classList.toggle(c,on)}};
