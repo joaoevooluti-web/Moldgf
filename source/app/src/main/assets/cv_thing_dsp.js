@@ -6,7 +6,7 @@
   "use strict";
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const finite = (v, d) => Number.isFinite(v) ? v : d;
-  const MODES = Object.freeze({ CC: 0, NOTE: 1, PROGRAM: 2, CLOCK: 3, START_STOP: 4 });
+  const MODES = Object.freeze({ CC: 0, NOTE: 1, PROGRAM: 2, CLOCK: 3, START_STOP: 4, NRPN: 5, PITCH_BEND: 6 });
   function createState() {
     return { previous: Array(8).fill(null), clockHigh: Array(8).fill(false), cooldown: Array(8).fill(0), events: [] };
   }
@@ -22,7 +22,7 @@
       const cfg = maps[i] || {};
       // The even-numbered jack following a V/Oct Note mapping is reserved as its gate.
       if (i > 0 && maps[i - 1] && Math.round(finite(maps[i - 1].mode, MODES.CC)) === MODES.NOTE) continue;
-      const mode = clamp(Math.round(finite(cfg.mode, MODES.CC)), 0, 4);
+      const mode = clamp(Math.round(finite(cfg.mode, MODES.CC)), 0, 6);
       const cv = x["cv" + (i + 1)];
       const raw = finite(cv, 0);
       const normalized = clamp((raw + 5) / 10, 0, 1);
@@ -65,6 +65,17 @@
         const program = value;
         if ((previous === null || Math.abs(normalized - previous) >= threshold) && s.cooldown[i] <= 0) {
           events.push({ type: "programChange", channel, program, input: i });
+          s.previous[i] = normalized;
+          s.cooldown[i] = midiInterval;
+        }
+      } else if (mode === MODES.NRPN || mode === MODES.PITCH_BEND) {
+        if (cv == null) { s.previous[i] = null; continue; }
+        if ((previous === null || Math.abs(normalized - previous) >= threshold) && s.cooldown[i] <= 0) {
+          if (mode === MODES.NRPN) {
+            events.push({ type: "nrpn", channel, parameter: clamp(Math.round(finite(cfg.cc, 0)), 0, 16383), value: clamp(Math.round(normalized * 16383), 0, 16383), input: i });
+          } else {
+            events.push({ type: "pitchBend", channel, value: clamp(Math.round(normalized * 16383), 0, 16383), input: i });
+          }
           s.previous[i] = normalized;
           s.cooldown[i] = midiInterval;
         }
