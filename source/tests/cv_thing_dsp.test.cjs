@@ -117,3 +117,24 @@ test("V/Oct pitch changes while Gate is high retrigger without leaving the old n
   assert.equal(changed[0].note, 60);
   assert.equal(changed[1].note, 72);
 });
+
+
+test("NRPN maps bipolar CV to a 14-bit parameter value and parameter number", () => {
+  const state = DSP.createState();
+  const events = DSP.process({ maps: [{ mode: DSP.modes.NRPN, cc: 130 }] }, { cv1: 5 }, state, 1);
+  assert.deepEqual(events[0], { type: "nrpn", channel: 1, parameter: 130, value: 16383, input: 0 });
+});
+
+test("NRPN maps negative full scale to zero and clamps parameter numbers", () => {
+  const events = DSP.process({ maps: [{ mode: DSP.modes.NRPN, cc: 20000 }] }, { cv1: -5 }, DSP.createState(), 1);
+  assert.equal(events[0].parameter, 16383);
+  assert.equal(events[0].value, 0);
+});
+
+test("pitch bend emits the full 14-bit MIDI range with center at zero volts", () => {
+  const params = { maps: [{ mode: DSP.modes.PITCH_BEND }] };
+  assert.equal(DSP.process(params, { cv1: -5 }, DSP.createState(), 1)[0].value, 0);
+  const middleState = DSP.createState();
+  assert.equal(DSP.process(params, { cv1: 0 }, middleState, 1)[0].value, 8192);
+  assert.equal(DSP.process(params, { cv1: 5 }, DSP.createState(), 1)[0].value, 16383);
+});
