@@ -46,3 +46,11 @@ test("inline engine script parses after module integrations", () => {
   assert.ok(match, "engine script missing");
   assert.doesNotThrow(() => new vm.Script(match[1]));
 });
+
+
+test("CV Thing exposes NRPN and Pitch Bend mappings through the panel and MIDI bridge", () => {
+  assert.match(html, /'START \/ STOP','NRPN','PITCH BEND'/);
+  assert.match(html, /max="16383" step="1" data-k="maps\.'\+i\+'\.cc" title="CC number or NRPN parameter"/);
+  assert.match(html, /e\.type==='pitchBend'\)mq\(224\|\(ch&15\),e\.value&127,\(e\.value>>7\)&127\)/);
+  assert.match(html, /e\.type==='nrpn'\)\{mq\(176\|\(ch&15\),99,\(e\.parameter>>7\)&127\);mq\(176\|\(ch&15\),98,e\.parameter&127\);mq\(176\|\(ch&15\),6,\(e\.value>>7\)&127\);mq\(176\|\(ch&15\),38,e\.value&127\)\}/);
+});
