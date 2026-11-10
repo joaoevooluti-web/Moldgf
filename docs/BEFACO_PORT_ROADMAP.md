@@ -489,3 +489,15 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - Branch protection: `main` remains unchanged at `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`. No merge to main was performed.
 
 **Phase 8 status:** five-module implementation and CI build/test gate passed. Remaining work is separate hardware/device validation and any follow-up fixes discovered there; do not call the modules physically validated yet.
+
+
+### CV Thing follow-up — NRPN and Pitch Bend
+
+- [x] Added two additional CV Thing mapping modes: **NRPN** and **Pitch Bend**.
+- [x] NRPN uses the row's parameter-number field and converts the incoming bipolar CV to a 14-bit value; the MIDI bridge emits the four standard CC messages (99, 98, 6, 38) in order.
+- [x] Pitch Bend converts -5 V..+5 V to the complete 14-bit MIDI range (0..16383), centered at 8192, and sends the channel pitch-bend message with correctly ordered LSB/MSB bytes.
+- [x] Added DSP tests for NRPN parameter/value bounds and Pitch Bend endpoints/center, plus runtime integration assertions for the UI and MIDI bridge.
+- [ ] Remaining CV Thing work: velocity controlled by CV, selectable gate/latch note behavior, full firmware feature coverage, and physical MIDI reception.
+- Implementation commits: `68d5ec77c82a7cb2a2f815197aafb1f51f9544b2`, `5a1e70e21a3ab3870e64a0741737be4100d1cdbc`, `4ef3ec7d8afcec78588d0f3eb61e60d8b5b21731`, `fca0164776e0594e9be41b44b02521674e0d3f24`.
+- The new Node test step passed in the four automatically triggered feature-branch runs. Full Android/WASM/APK results are still in progress; do not treat this follow-up as build-validated until a complete run finishes.
+- Preserve the existing eight-jack hardware topology and paired V/Oct/Gate behavior. No changes to `main`.
