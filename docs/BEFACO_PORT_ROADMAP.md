@@ -111,9 +111,10 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 
 - [x] The rack now rebuilds a deterministic topological execution plan through the existing typed registry whenever modules are added/removed or cables change. Legacy module descriptors are generated only when actual jack endpoints exist.
 - [x] Exposed a read-only diagnostic snapshot as `window.MoldgfGraphPlan()` containing validity, topological order and graph errors. This is a shadow plan: it does not reject existing patches or change the real-time DSP order.
-- [x] Added `graph_scheduler_runtime.test.cjs` to guard graph-plan refresh on rack/cable changes and prove the shared audio `step()` remains on its existing legacy order.
+- [x] Added `graph_scheduler_runtime.test.cjs` to guard graph-plan refresh on rack/cable changes and prove the shared audio `step()` remains on its existing legacy order; all three new assertions passed in workflow #77.
 - [ ] Active scheduler adoption remains pending. Before any DSP reordering, audit all 34 Befaco descriptors against rendered jack IDs, classify feedback-safe modules, and migrate only adapters whose input/output and state contracts are proven.
-- Workflow [#76 / 42829050147](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829050147) exercised the change but stopped at the new test: 690 existing tests passed and the three new assertions failed because the test assumed the UI inline script had an `id=ui`; the current page uses the final inline script instead. The test selector is corrected to use that existing fallback. Emscripten, Gradle/JUnit and APK steps were skipped after the Node gate; the unconditional WASM verifier consequently had no generated wrappers. No existing DSP/graph regression failed.
+- Workflow [#76 / 42829050147](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829050147) was a failed intermediate run: 690 existing tests passed and only the three new assertions failed because the test assumed the UI inline script had an `id=ui`; the page uses its final inline script instead. The selector was corrected in commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`. Emscripten, Gradle/JUnit and APK steps were skipped after the Node gate; the final verifier consequently had no generated wrappers. No existing DSP/graph regression failed.
+- [x] The correction and scheduler integration passed the complete feature workflow [#77 / 42829232566](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829232566) on commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`: 693/693 Node tests, Gradle/JUnit, Plaits/Beads WASM, `WebAssembly.compile`, `assembleDebug` and APK artifact upload all succeeded.
 
 ### Phase 2 — Utility and routing modules
 - [x] Atte — four attenuator/inverter channels, cascaded input normaling, selectable +1/+5/+10 V first-channel normal, individual outputs, and saved control state; dedicated DSP tests pass.
@@ -341,7 +342,7 @@ The five-module Phase 7 batch is now implemented on `feature/befaco-modules`. Th
 - The Phase 7 module-specific tests now total **100 DSP tests + 25 graph tests**: Hexmix 18+5, Hexpander 15+5, Pony VCF 17+5, Stereo Strip 19+5, MIDI Thing V2 31+5. The repository-wide Node suite reported 554 tests in run #29.
 - Workflow #29 failed one assertion: the second voice's gate was expected to be 5 V while its configured range was 0–10 V. The expectation was corrected to 10 V in `0383e7ceccb1e1d07e8e03ba9aa44c11dc3e52c3`. No APK was produced because the Node failure stopped the build steps.
 - [x] Workflow #30 (`42631339976`) completed successfully: Node 554/554, WASM, Beads native self-test 10/10, Gradle APK assembly, artifact upload and WASM payload verification all passed. It used commit `d8fc256fed489c490d6380e9301ee029966739f0` and did not run the later-added Kotlin unit-test task.
-- [ ] Workflow #31 must run on the current feature HEAD with `gradle testDebugUnitTest --no-daemon` enabled, confirm all nine MIDI decoder JUnit tests, and revalidate Node/WASM/APK before Phase 0 is fully CI-validated.
+- [x] Superseded by workflow #75 (13/13 MIDI JUnit tests and 690/690 Node tests) and the later complete workflow #77 (693/693 Node tests plus Gradle/JUnit, WASM and APK success). Phase 0 automated CI is complete; physical-device validation is still separate.
 
 
 ## Phase 7 CI validation — workflow #30
@@ -425,7 +426,7 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [x] Re-audited the live rack adapter and confirmed `module_graph.js` accepts rack instances using the runtime `t` field; a regression test already covers this earlier failure.
 - [x] Found a second concrete blocker in the BF-22 typed graph descriptor: the physical panel renders jacks `in`, `cv1`, `cv2`, `resCV`, `out`, while the descriptor incorrectly declared `inA`, `inB`, `cv1A`, `cv2A`, `resCVA`, `cv1B`, `cv2B`, `resCVB`, `outA`, `outB`. Consequently `canConnect()` returned `unknown-port` for every BF-22 manual patch even though the jack existed in the UI. Replaced the descriptor with the five actual runtime jack IDs in commit `bdd8ebdeb05f22804e8fc4e059feba92a401cb42`.
 - [x] Added graph-level regression coverage for BF-22's three CV inputs and audio input/output, plus rack HTML assertions that the panel jack IDs and typed descriptor stay aligned. Test commits: `313635c023dc08eee1b863c961355c7b45560673` and `c1da0daaf02c3c58c56b307184f7fb056ed20561`; UI assertion commit: `9ca073a209d61b6f2d707cfb6a606a21a01a2921`.
-- [ ] These new tests have been authored but not executed. No workflow or APK build was started, and `main` remains untouched.
+- [x] These new tests were executed in workflow #77 as part of the 693/693 passing Node suite; Gradle/JUnit, WASM, APK assembly and artifact verification also passed. No physical-device validation is claimed.
 - [ ] The five panels still require a proper hardware-reference redesign. Current CSS uses horizontal card layouts (Random8 8-column strips, MEX 4-column switches, Octaves 3-column groups, IROI 2-column sections, Bandit 4-column bands), which do not reproduce the physical vertical faceplates. Next visual pass must use product-specific HP widths and vertical control/jack placement, not just change colors or labels.
 - Next: audit all 39 registered module descriptors against actual rendered jack IDs; add a generated consistency test so no module can ship a panel jack absent from its descriptor. Then redesign Random8, MEX, Octaves VCO, IROI and Bandit panels from official product images/manuals. Keep CI blocked until the complete regression and visual pass is ready.
 
@@ -436,8 +437,8 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [x] Added a first hardware-proportion pass for the latest five ports: Random8 8HP (156px), MEX 4HP (82px), Octaves 12HP (218px), IROI 18HP (326px), Bandit 10HP (184px). MEX now lays out its eight step switches as a vertical rail; Random8 keeps eight narrow channel columns; Octaves has compact grouped controls; IROI retains its two-section control field; Bandit retains four spectral strips.
 - [x] Applied an HP-based width map and responsive wrapping to all 39 registered Befaco modules, with a shared jack/faceplate treatment. This replaces inconsistent oversized card widths with a consistent physical-width scale (18px per HP plus faceplate allowance) and allows control rows to wrap into a portrait layout.
 - [x] Added a visual regression test checking the five detailed faceplates and their physical-width/layout rules.
-- [ ] Automated tests have not yet been run. No workflow or APK build was started. This CSS pass is a first catalog-wide geometry correction; it is not yet pixel-perfect reproduction of every official panel. Next visual stage must compare each of the 39 faceplates against official product photos/manuals and tune per-module control positions, knob diameters, jack coordinates, silkscreen, color and HP measurements.
-- [ ] Manual cable/patch regression remains open beyond BF-22. The graph registry and rendered jack IDs must be validated with a full runtime-generated consistency test, then manual path entry and cable drag/drop must be exercised against each module type.
+- [x] The visual-regression assertions were included in workflow #77's 693/693 passing Node suite. This CSS pass remains a first catalog-wide geometry correction, not a pixel-perfect reproduction of every official panel; reference-by-reference control positions, knob diameters, jack coordinates, silkscreen, color and HP measurements remain open.
+- [~] Automated typed graph contracts passed in workflow #77, but a generated DOM-vs-descriptor audit for every rendered jack, manual path entry and cable drag/drop coverage for every module type remain open.
 - Current code changes: faceplate pass cf4d5824c42b3795946df46275c488f7a85b68ae; visual regression test c8d1a29a06b3319f6916214535b2404065e49ae2; catalog-wide HP layout 50a14a656a1b7861a8614b50b07da2e56f1df32a. CI remains intentionally blocked until the five-module batch and full visual/patch regression gate are complete.
 ### APK recovery gate — 2026-11-09
 
@@ -472,9 +473,9 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [x] Added Joystick DSP to both browser script loading and AudioWorklet DSP source loading; initialized its runtime state and added a per-step processor that reads the typed X/Y inputs and publishes X/Y plus gate outputs. This also makes the same DSP callable in the ScriptProcessor fallback because both use the shared engine.
 - [x] Added a dedicated original Moldgf 12 HP-style faceplate layout, axis controls, six jack positions, custom CSS and a touch XY pad that updates saved module parameters. The normal rack jack DOM IDs and cable drawing/rebuild functions were not changed.
 - [x] Added manual/CV input mode selection, X/Y attenuverters and independent Gate X/Gate Y toggle buttons; gate state is reflected on the panel. Hardware-reference visual review and device behavior still need verification. Added `joystick_runtime_integration.test.cjs` to check page/Worklet loading, runtime state, processing dispatch, six panel jack IDs, XY handler presence and inline engine syntax. These tests are authored but not run; parameter save/restore, live cable geometry and device behavior still need validation.
-- [ ] No workflow was triggered; the five-module batch gate remains in force.
+- [x] Workflow #77 ran after the shadow-scheduler test correction; all 693 Node tests and the full Android/WASM/APK pipeline passed.
 - Commits: DSP c24e8439efdd3759a3b9fcfe7c2c85b8a82a6635; DSP tests 6a8461a65116e26c4b02ce12574622c2f1bfc4c8; graph registration 2db9f2d3d10ea3f8aefd45fb40a3e73de7d7c6f6; graph tests 04a55c76e7eb528412fd99aa6f15c9058d7be4d9; engine/panel integration 8010d8be998251571b276fad33b5af76fdd34eb6; faceplate styling d8037351419c299dbec4e8423326cae74baef980; XY touch interaction 70a3acb74f769d3acbb10e7d33083b630299e456.
-- [x] Added `joystick_runtime_integration.test.cjs` for page/Worklet loading, state initialization, processing dispatch, six panel jack IDs, XY handler and inline script syntax. Test authored; not executed.
+- [x] Added `joystick_runtime_integration.test.cjs` for page/Worklet loading, state initialization, processing dispatch, six panel jack IDs, XY handler and inline script syntax; executed in workflow #77.
 - **DivKid Mutes mk2 — live rack integration in progress:**
   - [x] Added its DSP to page and AudioWorklet loading, initialized persistent DSP state, and dispatched all four audio channels in the shared engine.
   - [x] Registered four typed audio inputs and four typed audio outputs; added a dedicated four-channel panel with MOM/OFF/ON selector, momentary HOLD interaction, channel LEDs and response control.
@@ -486,7 +487,7 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
   - [x] Corrected the physical topology to exactly eight CV-capable jacks (not eight CV plus eight phantom Gate jacks). V/Oct Note mode pairs an odd-numbered CV input with the following physical input as Gate, and reserves that paired input from separate mapping. Clock and Start/Stop use a single CV input with the documented 2 V threshold.
   - [x] Added a dedicated 6 HP-style faceplate with OLED-inspired performance screen, encoder treatment, MIDI channel, threshold and eight mapping rows. The mapping modes currently implemented are CC, V/Oct Note, Program Change, Clock and Start/Stop; this is a documented functional subset, not the full firmware feature list.
   - [x] Routed generated MIDI events through the existing MQ queue, native NAT.midiOutBatch bridge and Web MIDI outputs. Added a tested native MIDI batch encoder so real-time Clock/Start/Stop bytes are sent as one-byte messages, while Program Change and channel voice messages retain their proper lengths. Web MIDI now uses the same correct message lengths.
-  - [x] Added CV Thing runtime tests and expanded DSP tests for paired CV/Gate notes, unplugged inputs, note-off on gate removal, and clean Start/Stop initialization. Tests are authored but not executed.
+  - [x] Added CV Thing runtime tests and expanded DSP tests for paired CV/Gate notes, unplugged inputs, note-off on gate removal, and clean Start/Stop initialization; included in the 693 passing Node tests in workflow #77.
   - [x] Added paired-gate UI feedback: when an input is assigned V/Oct Note, the following input is visibly marked and its independent mapping selector is disabled because that jack is consumed as Gate.
   - [x] Fixed MIDI 1.0 message framing for one-byte real-time Clock/Start/Stop statuses in both Android native and Web MIDI paths; added four Kotlin encoder tests. Added DSP protections against startup events on unpatched inputs and against stuck notes when a paired Gate is disconnected.
   - [ ] Remaining validation: event-rate behavior, mapping persistence across app restart, complete CV Thing firmware feature coverage (NRPN, velocity, pitch bend, note gate/latch, etc.), and physical MIDI reception.
@@ -495,11 +496,11 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - **BF-22 / Crush Delay V3 — revalidation:**
   - [x] Reconciled BF-22's live graph descriptor with its real two-channel DSP and panel endpoints: inA/inB, six CV inputs, outA/outB. The old live descriptor exposed generic in/cv1/cv2/resCV/out names that did not match the module's actual jacks, which could make patch connections fail. The corrected descriptor preserves existing audio/CV compatibility for the two audio inputs.
   - [x] Confirmed Crush Delay V3's live descriptor, panel jack IDs and DSP dispatch agree: IN, RETURN, five CV controls, crush gate, OUT and SEND.
-  - [x] Existing BF-22 and Crush Delay V3 DSP/graph test files are present; the existing BF-22 graph test describes the corrected ten-port topology, and Crush Delay graph tests cover its ten endpoints. They still need execution against the current branch.
-  - [ ] Add current-index runtime assertions and run all module DSP/graph/integration tests, then inspect workflow output and APK artifacts.
+  - [x] Existing BF-22 and Crush Delay V3 DSP/graph tests were executed in workflow #77; the BF-22 ten-port topology and Crush Delay ten endpoints passed the current-branch Node suite.
+  - [x] Current-index runtime assertions, all module DSP/graph/integration tests, and APK artifact inspection completed in workflow #77.
 - [x] Combined current-source integration test `phase8_live_integration.test.cjs` added for all five module assets, state initialization, sample dispatch, BF-22 and Crush Delay port/panel agreement, Joystick gates and Mutes momentary controls. All individual runtime integration suites and the Kotlin MIDI encoder tests are now present.
-- [ ] CI not yet run on this final batch. The five-module implementation is ready for the branch workflow; success still requires Node tests, Kotlin/JUnit, WASM validation, Gradle APK assembly and artifact checks. Physical Android/MIDI/audio validation remains separate.
-- Next: run the feature-branch workflow, fix any failures, then audit its APK and test artifacts before calling Phase 8 CI-validated.
+- [x] Final-batch CI validation completed in workflow #77: Node 693/693, Android/JUnit, Plaits/Beads WASM, Gradle APK and artifact inspection all passed. Physical Android/MIDI/audio validation remains separate.
+- Next: complete the generated DOM-jack/descriptor consistency audit, then migrate one verified module group to active topological execution while retaining the legacy DSP fallback.
 
 ### Phase 8 — Five-module batch CI evidence (2026-11-09)
 
@@ -523,5 +524,37 @@ For each module: DSP asset, typed graph descriptor, rack engine integration, per
 - [x] Added DSP tests for NRPN parameter/value bounds and Pitch Bend endpoints/center, plus runtime integration assertions for the UI and MIDI bridge.
 - [ ] Remaining CV Thing work: velocity controlled by CV, selectable gate/latch note behavior, full firmware feature coverage, and physical MIDI reception.
 - Implementation commits: `68d5ec77c82a7cb2a2f815197aafb1f51f9544b2`, `5a1e70e21a3ab3870e64a0741737be4100d1cdbc`, `4ef3ec7d8afcec78588d0f3eb61e60d8b5b21731`, `fca0164776e0594e9be41b44b02521674e0d3f24`.
-- The new Node test step passed in the four automatically triggered feature-branch runs. Full Android/WASM/APK results are still in progress; do not treat this follow-up as build-validated until a complete run finishes.
+- The full Node/Android/WASM/APK pipeline passed in workflow #77. CV Thing's NRPN and Pitch Bend code is CI-validated; velocity-by-CV, selectable gate/latch behavior, remaining firmware coverage and physical MIDI reception are still pending.
 - Preserve the existing eight-jack hardware topology and paired V/Oct/Gate behavior. No changes to `main`.
+
+
+## Latest verified repository state — 2026-11-10
+
+This snapshot supersedes older pending-CI notes above where they refer to tests or APK validation that have since run.
+
+### Branch and commits
+- Working branch: \`feature/befaco-modules\`.
+- Latest code/test commit validated by CI: \`29c7dbb408b26851b3b2a5ea7fb5418e66002013\` (scheduler runtime test selector correction; parent \`5433518e25fc598793ee80b55d2269a3adecf964\` contains the shadow scheduler integration).
+- \`main\` remains exactly \`8e81fcb36fb1bedbf63019b6ee5d890f694fb165\`; comparison reports feature branch 570 commits ahead, 0 behind at the validated code commit. No merge, force-push or write to \`main\`.
+
+### Workflow #77 — complete CI validation
+- [x] Workflow [#77 / 42829232566](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829232566) completed with \`success\` on the validated commit above; every job step completed successfully.
+- [x] Node suite: **693 passed, 0 failed**, including all current DSP, typed graph, runtime integration, visual assertion and shadow scheduler tests.
+- [x] Android/JUnit: \`gradle testDebugUnitTest --no-daemon\` succeeded. The uploaded XML report contains **9/9 MidiMessageDecoderTest** and **4/4 MidiBatchEncoderTest** cases, with zero failures, errors or skips.
+- [x] WASM: Plaits **185,636 bytes** and Beads **196,726 bytes**; the Beads native self-test passed its eight media/mode combinations, synth-output and resampling checks; both embedded payloads passed \`WebAssembly.compile\`.
+- [x] Android packaging: \`gradle assembleDebug --no-daemon\` succeeded. Artifact \`eurorack-study-debug-apk\` ID **13771540494**, ZIP **1,675,219 bytes**, SHA-256 \`1ed9a7f29dc411a31b7972e1035439148b37a28ae7aca1013d99c1705ccb6837\`. The APK inside is **1,709,747 bytes**, SHA-256 \`760f81f0d51d82c375352ca727e98bf28cff3ca406f71e22780d33733edecea1\`.
+- [x] Android unit-test report artifact ID **13770214220**, 9,914 bytes, SHA-256 \`ca87aadfcf89df9802bdcbd9fc3f168e2eb35417b2b248c03e461e7d85c625f5\`; WASM log artifact ID **13771140612**, 1,379 bytes, SHA-256 \`1a71c68e1c8998a018241c64ed0c4dc02837008cfa0b4cf41a6f1263326dc7c4\`.
+- [x] Downloaded and inspected the APK archive: it contains \`assets/index.html\` with the shadow-plan hook, \`module_graph.js\`, all **42** DSP assets, and the Plaits/Beads WASM wrappers. This is CI/package-content evidence only, not installation or physical-device validation.
+
+### Reconciliation of the 34 Befaco targets
+- [x] Inventory audit found a DSP asset and a dedicated DSP test file for **all 34 planned Befaco modules**.
+- [x] **33/34** have a dedicated graph test file; Atte's graph behavior is covered by the shared deterministic \`audio_graph_smoke.test.cjs\`. The repository has 42 DSP assets/test pairs (the 34 Befaco targets plus eight additional non-catalog/legacy integrations), 40 graph test files and 90 Node test files.
+- [x] The full Node runner in #77 executed the complete current suite successfully. The 34 modules are therefore source-integrated and CI-tested at the DSP/graph contract level; this does not imply bit-exact analog behavior, complete firmware feature parity or physical hardware verification.
+- [ ] Keep the remaining behavioral approximations visible: IROI is represented as two scalar mono paths rather than a native stereo bus; MEX rear THRU daisy-chain behavior is not modeled; Pony VCO uses polyBLEP rather than the VCV 12× oversampled core; Noise Plethora and several analog effects are clean-room approximations; MIDI Thing/CV Thing hardware routing and physical MIDI reception remain unverified.
+- [ ] Visual faceplate fidelity is still incomplete. The shared HP/geometry pass and five detailed panels are not a per-module reference-approved redesign. No physical Android, audio, touch, MIDI reception or performance validation is claimed.
+
+### Phase 1 scheduler status and next safe step
+- [x] Shadow topological plan is integrated into rack inventory and cable updates, with read-only diagnostics via \`window.MoldgfGraphPlan()\`; workflow #77 passed the three runtime assertions.
+- [ ] The shadow plan does **not** reorder the real-time audio \`step()\`. Keep the current DSP order until all connected module adapters, normaling, feedback behavior and state contracts are verified.
+- [ ] Next objective: generate a runtime audit comparing every rendered jack ID against its registered descriptor; fix discrepancies; then opt in one small acyclic module group to scheduler-driven execution with the old path retained as fallback. Parameter event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
+
