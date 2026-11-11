@@ -559,3 +559,16 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - [ ] The shadow plan does **not** reorder the real-time audio `step()`. Keep the current DSP order until all connected module adapters, normaling, feedback behavior and state contracts are verified.
 - [ ] Next objective: generate a runtime audit comparing every rendered jack ID against its registered descriptor; fix discrepancies; then opt in one small acyclic module group to scheduler-driven execution with the old path retained as fallback. Parameter event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
 
+
+
+## Runtime jack audit — 2026-11-11
+
+- [x] Added a pure graph utility that compares each module descriptor against the jack elements rendered by its faceplate.
+- [x] Audit reports descriptor ports missing from the faceplate, unregistered faceplate jacks, duplicate rendered jack IDs, and input/output direction mismatches.
+- [x] Exposed a read-only in-app diagnostic at `window.MoldgfJackAudit()`, with per-module results and a summary. It reads actual DOM jack elements (not the deduplicated jack lookup map), so duplicate elements remain visible to the audit.
+- [x] Added unit tests for valid matching ports and all four mismatch categories.
+- [x] Kept the real-time audio sample processor and shadow-only scheduler behavior unchanged.
+- [ ] Run the diagnostic in a live rack containing all 42 DSP-backed module types, resolve any real mismatches it reports, then add regression fixtures for the corrected faceplates.
+- Implementation commits: `6d0b37b886f1b6f41a576174be4a2a67cb62f954`, `adb8cac64ba9da05836e8868dd6e22af8ec89351`, `fe172cf9122889103de0c3b02f7a7199f26e8588`, `fb1e263255179566fe42b25aed37efca114abc70`, `8dfa04c5fea74be6492e1b53a028c5b2d5556b28`, `5cab9f73d7ea73a5d1e9bffea9d32c70b001e2d0`, `9f351dd826c6602046092581a4a60980ee3e4952`.
+- Node test step passed in workflow `42993312372` on commit `9f351dd826c6602046092581a4a60980ee3e4952`; WASM build also passed. Android unit tests, APK assembly and embedded WASM verification had not completed at the time this note was written. This commit predates the final no-content commit `37b448e1260cda9b2f1ed185c6f8d75713791dd5`; both point to the same test content.
+- `main` remains unchanged; all changes are confined to `feature/befaco-modules`.
