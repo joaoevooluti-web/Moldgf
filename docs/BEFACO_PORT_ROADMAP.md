@@ -601,5 +601,21 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - [x] Added the missing DIST CV input jack beside the Distribution control. Existing DSP processing and graph port IDs are unchanged; the already-existing Burst graph test continues to cover CV connectivity.
 - [x] Added a generated-template regression test that evaluates all 42 registered module descriptors and their actual TY[type].html(id) render functions, then compares every generated jack ID/direction against the descriptor. This is template-level validation, not a live WebView DOM/device test.
 - [x] The pre-fix generated audit found exactly one mismatch: Burst missing distribution. Re-running the same deterministic audit after the panel change returned 42/42 descriptors valid, zero mismatches.
-- [ ] The new regression test and panel correction are committed below; workflow validation for this batch is pending. The next CI result must be recorded here before calling this step CI-validated.
+- [x] Burst panel correction and generated-template regression test were committed together in code/test commit e8655db4d3f7ba68a8739f884177b99ca985a95d. Workflow #86 passed the complete CI pipeline; details are recorded below.
 
+
+
+### Workflow #86 — Burst jack audit CI validation
+
+- [x] Workflow [#86 / 43034016080](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43034016080) completed with success on commit e8655db4d3f7ba68a8739f884177b99ca985a95d. The single build job and every step completed successfully.
+- [x] Node: **697 passed, 0 failed**. The new all-42 generated faceplate/descriptor audit passed; its runner line is present in the downloaded job log.
+- [x] Android/JUnit: Gradle testDebugUnitTest passed. Downloaded XML reports confirm MidiMessageDecoderTest **9/9** and MidiBatchEncoderTest **4/4**, with no failures/errors/skips.
+- [x] WASM: Plaits **185,636 bytes** and Beads **196,726 bytes** built; both wrappers passed WebAssembly.compile. Beads native self-test logged all eight media/mode cases, synth output, resampling, and SELFTEST OK.
+- [x] Gradle assembleDebug succeeded. Artifact eurorack-study-debug-apk ID **13863081050**, ZIP **1,675,880 bytes**, SHA-256 `d0b8b105e7c0a99cfcb46c411cb790c4d405e6302888c39d5453a9839e2fad45`. Extracted APK: **1,710,463 bytes**, SHA-256 `85a1ee69c43f3cb8f194ec192554eb3a2594ea94225abcd84b6f0bf5eeef40d9`.
+- [x] APK inspection confirms the Burst DIST CV jack is present in assets/index.html, together with module_graph.js, all **42** DSP assets, and the Plaits/Beads WASM wrappers.
+- [x] Supporting artifacts: wasm-log ID **13862437146** (1,380-byte ZIP, SHA-256 `ea398e0ace670f252d1c5345ec7d26ee653d3dd432748b6cd69f9ba8fd2af4b0`); Android unit-test report ID **13862092639** (9,918-byte ZIP, SHA-256 `5d364acb3e3e1849bb1873f58e5994a42330c79b7e64eac632adb31551950557`).
+- [ ] No Android device installation, physical audio, MIDI reception, touch, latency or hardware behavior was tested or inferred from the APK.
+- Current code/test commit: e8655db4d3f7ba68a8739f884177b99ca985a95d. main remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; branch comparison at this point is **586 ahead / 0 behind**.
+
+### Next Phase 1 objective
+Audit the runtime adapters, normaling, state and parameter reads for a small acyclic module group. Add an opt-in topological execution path only for that verified group, preserve the legacy step as automatic fallback, and test that an intentionally reverse rack insertion order still produces source-to-sink processing without changing AudioWorklet/ScriptProcessor parity.
