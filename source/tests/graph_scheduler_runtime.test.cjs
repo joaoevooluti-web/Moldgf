@@ -46,6 +46,7 @@ test("runtime exposes a rendered-jack audit without changing the legacy audio sc
   const { ui, engine } = readScripts();
   assert.match(ui, /window\.MoldgfJackAudit=\(\)=>/);
   assert.match(ui, /MoldgfModuleGraph\.auditRenderedPorts\(descriptor,rendered\)/);
+  assert.match(ui, /document\\.querySelectorAll\\(/);
   assert.match(ui, /summary:\{modules:reports\.length,valid:reports\.filter\(report=>report\.valid\)\.length/);
   assert.match(engine, /function step\(\)/);
   assert.doesNotMatch(engine, /MoldgfJackAudit/);
