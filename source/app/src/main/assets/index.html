@@ -1181,9 +1181,9 @@ window.MoldgfJackAudit=()=>{
    continue;
   }
   const prefix=m.id+'.';
-  const rendered=Object.keys(jk).filter(jackId=>jackId.startsWith(prefix)).map(jackId=>({
-   id:jackId.slice(prefix.length),
-   direction:jk[jackId].classList.contains('o')?'output':'input'
+  const rendered=[...document.querySelectorAll('.jk[data-id]')].filter(element=>element.dataset.id.startsWith(prefix)).map(element=>({
+   id:element.dataset.id.slice(prefix.length),
+   direction:element.classList.contains('o')?'output':'input'
   }));
   reports.push(Object.assign({module:id,inferred},MoldgfModuleGraph.auditRenderedPorts(descriptor,rendered)));
  }
