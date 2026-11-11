@@ -1168,6 +1168,30 @@ window.MoldgfGraphPlan=()=>({
  order:graphPlan.order.slice(),
  errors:graphPlan.errors.map(e=>Object.assign({},e))
 });
+window.MoldgfJackAudit=()=>{
+ const reports=[];
+ for(const id of Object.keys(I)){
+  const m=I[id];
+  if(!m)continue;
+  const inferred=!PORT_REGISTRY.has(m.t);
+  ensurePortDescriptor(m);
+  const descriptor=PORT_REGISTRY.get(m.t);
+  if(!descriptor) {
+   reports.push({module:id,type:m.t,inferred,valid:false,error:'missing-descriptor'});
+   continue;
+  }
+  const prefix=m.id+'.';
+  const rendered=Object.keys(jk).filter(jackId=>jackId.startsWith(prefix)).map(jackId=>({
+   id:jackId.slice(prefix.length),
+   direction:jk[jackId].classList.contains('o')?'output':'input'
+  }));
+  reports.push(Object.assign({module:id,inferred},MoldgfModuleGraph.auditRenderedPorts(descriptor,rendered)));
+ }
+ return {valid:reports.every(report=>report.valid),modules:reports,
+  summary:{modules:reports.length,valid:reports.filter(report=>report.valid).length,
+   inferred:reports.filter(report=>report.inferred).length,
+   issues:reports.filter(report=>!report.valid).length}};
+};
 const reg=()=>{jk={};document.querySelectorAll('.jk').forEach(e=>jk[e.dataset.id]=e);ledEls=[...document.querySelectorAll('[data-v]')];needDr=1};
 function idx(){idxE();reg();refreshGraphPlan()}
 function postCab(){post({t:'cab',cab:cab.map(c=>[c.a,c.b])})}
