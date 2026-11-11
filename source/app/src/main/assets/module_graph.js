@@ -143,5 +143,35 @@
     return { valid: errors.length === 0, errors, order: errors.length ? [] : order };
   }
 
-  return Object.freeze({ createRegistry, normalizeDescriptor, canConnect, validateGraph, signals: Object.freeze(Array.from(SIGNALS)) });
+  function auditRenderedPorts(descriptorInput, renderedPorts) {
+    const descriptor = descriptorInput && descriptorInput.ports ? descriptorInput : normalizeDescriptor(descriptorInput);
+    const rendered = Array.isArray(renderedPorts) ? renderedPorts : [];
+    const expected = new Map(descriptor.ports.map((port) => [port.id, port]));
+    const seen = new Set();
+    const duplicates = [];
+    const unregistered = [];
+    const directionMismatches = [];
+    rendered.forEach((port) => {
+      if (!port || typeof port.id !== "string" || !port.id.trim()) return;
+      if (seen.has(port.id)) duplicates.push(port.id);
+      seen.add(port.id);
+      const declared = expected.get(port.id);
+      if (!declared) unregistered.push(port.id);
+      else if (port.direction && port.direction !== declared.direction) {
+        directionMismatches.push({ id: port.id, declared: declared.direction, rendered: port.direction });
+      }
+    });
+    const missingRendered = descriptor.ports.filter((port) => !seen.has(port.id)).map((port) => port.id);
+    return {
+      type: descriptor.type,
+      valid: duplicates.length === 0 && unregistered.length === 0 &&
+        directionMismatches.length === 0 && missingRendered.length === 0,
+      missingRendered,
+      unregistered,
+      duplicates,
+      directionMismatches
+    };
+  }
+
+  return Object.freeze({ createRegistry, normalizeDescriptor, canConnect, validateGraph, auditRenderedPorts, signals: Object.freeze(Array.from(SIGNALS)) });
 });
