@@ -40,3 +40,13 @@ test("shadow planning does not reorder the real-time sample processor", () => {
   assert.doesNotMatch(step, /graphPlan|MoldgfGraphPlan/);
   assert.match(ui, /Shadow graph scheduler/);
 });
+
+
+test("runtime exposes a rendered-jack audit without changing the legacy audio scheduler", () => {
+  const { ui, engine } = readScripts();
+  assert.match(ui, /window\.MoldgfJackAudit=\(\)=>/);
+  assert.match(ui, /MoldgfModuleGraph\.auditRenderedPorts\(descriptor,rendered\)/);
+  assert.match(ui, /summary:\{modules:reports\.length,valid:reports\.filter\(report=>report\.valid\)\.length/);
+  assert.match(engine, /function step\(\)/);
+  assert.doesNotMatch(engine, /MoldgfJackAudit/);
+});
