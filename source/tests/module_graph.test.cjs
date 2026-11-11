@@ -139,3 +139,38 @@ test("BF-22 runtime jack IDs match the typed graph descriptor used by manual pat
   assert.equal(canConnect(registry, module, "out",
     { id: "sink", t: "sink" }, "in").ok, true);
 });
+
+
+test("rendered jack audit reports missing, unregistered, duplicate and wrong-direction ports", () => {
+  const { auditRenderedPorts } = require("../app/src/main/assets/module_graph.js");
+  const descriptor = { type: "fixture", ports: [
+    { id: "in", direction: "input", signal: "cv" },
+    { id: "out", direction: "output", signal: "cv" },
+    { id: "gate", direction: "input", signal: "gate" }
+  ] };
+  const result = auditRenderedPorts(descriptor, [
+    { id: "in", direction: "output" },
+    { id: "out", direction: "output" },
+    { id: "extra", direction: "input" },
+    { id: "extra", direction: "input" }
+  ]);
+  assert.equal(result.valid, false);
+  assert.deepEqual(result.missingRendered, ["gate"]);
+  assert.deepEqual(result.unregistered, ["extra"]);
+  assert.deepEqual(result.duplicates, ["extra"]);
+  assert.deepEqual(result.directionMismatches, [{ id: "in", declared: "input", rendered: "output" }]);
+});
+
+test("rendered jack audit accepts matching descriptor and faceplate endpoints", () => {
+  const { auditRenderedPorts } = require("../app/src/main/assets/module_graph.js");
+  const result = auditRenderedPorts({ type: "fixture", ports: [
+    { id: "audioIn", direction: "input", signal: "audio" },
+    { id: "cvOut", direction: "output", signal: "cv" }
+  ] }, [
+    { id: "audioIn", direction: "input" },
+    { id: "cvOut", direction: "output" }
+  ]);
+  assert.equal(result.valid, true);
+  assert.deepEqual(result.missingRendered, []);
+  assert.deepEqual(result.unregistered, []);
+});
