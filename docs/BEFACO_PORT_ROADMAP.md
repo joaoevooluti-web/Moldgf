@@ -568,7 +568,38 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - [x] Exposed a read-only in-app diagnostic at `window.MoldgfJackAudit()`, with per-module results and a summary. It reads actual DOM jack elements (not the deduplicated jack lookup map), so duplicate elements remain visible to the audit.
 - [x] Added unit tests for valid matching ports and all four mismatch categories.
 - [x] Kept the real-time audio sample processor and shadow-only scheduler behavior unchanged.
-- [ ] Run the diagnostic in a live rack containing all 42 DSP-backed module types, resolve any real mismatches it reports, then add regression fixtures for the corrected faceplates.
+- [~] Added a deterministic generated-template audit across all 42 explicit descriptors; it renders each real TY faceplate template and detects missing, unregistered, duplicate, and wrong-direction jacks. A separate live DOM diagnostic in an actual WebView rack remains pending.
 - Implementation commits: `6d0b37b886f1b6f41a576174be4a2a67cb62f954`, `adb8cac64ba9da05836e8868dd6e22af8ec89351`, `fe172cf9122889103de0c3b02f7a7199f26e8588`, `fb1e263255179566fe42b25aed37efca114abc70`, `8dfa04c5fea74be6492e1b53a028c5b2d5556b28`, `5cab9f73d7ea73a5d1e9bffea9d32c70b001e2d0`, `9f351dd826c6602046092581a4a60980ee3e4952`.
 - Node test step passed in workflow `42993312372` on commit `9f351dd826c6602046092581a4a60980ee3e4952`; WASM build also passed. Android unit tests, APK assembly and embedded WASM verification had not completed at the time this note was written. This commit predates the final no-content commit `37b448e1260cda9b2f1ed185c6f8d75713791dd5`; both point to the same test content.
 - `main` remains unchanged; all changes are confined to `feature/befaco-modules`.
+
+
+## Verified CI and Burst port correction — 2026-11-11
+
+### Repository snapshot before this batch
+- Working branch: feature/befaco-modules; HEAD f9e7819718e3d8186462e0e9970f96325236a1a9 (roadmap-only commit, parent 37b448e1260cda9b2f1ed185c6f8d75713791dd5).
+- Latest code/test commit with a complete CI run: 9f351dd826c6602046092581a4a60980ee3e4952.
+- main remains 8e81fcb36fb1bedbf63019b6ee5d890f694fb165; comparison at this snapshot: feature branch 585 commits ahead, 0 behind. No merge or force-push.
+- The roadmap-only HEAD after workflow #85 has the same application/test tree as the validated code commit; its only change is documentation.
+
+### Workflow #85 — full CI success
+- [x] Workflow [#85 / 42993312372](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42993312372) completed with success on code commit 9f351dd826c6602046092581a4a60980ee3e4952. Its single build job completed all steps successfully.
+- [x] Node suite: 696 passed, 0 failed. This is the direct runner summary from the job log.
+- [x] Android/JUnit: Gradle testDebugUnitTest succeeded. The downloaded XML report artifact confirms MidiMessageDecoderTest 9/9 and MidiBatchEncoderTest 4/4, with zero failures, errors, or skips.
+- [x] WASM: Plaits 185,636 bytes and Beads 196,726 bytes were generated. The uploaded build log confirms Plaits/Beads success, all eight Beads media/mode self-test cases, synth output, and 44.1 kHz host / 24 kHz media resampling. Both embedded payloads passed WebAssembly.compile.
+- [x] Android packaging: Gradle assembleDebug completed successfully. Artifact eurorack-study-debug-apk ID 13843480684, ZIP size 1,675,765 bytes, SHA-256 b637a9e336f8d2c853357b2cb6dab651b25d94e3032d547eb72d57428c86e6ad. The extracted APK is 1,710,395 bytes, SHA-256 8c84ec3b02ab5128e689e7b1e79ae0aad95157cf1ca6e21573440c1a59ded7cf.
+- [x] APK archive inspection confirms assets/index.html, assets/module_graph.js, all 42 *_dsp.js assets, and both Plaits/Beads WASM wrappers are present.
+- [x] Supporting artifacts: Android unit-test report ID 13842981793 (9,907-byte ZIP, SHA-256 47bb013cdf649c28865671ba6b242b3ef396faa38505b451153100837c38f13a); WASM log ID 13842626408 (1,379-byte ZIP, SHA-256 f47ece8831a21f2aaad0e69d24d8376a299b025fdff0ea1d4780deb39a4f453c).
+- [ ] No installation, physical audio output, MIDI reception, touch, latency, or device compatibility validation is claimed.
+
+### Failed intermediate workflow #84 — corrected
+- [x] Workflow [#84 / 42993262781](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42993262781) stopped at the Node gate: 692/693 passed. The sole failure was a source assertion that expected escaped dots in document.querySelectorAll; the actual implementation correctly uses ordinary dots. The WASM, JUnit and APK steps were skipped, and the final verifier consequently reported missing wrappers.
+- [x] Corrected the assertion in commit 9f351dd826c6602046092581a4a60980ee3e4952; workflow #85 then passed the complete pipeline. No DSP, MIDI, graph or APK regression is indicated by #84.
+
+### Burst — descriptor/faceplate mismatch found and corrected in this batch
+- Official Burst documentation identifies a dedicated Distribution knob/CV input; the DSP already consumed inputs.distribution and the typed descriptor already declared the distribution input, but the faceplate template omitted its jack. The official manual explains that the CV is summed with the panel control. References: https://www.befaco.org/burst-2/ and https://befaco.org/docs/Burst/Burst_User_Manual.pdf.
+- [x] Added the missing DIST CV input jack beside the Distribution control. Existing DSP processing and graph port IDs are unchanged; the already-existing Burst graph test continues to cover CV connectivity.
+- [x] Added a generated-template regression test that evaluates all 42 registered module descriptors and their actual TY[type].html(id) render functions, then compares every generated jack ID/direction against the descriptor. This is template-level validation, not a live WebView DOM/device test.
+- [x] The pre-fix generated audit found exactly one mismatch: Burst missing distribution. Re-running the same deterministic audit after the panel change returned 42/42 descriptors valid, zero mismatches.
+- [ ] The new regression test and panel correction are committed below; workflow validation for this batch is pending. The next CI result must be recorded here before calling this step CI-validated.
+
