@@ -156,8 +156,9 @@
       if (seen.has(port.id)) duplicates.push(port.id);
       seen.add(port.id);
       const declared = expected.get(port.id);
-      if (!declared) unregistered.push(port.id);
-      else if (port.direction && port.direction !== declared.direction) {
+      if (!declared) {
+        if (!unregistered.includes(port.id)) unregistered.push(port.id);
+      } else if (port.direction && port.direction !== declared.direction) {
         directionMismatches.push({ id: port.id, declared: declared.direction, rendered: port.direction });
       }
     });
