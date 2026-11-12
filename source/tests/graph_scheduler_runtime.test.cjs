@@ -29,7 +29,7 @@ test("legacy jack descriptors are registered only when real jack endpoints exist
   assert.match(ui, /if\(!ports\.length\)return;[\s\S]*?PORT_REGISTRY\.register\(\{type:module\.t,ports\}\)/);
 });
 
-test("active scheduler is restricted to verified Atte/Mixer2/Mixer/Audio Out adapters and keeps the legacy fallback", () => {
+test("active scheduler is restricted to verified Voltio/Atte/Mixer2/Mixer/Audio Out adapters and keeps the legacy fallback", () => {
   const { engine, ui } = readScripts();
   const stepAt = engine.indexOf("function step(){");
   assert.ok(stepAt >= 0, "shared DSP step must remain present");
@@ -38,12 +38,13 @@ test("active scheduler is restricted to verified Atte/Mixer2/Mixer/Audio Out ada
   assert.match(engine, /function setGraphExecutionOrder\(order\)/);
   assert.match(engine, /function processTopologicalRack\(\)/);
   assert.match(engine, /fromIndex>=toIndex/);
-  assert.match(engine, /!\['atte','mixer2','mixer','out'\]\.includes\(m\.t\)/);
+  assert.match(engine, /!\['voltio','atte','mixer2','mixer','out'\]\.includes\(m\.t\)/);
+  assert.match(engine, /else if\(m\.t==='voltio'\)voltioF\(m\)/);
   assert.match(engine, /else if\(m\.t==='mixer'\)mixerF\(m\)/);
   assert.match(step, /graphExecutionOrder&&processTopologicalRack\(\)/);
   assert.match(step, /A=byT\.atte/);
   assert.match(step, /A=byT\.out/);
-  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['atte','mixer2','mixer','out'\]\)/);
+  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','mixer2','mixer','out'\]\)/);
   assert.match(ui, /executionMode:executionOrder\?'topological':'legacy'/);
   assert.match(ui, /fromIndex>=toIndex/);
   assert.match(ui, /function postCab\(\)\{const order=activeSchedulerOrder\(\);if\(typeof globalThis\.MoldgfSetExecutionOrder==='function'\)globalThis\.MoldgfSetExecutionOrder\(order\);post\(\{t:'cab'/);

@@ -7,6 +7,7 @@ const { createRegistry, validateGraph } = require("../app/src/main/assets/module
 const AtteDSP = require("../app/src/main/assets/atte_dsp.js");
 const Mixer2DSP = require("../app/src/main/assets/mixer2_dsp.js");
 const MixerDSP = require("../app/src/main/assets/mixer_dsp.js");
+const VoltioDSP = require("../app/src/main/assets/voltio_dsp.js");
 const CVThingDSP = require("../app/src/main/assets/cv_thing_dsp.js");
 const DivKidMutesDSP = require("../app/src/main/assets/divkid_mutes_mk2_dsp.js");
 const JoystickDSP = require("../app/src/main/assets/joystick_dsp.js");
@@ -24,6 +25,7 @@ function createEngineHarness() {
     MoldgfAtteDSP: AtteDSP,
     MoldgfMixer2DSP: Mixer2DSP,
     MoldgfMixerDSP: MixerDSP,
+    MoldgfVoltioDSP: VoltioDSP,
     MoldgfCVThingDSP: CVThingDSP,
     MoldgfDivKidMutesMK2DSP: DivKidMutesDSP,
     MoldgfJoystickDSP: JoystickDSP
@@ -46,9 +48,9 @@ function createEngineHarness() {
 
 function makeGraphPlan() {
   const registry = createRegistry([
-    { type: "atte", ports: [
-      { id: "inA", direction: "input", signal: "cv" },
-      { id: "a", direction: "output", signal: "cv" }
+    { type: "voltio", ports: [
+      { id: "sumIn", direction: "input", signal: "cv" },
+      { id: "out", direction: "output", signal: "cv" }
     ] },
     { type: "mixer2", ports: [
       { id: "ch1", direction: "input", signal: "audio", accepts: ["audio", "cv"] },
@@ -65,42 +67,42 @@ function makeGraphPlan() {
     ] }
   ]);
   return validateGraph(registry,
-    [{ id: "out1", type: "out" }, { id: "mixer1", type: "mixer" }, { id: "mixer21", type: "mixer2" }, { id: "atte1", type: "atte" }],
+    [{ id: "out1", type: "out" }, { id: "mixer1", type: "mixer" }, { id: "mixer21", type: "mixer2" }, { id: "voltio1", type: "voltio" }],
     [
-      { from: { module: "atte1", port: "a" }, to: { module: "mixer21", port: "ch1" } },
+      { from: { module: "voltio1", port: "out" }, to: { module: "mixer21", port: "ch1" } },
       { from: { module: "mixer21", port: "mix12" }, to: { module: "mixer1", port: "ch1" } },
       { from: { module: "mixer1", port: "main" }, to: { module: "out1", port: "l" } }
     ]);
 }
 
-function buildAtteMixerRack(engine) {
+function buildVoltioMixerRack(engine) {
   engine.mkInst("out1", "out", { lv: 1, mu: 0 });
   engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
   engine.mkInst("mixer21", "mixer2", { gain: [1, 1, 1, 1], clip: 0 });
-  engine.mkInst("atte1", "atte", { gain: [1, 1, 1, 1], mode: [1, 1, 1, 1], normalledVoltage: 2 });
+  engine.mkInst("voltio1", "voltio", { octave: 5, semitone: 0, range: 0 });
   engine.idxE();
   engine.cab.push(
-    { a: "atte1.a", b: "mixer21.ch1" },
+    { a: "voltio1.out", b: "mixer21.ch1" },
     { a: "mixer21.mix12", b: "mixer1.ch1" },
     { a: "mixer1.main", b: "out1.l" }
   );
   engine.rebuild();
-  engine.setInput("atte1.inA", 5);
 }
 
-test("topological Atte -> Mixer2 -> Mixer -> Audio Out processing preserves main/inverted polarity", () => {
+test("topological Voltio -> Mixer2 -> Mixer -> Audio Out processing preserves main/inverted polarity", () => {
   const engine = createEngineHarness();
   const plan = makeGraphPlan();
   assert.equal(plan.valid, true);
-  assert.deepEqual(plan.order, ["atte1", "mixer21", "mixer1", "out1"]);
-  buildAtteMixerRack(engine);
-  assert.equal(engine.setGraphExecutionOrder(["out1", "mixer1", "mixer21", "atte1"]), false,
+  assert.deepEqual(plan.order, ["voltio1", "mixer21", "mixer1", "out1"]);
+  buildVoltioMixerRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(["out1", "mixer1", "mixer21", "voltio1"]), false,
     "a plan that violates cable direction/order must not be activated");
   assert.equal(engine.setGraphExecutionOrder(plan.order), true);
   engine.step();
   const [left, right] = engine.output();
   assert.ok(Math.abs(left - Math.tanh(1)) < 1e-9, "left channel must include the Atte and Mixer2 output");
   assert.ok(Math.abs(right - Math.tanh(1)) < 1e-9, "unpatched right channel must follow the mono left input");
+  assert.equal(engine.V[engine.sig("voltio1.out")], 5);
   assert.equal(engine.V[engine.sig("mixer1.main")], 5);
   assert.equal(engine.V[engine.sig("mixer1.inverted")], -5);
 });
@@ -108,7 +110,7 @@ test("topological Atte -> Mixer2 -> Mixer -> Audio Out processing preserves main
 test("an unsupported legacy module disables topological mode and preserves legacy step output", () => {
   const engine = createEngineHarness();
   const plan = makeGraphPlan();
-  buildAtteMixerRack(engine);
+  buildVoltioMixerRack(engine);
   engine.mkInst("mid1", "mid", {});
   engine.idxE();
   assert.equal(engine.setGraphExecutionOrder(plan.order), false);
