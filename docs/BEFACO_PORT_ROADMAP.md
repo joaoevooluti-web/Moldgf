@@ -624,7 +624,7 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 
 ## Phase 1 runtime scheduler rollout — 2026-11-12
 
-### Implemented in code — Voltio, Atte, Mixer2 and Mixer scheduler adapters; workflow #91 correction pending
+### Implemented in code — Voltio, Atte, Mixer2 and Mixer scheduler adapters; workflow #91 passed
 
 - Added a guarded topological execution path for racks containing only explicitly described `Voltio`, `Atte`, `Mixer2`, `Mixer`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
 - Added the explicit internal `out` descriptor (audio inputs L/R), so this route no longer relies on an inferred legacy descriptor.
@@ -705,13 +705,34 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 - Official STMix manual: `https://befaco.org/docs/StMix/StMix_User_Manual.pdf`. It states the six-pin ribbon connection sends STMix output into the Hexmix master section; AUX is unattenuated and feeds the output directly.
 - Gap found: current `stmixF` computes standalone stereo outputs, but `hexmixF` only consumes the Hexmix VCA expander's six `hostInputs`; there is no STMix-to-Hexmix stereo host path. Therefore the module is not yet complete as a Hexmix expansion.
 - Decision: do not add STMix to the active scheduler whitelist yet. Its standalone DSP remains on the legacy path; the hidden Hexmix host dependency must be implemented and tested first.
-- Next implementation: trace the official Hexmix/STMix master-bus insertion point, add an explicit internal host link without duplicating patched AUX/cable audio, and test STMix → Hexmix master EQ/volume plus fallback behavior.
+- Official manuals confirm the STMix signal enters the Hexmix master section, but do not specify the exact insertion node. The available official Hexmix V1 schematic does not show the STMix expansion connector; the STMix V2 schematic shows its six-pin connector but not the Hexmix-side routing. Do not guess the exact pre/post-EQ position. Next: obtain authoritative Hexmix-side pinout/schematic or explicitly document a modeled assumption before implementing the host bus.
 
 
-## Voltio scheduler adapter — workflow #90 correction
+## Voltio scheduler adapter — workflow #91 validated
 
 - [x] Code commit `ab9806de7b905b282860150e0fcc03204f33635f` added Voltio to the guarded scheduler whitelist and topological DSP dispatch.
 - [x] Runtime route: Voltio (+5 V) → Mixer2 → Mixer → Audio Out; local V8 smoke verified the 5 V source, +5 V/−5 V Mixer outputs, stereo master output, reverse-order rejection and legacy fallback.
 - [x] Workflow [#90 / 43241442280](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43241442280) executed 701 Node tests: **700 passed, 1 failed**. The only failure was a stale static assertion expecting an `else if` for Voltio; the implementation correctly uses the first `if` branch. The engine-level Voltio test passed.
 - [x] Emscripten, JUnit, Gradle APK and artifact upload were skipped after the Node gate; no APK/WASM artifact was produced by #90.
-- [ ] The assertion is corrected in the next commit; full CI validation is pending in workflow #91. No Android/device validation is claimed.
+- [x] The stale assertion was corrected in commit `d5549beef3cb58a4fa2132239fd7531344a929e1`; workflow #91 passed. No Android/device validation is claimed.
+
+
+## Workflow #91 — Voltio scheduler validated
+
+- [x] Workflow [#91 / 43242059403](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43242059403) passed on correction commit `d5549beef3cb58a4fa2132239fd7531344a929e1`.
+- [x] Node regression suite: **701/701 passed**.
+- [x] Android JUnit XML inspected: **13/13 passed** (9 MIDI decoder + 4 MIDI batch encoder; zero failures/errors/skips).
+- [x] Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**; WebAssembly compile checks passed; Beads native self-test reported `SELFTEST OK`.
+- [x] Gradle `assembleDebug`: success.
+- [x] Artifacts inspected:
+  - `eurorack-study-debug-apk`, ID `13955017283`, archive SHA-256 `24281bddea54dc307b96aa4a77a6c7cb4b57ac0409dc2c89dafa31be38ad37c0`; contained APK SHA-256 `3e5a9ebd43cbc82e3fe7d24d513aa52591ce00c0aa4c55d7489d8b1e4bfe0a00`.
+  - `android-unit-test-report`, ID `13955271671`, SHA-256 `08bc4118424d5fc4b8e47335e7a32d1f5c2c9b625d6f28fdc29f1336846c49d4`; XML totals 13 passing tests.
+  - `wasm-log`, ID `13956000741`, SHA-256 `9f1b8607b30d4eed92db957fd59aa22ef1b23870b1f1e693ba415235040b87eb`; inspected build log.
+- [x] APK contents inspected: packaged `index.html` contains the Voltio/Atte/Mixer2/Mixer/Audio Out whitelist and Voltio DSP dispatch; `voltio_dsp.js`, `mixer2_dsp.js`, `mixer_dsp.js` and both Plaits/Beads WASM wrappers are present.
+- CI evidence only. No installation, live audio, MIDI routing or physical Android validation is claimed.
+
+## Voltio adapter runtime contract
+
+- Voltio is a stateless CV source/precision-adder adapter in the scheduler. Its output is computed before downstream modules according to the typed graph order.
+- Deterministic route tested in the engine harness: Voltio set to +5 V → Mixer2 → Mixer → Audio Out; output is `tanh(1)` on both channels, Mixer main/inverted remain +5 V/−5 V.
+- Unsupported rack types still disable topological mode and use the legacy `step()`; no broader scheduler activation is implied.
