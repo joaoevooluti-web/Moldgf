@@ -39,7 +39,7 @@ test("active scheduler is restricted to verified Voltio/Atte/Mixer2/Mixer/Audio 
   assert.match(engine, /function processTopologicalRack\(\)/);
   assert.match(engine, /fromIndex>=toIndex/);
   assert.match(engine, /!\['voltio','atte','mixer2','mixer','out'\]\.includes\(m\.t\)/);
-  assert.match(engine, /else if\(m\.t==='voltio'\)voltioF\(m\)/);
+  assert.match(engine, /if\(m\.t==='voltio'\)voltioF\(m\)/);
   assert.match(engine, /else if\(m\.t==='mixer'\)mixerF\(m\)/);
   assert.match(step, /graphExecutionOrder&&processTopologicalRack\(\)/);
   assert.match(step, /A=byT\.atte/);

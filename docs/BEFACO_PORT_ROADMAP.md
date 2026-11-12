@@ -624,20 +624,20 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 
 ## Phase 1 runtime scheduler rollout — 2026-11-12
 
-### Implemented in code — Atte, Mixer2 and Mixer scheduler adapters; workflow #89 passed
+### Implemented in code — Voltio, Atte, Mixer2 and Mixer scheduler adapters; workflow #91 correction pending
 
-- Added a guarded topological execution path for racks containing only explicitly described `Atte`, `Mixer2`, `Mixer`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
+- Added a guarded topological execution path for racks containing only explicitly described `Voltio`, `Atte`, `Mixer2`, `Mixer`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
 - Added the explicit internal `out` descriptor (audio inputs L/R), so this route no longer relies on an inferred legacy descriptor.
 - The AudioWorklet receives the graph order with cable updates. It keeps a pending plan until all module-state sync messages arrive, then checks rack cardinality, unique/known IDs, eligible types, and cable order before activating.
 - The ScriptProcessor fallback receives the same order through the shared engine setter, which is kept synchronized even while AudioWorklet is active. Both paths call the same `step()`; the old type-ordered processor remains the automatic fallback.
 - Fixed three missing `byT` buckets (`cvThing`, `divkidMutesMk2`, `joystick`) referenced by `idxE()` and `step()`. This latent issue was not exercised by the previous static suite.
-- Added deterministic engine-level tests with the real Atte, Mixer2 and Mixer DSP helpers for Atte → Mixer2 → Mixer → Audio Out signal flow, main/inverted outputs, reverse-order rejection, legacy fallback, and the three previously missing runtime buckets.
+- Added deterministic engine-level tests with the real Voltio, Mixer2 and Mixer DSP helpers for Voltio → Mixer2 → Mixer → Audio Out signal flow, +5 V source output, main/inverted outputs, reverse-order rejection, legacy fallback, and the three previously missing runtime buckets.
 - Extended the generated faceplate/descriptor audit from 42 DSP descriptors to 43 descriptors including the internal Audio Out sink.
 
 ### Local validation performed before commit
 
 - V8 compilation of every inline HTML script and the updated/new test sources: passed.
-- Engine smoke with actual Atte, Mixer2 and Mixer DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` for the 5 V test input; Mixer main/inverted outputs were +5 V/−5 V; reverse cable order was rejected.
+- Engine smoke with actual Voltio, Mixer2 and Mixer DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` from Voltio's +5 V setting; Mixer main/inverted outputs were +5 V/−5 V; reverse cable order was rejected.
 - Runtime inventory smoke: CV Thing, DivKid Mutes and Joystick buckets all initialized and indexed.
 - Generated template audit: 43 descriptors, zero jack ID/direction mismatches.
 - Workflow [#87 / 43236747447](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43236747447) executed the full Node suite: 699/701 passed. The two failures were stale assertions in `index_scripts_syntax.test.cjs` (42 vs 43 descriptors, and the old cable-only post payload); the new engine-level scheduler/fallback tests passed. The test expectations were corrected in commit `383821b8af07b42bb83aa3953334f35f2f724973`; workflow #88 then passed. Emscripten, JUnit and Gradle/APK steps were skipped in #87; no artifact was produced by that run.
@@ -706,3 +706,12 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 - Gap found: current `stmixF` computes standalone stereo outputs, but `hexmixF` only consumes the Hexmix VCA expander's six `hostInputs`; there is no STMix-to-Hexmix stereo host path. Therefore the module is not yet complete as a Hexmix expansion.
 - Decision: do not add STMix to the active scheduler whitelist yet. Its standalone DSP remains on the legacy path; the hidden Hexmix host dependency must be implemented and tested first.
 - Next implementation: trace the official Hexmix/STMix master-bus insertion point, add an explicit internal host link without duplicating patched AUX/cable audio, and test STMix → Hexmix master EQ/volume plus fallback behavior.
+
+
+## Voltio scheduler adapter — workflow #90 correction
+
+- [x] Code commit `ab9806de7b905b282860150e0fcc03204f33635f` added Voltio to the guarded scheduler whitelist and topological DSP dispatch.
+- [x] Runtime route: Voltio (+5 V) → Mixer2 → Mixer → Audio Out; local V8 smoke verified the 5 V source, +5 V/−5 V Mixer outputs, stereo master output, reverse-order rejection and legacy fallback.
+- [x] Workflow [#90 / 43241442280](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43241442280) executed 701 Node tests: **700 passed, 1 failed**. The only failure was a stale static assertion expecting an `else if` for Voltio; the implementation correctly uses the first `if` branch. The engine-level Voltio test passed.
+- [x] Emscripten, JUnit, Gradle APK and artifact upload were skipped after the Node gate; no APK/WASM artifact was produced by #90.
+- [ ] The assertion is corrected in the next commit; full CI validation is pending in workflow #91. No Android/device validation is claimed.
