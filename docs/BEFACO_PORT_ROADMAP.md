@@ -556,7 +556,7 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 
 ### Phase 1 scheduler status and next safe step
 - [x] Shadow topological plan and generated faceplate audit are integrated; the generated-template audit covers 42 DSP module descriptors plus the internal Audio Out sink (43 total). A live DOM audit in a physical WebView remains unverified.
-- [x] Active topological execution is enabled only for a fully typed, acyclic rack containing Atte, Mixer2 and/or the internal Audio Out sink. Cable order is checked in the UI and audio engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use the legacy `step()`.
+- [x] Active topological execution is enabled only for a fully typed, acyclic rack containing Atte, Mixer2, Mixer and/or the internal Audio Out sink. Cable order is checked in the UI and audio engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use the legacy `step()`.
 - [x] AudioWorklet receives the validated order with cable updates and holds it until module sync completes. ScriptProcessor fallback uses the same shared engine setter and the same `step()`.
 - [ ] Broaden the active adapter set only after each module's input normaling, hidden host links, state/reset semantics and sample-rate behavior are audited. Parameter-event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
 
@@ -619,25 +619,25 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - Current code/test commit: e8655db4d3f7ba68a8739f884177b99ca985a95d. main remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; branch comparison at this point is **586 ahead / 0 behind**.
 
 ### Next Phase 1 objective
-Audit the Mixer adapter (including output normalization, gain state and reset behavior), add its deterministic runtime tests, then widen the scheduler whitelist by one module only. Preserve the legacy fallback and AudioWorklet/ScriptProcessor shared-step parity.
+Audit STMix's stereo routing, left-to-right normaling, AUX path and reset/state semantics. Add deterministic runtime tests before widening the scheduler whitelist; retain the legacy fallback for all unverified configurations.
 
 
 ## Phase 1 runtime scheduler rollout — 2026-11-12
 
-### Implemented in code (workflow #87 exposed two stale test expectations; correction committed next)
+### Implemented in code — Atte, Mixer2 and Mixer scheduler adapters; workflow #89 pending
 
-- Added a guarded topological execution path for racks containing only explicitly described `Atte`, `Mixer2`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
+- Added a guarded topological execution path for racks containing only explicitly described `Atte`, `Mixer2`, `Mixer`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
 - Added the explicit internal `out` descriptor (audio inputs L/R), so this route no longer relies on an inferred legacy descriptor.
 - The AudioWorklet receives the graph order with cable updates. It keeps a pending plan until all module-state sync messages arrive, then checks rack cardinality, unique/known IDs, eligible types, and cable order before activating.
 - The ScriptProcessor fallback receives the same order through the shared engine setter, which is kept synchronized even while AudioWorklet is active. Both paths call the same `step()`; the old type-ordered processor remains the automatic fallback.
 - Fixed three missing `byT` buckets (`cvThing`, `divkidMutesMk2`, `joystick`) referenced by `idxE()` and `step()`. This latent issue was not exercised by the previous static suite.
-- Added deterministic engine-level tests with the real Atte and Mixer2 DSP helpers for Atte → Mixer2 → Audio Out signal flow, reverse-order rejection, legacy fallback, and the three previously missing runtime buckets.
+- Added deterministic engine-level tests with the real Atte, Mixer2 and Mixer DSP helpers for Atte → Mixer2 → Mixer → Audio Out signal flow, main/inverted outputs, reverse-order rejection, legacy fallback, and the three previously missing runtime buckets.
 - Extended the generated faceplate/descriptor audit from 42 DSP descriptors to 43 descriptors including the internal Audio Out sink.
 
 ### Local validation performed before commit
 
 - V8 compilation of every inline HTML script and the updated/new test sources: passed.
-- Engine smoke with actual Atte and Mixer2 DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` for the 5 V test input; reverse cable order was rejected.
+- Engine smoke with actual Atte, Mixer2 and Mixer DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` for the 5 V test input; Mixer main/inverted outputs were +5 V/−5 V; reverse cable order was rejected.
 - Runtime inventory smoke: CV Thing, DivKid Mutes and Joystick buckets all initialized and indexed.
 - Generated template audit: 43 descriptors, zero jack ID/direction mismatches.
 - Workflow [#87 / 43236747447](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43236747447) executed the full Node suite: 699/701 passed. The two failures were stale assertions in `index_scripts_syntax.test.cjs` (42 vs 43 descriptors, and the old cable-only post payload); the new engine-level scheduler/fallback tests passed. The test expectations are corrected in the next commit. Emscripten, JUnit and Gradle/APK steps were skipped after the Node gate; no artifact was produced.
@@ -647,7 +647,7 @@ Audit the Mixer adapter (including output normalization, gain state and reset be
 
 - Extend the active adapter set only after each module's dependencies, hidden-host links, normaling, state/reset semantics and per-sample behavior are verified.
 - Add parameter-event queue and versioned state/reset/bypass contracts before broader real-time migration.
-- Keep all other module types on legacy `step()` until their adapters are proven.
+- Keep all other module types on legacy `step()` until their adapters are proven. STMix is the next adapter candidate, pending a full dependency/normaling audit.
 
 
 ### Workflow #87 — test expectation corrections
@@ -657,3 +657,29 @@ Audit the Mixer adapter (including output normalization, gain state and reset be
 - [x] The new topological Atte → Mixer2 → Audio Out runtime test passed, as did the legacy fallback and bucket inventory tests.
 - [x] Emscripten, Android/JUnit, Gradle APK assembly and artifact upload were skipped because the Node gate failed. The final verifier's missing-WASM-wrapper message is downstream of those skipped build steps; workflow #87 produced no APK or WASM artifact.
 - [ ] Full CI validation remains pending on the correction commit. No Android/device validation is claimed.
+
+
+## Workflow #88 — correction verified in CI
+
+- [x] Workflow [#88 / 43237185052](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43237185052) passed on correction commit `383821b8af07b42bb83aa3953334f35f2f724973`.
+- [x] Node regression suite: **701/701 passed**.
+- [x] Android JUnit reports inspected from `android-unit-test-report`: **13/13 passed** (9 MIDI decoder + 4 MIDI batch encoder; zero failures/errors/skips).
+- [x] Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. The WASM log artifact reports successful builds, WebAssembly compilation and Beads native self-test.
+- [x] Gradle `assembleDebug`: success.
+- [x] Artifacts inspected:
+  - `eurorack-study-debug-apk`, ID `13952457793`, archive SHA-256 `778e351f6e1fbbdbedc83d8a7a41e05e34dbb52d9a0d4a0a1d11c5d63e9c8b34`; contained APK SHA-256 `4845b5d7f2e62d2fba1a2fbd6ed1f6a9a6d7f7e8cdd6a22c2b53e9d59bfe88a1`.
+  - `android-unit-test-report`, ID `13953466772`; inspected XML totals 13 tests, all passing.
+  - `wasm-log`, ID `13952832187`; inspected; both WASM payloads and native Beads self-test succeeded.
+- [x] APK contents inspected: packaged `index.html` includes the guarded scheduler and missing-bucket fixes; Atte, Mixer and Mixer2 DSP assets and both Plaits/Beads WASM wrappers are present.
+- CI evidence only. No installation, audio playback, MIDI routing or physical Android validation is claimed.
+- Workflow #87's two stale test expectations were corrected; #88 passed without a source/DSP regression.
+
+## Mixer adapter extension — code commit `c9a5a69ca0e6cd7cb16f4da30934f4a17c3e5590`
+
+- Implemented: added Mixer to the guarded scheduler whitelist and topological DSP dispatch.
+- Runtime path: Atte → Mixer2 → Mixer → Audio Out.
+- Deterministic coverage: Mixer main output +5 V, inverted output −5 V, stereo output after master stage, rejection of reverse cable order, and legacy fallback when an unsupported module is present.
+- Local V8 checks passed with the actual Atte, Mixer2 and Mixer DSP helpers; updated inline scripts and test sources compile.
+- GitHub Actions workflow #89 was queued after this code commit; full CI validation is pending.
+- AudioWorklet and ScriptProcessor continue to use the same `step()` and synchronized execution-order setter.
+- Next candidate: STMix; do not enable it until stereo normaling and AUX dependencies are audited.
