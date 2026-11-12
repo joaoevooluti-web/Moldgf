@@ -451,7 +451,7 @@ function setGraphExecutionOrder(order){
  const seen=new Set(),positions=Object.create(null);
  for(let i=0;i<pendingGraphExecutionOrder.length;i++){
   const id=pendingGraphExecutionOrder[i],m=I[id];
-  if(!m||seen.has(id)||!['atte','mixer2','out'].includes(m.t)){graphExecutionOrder=null;return false}
+  if(!m||seen.has(id)||!['atte','mixer2','mixer','out'].includes(m.t)){graphExecutionOrder=null;return false}
   seen.add(id);positions[id]=i
  }
  for(let i=0;i<cab.length;i++){
@@ -473,6 +473,7 @@ function processTopologicalRack(){
   if(!m){graphExecutionOrder=null;return false}
   if(m.t==='atte')atteF(m);
   else if(m.t==='mixer2')mixer2F(m);
+  else if(m.t==='mixer')mixerF(m);
   else if(m.t!=='out'){graphExecutionOrder=null;return false}
  }
  let L=0,R=0;const A=byT.out;
@@ -1183,7 +1184,7 @@ function ensurePortDescriptor(module){
 }
 // Graph scheduler: derive a deterministic topological plan whenever the rack
 // inventory or patch cables change. Active sample-order execution is deliberately
-// restricted to the verified Atte -> Mixer2 -> Audio Out adapter set; other racks use legacy step().
+// restricted to the verified Atte -> Mixer2 -> Mixer -> Audio Out adapter set; other racks use legacy step().
 let graphPlan={valid:true,order:[],errors:[]};
 function refreshGraphPlan(){
  const modules=[];
@@ -1202,7 +1203,7 @@ function refreshGraphPlan(){
  graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables);
  return graphPlan;
 }
-const ACTIVE_SCHEDULER_TYPES=new Set(['atte','mixer2','out']);
+const ACTIVE_SCHEDULER_TYPES=new Set(['atte','mixer2','mixer','out']);
 function activeSchedulerOrder(){
  const ids=Object.keys(I);
  if(!ids.length||!graphPlan.valid||graphPlan.order.length!==ids.length)return null;
