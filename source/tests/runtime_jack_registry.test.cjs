@@ -10,7 +10,7 @@ const html = fs.readFileSync(
   "utf8"
 );
 
-test("all 42 registered DSP module descriptors match their generated faceplate jacks", () => {
+test("all 42 DSP module descriptors plus Audio Out match their generated faceplate jacks", () => {
   const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
   const uiScript = scripts.find((match) => match[2].includes("const J="));
   assert.ok(uiScript, "rack UI script must exist");
@@ -37,7 +37,7 @@ test("all 42 registered DSP module descriptors match their generated faceplate j
     { timeout: 1000 }
   );
   const descriptors = registryContext.__MOLDGF_PORTS.list();
-  assert.equal(descriptors.length, 42, "all registered DSP module types must be audited");
+  assert.equal(descriptors.length, 43, "all 42 DSP types plus the internal Audio Out endpoint must be audited");
 
   const moduleId = "__moldgf_audit__";
   const prefix = moduleId + ".";

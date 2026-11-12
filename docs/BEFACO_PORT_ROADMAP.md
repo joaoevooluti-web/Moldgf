@@ -555,9 +555,10 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - [ ] Visual faceplate fidelity is still incomplete. The shared HP/geometry pass and five detailed panels are not a per-module reference-approved redesign. No physical Android, audio, touch, MIDI reception or performance validation is claimed.
 
 ### Phase 1 scheduler status and next safe step
-- [x] Shadow topological plan is integrated into rack inventory and cable updates, with read-only diagnostics via `window.MoldgfGraphPlan()`; workflow #77 passed the three runtime assertions.
-- [ ] The shadow plan does **not** reorder the real-time audio `step()`. Keep the current DSP order until all connected module adapters, normaling, feedback behavior and state contracts are verified.
-- [ ] Next objective: generate a runtime audit comparing every rendered jack ID against its registered descriptor; fix discrepancies; then opt in one small acyclic module group to scheduler-driven execution with the old path retained as fallback. Parameter event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
+- [x] Shadow topological plan and generated faceplate audit are integrated; the generated-template audit covers 42 DSP module descriptors plus the internal Audio Out sink (43 total). A live DOM audit in a physical WebView remains unverified.
+- [x] Active topological execution is enabled only for a fully typed, acyclic rack containing Atte, Mixer2 and/or the internal Audio Out sink. Cable order is checked in the UI and audio engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use the legacy `step()`.
+- [x] AudioWorklet receives the validated order with cable updates and holds it until module sync completes. ScriptProcessor fallback uses the same shared engine setter and the same `step()`.
+- [ ] Broaden the active adapter set only after each module's input normaling, hidden host links, state/reset semantics and sample-rate behavior are audited. Parameter-event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
 
 
 
@@ -568,7 +569,7 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - [x] Exposed a read-only in-app diagnostic at `window.MoldgfJackAudit()`, with per-module results and a summary. It reads actual DOM jack elements (not the deduplicated jack lookup map), so duplicate elements remain visible to the audit.
 - [x] Added unit tests for valid matching ports and all four mismatch categories.
 - [x] Kept the real-time audio sample processor and shadow-only scheduler behavior unchanged.
-- [~] Added a deterministic generated-template audit across all 42 explicit descriptors; it renders each real TY faceplate template and detects missing, unregistered, duplicate, and wrong-direction jacks. A separate live DOM diagnostic in an actual WebView rack remains pending.
+- [x] Deterministic generated-template audit now covers 43 explicit descriptors (42 DSP module types plus internal Audio Out); it renders each real TY faceplate template and detects missing, unregistered, duplicate, and wrong-direction jacks. A separate live DOM diagnostic in an actual WebView rack remains pending.
 - Implementation commits: `6d0b37b886f1b6f41a576174be4a2a67cb62f954`, `adb8cac64ba9da05836e8868dd6e22af8ec89351`, `fe172cf9122889103de0c3b02f7a7199f26e8588`, `fb1e263255179566fe42b25aed37efca114abc70`, `8dfa04c5fea74be6492e1b53a028c5b2d5556b28`, `5cab9f73d7ea73a5d1e9bffea9d32c70b001e2d0`, `9f351dd826c6602046092581a4a60980ee3e4952`.
 - Node test step passed in workflow `42993312372` on commit `9f351dd826c6602046092581a4a60980ee3e4952`; WASM build also passed. Android unit tests, APK assembly and embedded WASM verification had not completed at the time this note was written. This commit predates the final no-content commit `37b448e1260cda9b2f1ed185c6f8d75713791dd5`; both point to the same test content.
 - `main` remains unchanged; all changes are confined to `feature/befaco-modules`.
@@ -618,4 +619,32 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - Current code/test commit: e8655db4d3f7ba68a8739f884177b99ca985a95d. main remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; branch comparison at this point is **586 ahead / 0 behind**.
 
 ### Next Phase 1 objective
-Audit the runtime adapters, normaling, state and parameter reads for a small acyclic module group. Add an opt-in topological execution path only for that verified group, preserve the legacy step as automatic fallback, and test that an intentionally reverse rack insertion order still produces source-to-sink processing without changing AudioWorklet/ScriptProcessor parity.
+Audit the Mixer adapter (including output normalization, gain state and reset behavior), add its deterministic runtime tests, then widen the scheduler whitelist by one module only. Preserve the legacy fallback and AudioWorklet/ScriptProcessor shared-step parity.
+
+
+## Phase 1 runtime scheduler rollout — 2026-11-12
+
+### Implemented in code (CI pending at this commit)
+
+- Added a guarded topological execution path for racks containing only explicitly described `Atte`, `Mixer2`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
+- Added the explicit internal `out` descriptor (audio inputs L/R), so this route no longer relies on an inferred legacy descriptor.
+- The AudioWorklet receives the graph order with cable updates. It keeps a pending plan until all module-state sync messages arrive, then checks rack cardinality, unique/known IDs, eligible types, and cable order before activating.
+- The ScriptProcessor fallback receives the same order through the shared engine setter, which is kept synchronized even while AudioWorklet is active. Both paths call the same `step()`; the old type-ordered processor remains the automatic fallback.
+- Fixed three missing `byT` buckets (`cvThing`, `divkidMutesMk2`, `joystick`) referenced by `idxE()` and `step()`. This latent issue was not exercised by the previous static suite.
+- Added deterministic engine-level tests with the real Atte and Mixer2 DSP helpers for Atte → Mixer2 → Audio Out signal flow, reverse-order rejection, legacy fallback, and the three previously missing runtime buckets.
+- Extended the generated faceplate/descriptor audit from 42 DSP descriptors to 43 descriptors including the internal Audio Out sink.
+
+### Local validation performed before commit
+
+- V8 compilation of every inline HTML script and the updated/new test sources: passed.
+- Engine smoke with actual Atte and Mixer2 DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` for the 5 V test input; reverse cable order was rejected.
+- Runtime inventory smoke: CV Thing, DivKid Mutes and Joystick buckets all initialized and indexed.
+- Generated template audit: 43 descriptors, zero jack ID/direction mismatches.
+- Full `node --test`, Kotlin/JUnit, Emscripten, APK and GitHub Actions validation: pending.
+- Android/device validation: not claimed.
+
+### Remaining
+
+- Extend the active adapter set only after each module's dependencies, hidden-host links, normaling, state/reset semantics and per-sample behavior are verified.
+- Add parameter-event queue and versioned state/reset/bypass contracts before broader real-time migration.
+- Keep all other module types on legacy `step()` until their adapters are proven.

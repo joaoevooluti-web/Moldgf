@@ -440,9 +440,47 @@ out:()=>({ol:0,or:0,pk:[0,0]}),atte:()=>({out:[0,0,0,0]}),dualAt:()=>({out:[0,0]
 const newQ=()=>({p:0,q:0,l2:0,lp:0,lg:0,s1:0,ns:0,tc:0,en:0,pe:0,sf:1000,ex:0,bi:0,bu:0,sH:.5,sT:.5,sM:.5,sk:36,dc:.99,ldc:-1,md:-1,
 b:new Float32Array(4096),ph:new Float64Array(8),me:new Float64Array(8),g:new Float64Array(8).fill(1),d:new Float64Array(8),r:new Float64Array(8).fill(1),s:new Float64Array(6),v:new Float64Array(4),
 v1:{mp:0,sp:0,ns:0,pp:.5,hi:0},v2:{mp:0,sp:0,ns:0,pp:.5,hi:0},vi:-1,tm:0,ro:new Float32Array(64),ra:new Float32Array(64),wi:0,rp:0,inited:0});
-const CR=4;let sr=48000,PX=null,BX=null,BXPORT=null,cc=0;const SIG=Object.create(null),SN=[],V=new Float64Array(4096),cab=[],cs={},I={},byT={crushDelayV3:[],bf22:[],midiThingV2:[],stereoStrip:[],ponyVcf:[],hexpander:[],hexmix:[],bandit:[],iroi:[],octaves:[],mex:[],random8:[],mid:[],pam:[],sc:[],pl:[],mix:[],axn:[],ex1:[],ex2:[],po:[],mout:[],bbd:[],bds:[],out:[],atte:[],dualAt:[],voltio:[],axbc:[],abc:[],bypass:[],mixer2:[],mixer:[],stmix:[],morphader:[],hexmixvca:[],motionmtr:[],slewlimiter:[],ponyVco:[],adsr:[],percall:[],mudi:[],slew:[],burst:[],samplingModulator:[],choppingKinky:[],evenVco:[],rampage:[],springReverb:[],kickall:[],noisePlethora:[],muxlicer:[]},M={note:60,gate:0,mod:0,vel:0,c:0,ck:0,run:0};
+const CR=4;let sr=48000,PX=null,BX=null,BXPORT=null,cc=0;const SIG=Object.create(null),SN=[],V=new Float64Array(4096),cab=[],cs={},I={},byT={crushDelayV3:[],bf22:[],midiThingV2:[],cvThing:[],divkidMutesMk2:[],joystick:[],stereoStrip:[],ponyVcf:[],hexpander:[],hexmix:[],bandit:[],iroi:[],octaves:[],mex:[],random8:[],mid:[],pam:[],sc:[],pl:[],mix:[],axn:[],ex1:[],ex2:[],po:[],mout:[],bbd:[],bds:[],out:[],atte:[],dualAt:[],voltio:[],axbc:[],abc:[],bypass:[],mixer2:[],mixer:[],stmix:[],morphader:[],hexmixvca:[],motionmtr:[],slewlimiter:[],ponyVco:[],adsr:[],percall:[],mudi:[],slew:[],burst:[],samplingModulator:[],choppingKinky:[],evenVco:[],rampage:[],springReverb:[],kickall:[],noisePlethora:[],muxlicer:[]},M={note:60,gate:0,mod:0,vel:0,c:0,ck:0,run:0};
 const sig=n=>{let i=SIG[n];if(i===undefined){i=SN.length;SIG[n]=i;SN.push(n)}return i};
-const SU={};const rebuild=()=>{for(const k in cs)delete cs[k];for(const k in SU)delete SU[k];for(const c of cab){const b=sig(c.b),a=sig(c.a);(cs[b]=cs[b]||[]).push(a);SU[a]=1}};
+const SU={};
+let graphExecutionOrder=null,pendingGraphExecutionOrder=null;
+function setGraphExecutionOrder(order){
+ if(!Array.isArray(order)){pendingGraphExecutionOrder=null;graphExecutionOrder=null;return false}
+ pendingGraphExecutionOrder=order.slice();
+ if(pendingGraphExecutionOrder.length!==Object.keys(I).length){graphExecutionOrder=null;return false}
+ const seen=new Set(),positions=Object.create(null);
+ for(let i=0;i<pendingGraphExecutionOrder.length;i++){
+  const id=pendingGraphExecutionOrder[i],m=I[id];
+  if(!m||seen.has(id)||!['atte','mixer2','out'].includes(m.t)){graphExecutionOrder=null;return false}
+  seen.add(id);positions[id]=i
+ }
+ for(let i=0;i<cab.length;i++){
+  const c=cab[i];
+  if(!c||typeof c.a!=='string'||typeof c.b!=='string'){graphExecutionOrder=null;return false}
+  const fromDot=c.a.lastIndexOf('.'),toDot=c.b.lastIndexOf('.');
+  if(fromDot<=0||toDot<=0){graphExecutionOrder=null;return false}
+  const fromIndex=positions[c.a.slice(0,fromDot)],toIndex=positions[c.b.slice(0,toDot)];
+  if(fromIndex===undefined||toIndex===undefined||fromIndex>=toIndex){graphExecutionOrder=null;return false}
+ }
+ graphExecutionOrder=pendingGraphExecutionOrder;
+ return true
+}
+globalThis.MoldgfSetExecutionOrder=setGraphExecutionOrder;
+function processTopologicalRack(){
+ if(!graphExecutionOrder)return false;
+ for(let i=0;i<graphExecutionOrder.length;i++){
+  const m=I[graphExecutionOrder[i]];
+  if(!m){graphExecutionOrder=null;return false}
+  if(m.t==='atte')atteF(m);
+  else if(m.t==='mixer2')mixer2F(m);
+  else if(m.t!=='out'){graphExecutionOrder=null;return false}
+ }
+ let L=0,R=0;const A=byT.out;
+ for(let i=0;i<A.length;i++){outF(A[i]);L+=A[i].r.ol;R+=A[i].r.or}
+ OL=Math.tanh(L*.2);OR=Math.tanh(R*.2);
+ return true
+}
+const rebuild=()=>{for(const k in cs)delete cs[k];for(const k in SU)delete SU[k];for(const c of cab){const b=sig(c.b),a=sig(c.a);(cs[b]=cs[b]||[]).push(a);SU[a]=1}};
 const inp=id=>{const a=cs[id];if(!a)return null;let s=0;for(let i=0;i<a.length;i++)s+=V[a[i]]||0;return s};
 const K=(m,n)=>m.kc[n]!==undefined?m.kc[n]:(m.kc[n]=sig(m.id+'.'+n));
 const rise=(m,k,v)=>{const r=v>1.5&&!(m.lv[k]>1.5);m.lv[k]=v;return r};
@@ -831,7 +869,7 @@ function outF(m){const s=m.s,R=m.r,ko=m.ko;let l=inp(ko[0]),r=inp(ko[1]);
  if(l===null&&r===null){R.ol=0;R.or=0;R.pk[0]*=.9995;R.pk[1]*=.9995;return}
  if(l===null)l=r;else if(r===null)r=l;const g=s.mu?0:s.lv;R.ol=l*g;R.or=r*g;
  let a=(l<0?-l:l)/5;R.pk[0]=a>R.pk[0]?a:R.pk[0]*.9995;a=(r<0?-r:r)/5;R.pk[1]=a>R.pk[1]?a:R.pk[1]*.9995}
-function step(){M.ck=M.c>0?5:0;if(M.c>0)M.c--;let A,i;if(cc===0){A=byT.mid;for(i=0;i<A.length;i++)midF(A[i]);A=byT.pam;for(i=0;i<A.length;i++)pamF(A[i]);A=byT.ex1;for(i=0;i<A.length;i++)ex1F(A[i]);A=byT.ex2;for(i=0;i<A.length;i++)ex1F(A[i]);A=byT.sc;for(i=0;i<A.length;i++)scF(A[i]);A=byT.mout;for(i=0;i<A.length;i++)moF(A[i])}cc=(cc+1)&3;A=byT.atte;for(i=0;i<A.length;i++)atteF(A[i]);A=byT.pl;for(i=0;i<A.length;i++){if(PX&&A[i].q.vi>=0)plW(A[i]);else plF(A[i])}A=byT.po;for(i=0;i<A.length;i++)poF(A[i]);A=byT.bbd;for(i=0;i<A.length;i++)bbdF(A[i]);A=byT.bds;for(i=0;i<A.length;i++)bdsF(A[i]);A=byT.cvThing;for(i=0;i<A.length;i++)cvThingF(A[i]);A=byT.divkidMutesMk2;for(i=0;i<A.length;i++)divkidMutesMk2F(A[i]);A=byT.joystick;for(i=0;i<A.length;i++)joystickF(A[i]);A=byT.dualAt;for(i=0;i<A.length;i++)dualAtenuverterF(A[i]);A=byT.voltio;for(i=0;i<A.length;i++)voltioF(A[i]);A=byT.axbc;for(i=0;i<A.length;i++)axbcF(A[i]);A=byT.abc;for(i=0;i<A.length;i++)abcF(A[i]);A=byT.bypass;for(i=0;i<A.length;i++)bypassF(A[i]);A=byT.mixer2;for(i=0;i<A.length;i++)mixer2F(A[i]);A=byT.mixer;for(i=0;i<A.length;i++)mixerF(A[i]);A=byT.stmix;for(i=0;i<A.length;i++)stmixF(A[i]);A=byT.morphader;for(i=0;i<A.length;i++)morphaderF(A[i]);A=byT.hexmixvca;for(i=0;i<A.length;i++)hexmixvcaF(A[i]);A=byT.hexmix;for(i=0;i<A.length;i++)hexmixF(A[i]);A=byT.hexpander;for(i=0;i<A.length;i++)hexpanderF(A[i]);A=byT.motionmtr;for(i=0;i<A.length;i++)motionmtrF(A[i]);A=byT.slewlimiter;for(i=0;i<A.length;i++)slewlimiterF(A[i]);A=byT.ponyVco;for(i=0;i<A.length;i++)ponyVcoF(A[i]);A=byT.crushDelayV3;for(i=0;i<A.length;i++)crushDelayV3F(A[i]);A=byT.bf22;for(i=0;i<A.length;i++)bf22F(A[i]);A=byT.ponyVcf;for(i=0;i<A.length;i++)ponyVcfF(A[i]);A=byT.stereoStrip;for(i=0;i<A.length;i++)stereoStripF(A[i]);A=byT.adsr;for(i=0;i<A.length;i++)adsrF(A[i]);A=byT.percall;for(i=0;i<A.length;i++)percallF(A[i]);A=byT.mudi;for(i=0;i<A.length;i++)mudiF(A[i]);A=byT.slew;for(i=0;i<A.length;i++)slewF(A[i]);A=byT.burst;for(i=0;i<A.length;i++)burstF(A[i]);A=byT.samplingModulator;for(i=0;i<A.length;i++)samplingModulatorF(A[i]);A=byT.choppingKinky;for(i=0;i<A.length;i++)choppingKinkyF(A[i]);A=byT.evenVco;for(i=0;i<A.length;i++)evenVcoF(A[i]);A=byT.rampage;for(i=0;i<A.length;i++)rampageF(A[i]);A=byT.springReverb;for(i=0;i<A.length;i++)springReverbF(A[i]);A=byT.kickall;for(i=0;i<A.length;i++)kickallF(A[i]);A=byT.noisePlethora;for(i=0;i<A.length;i++)noisePlethoraF(A[i]);A=byT.muxlicer;for(i=0;i<A.length;i++)muxlicerF(A[i]);A=byT.bandit;for(i=0;i<A.length;i++)banditF(A[i]);A=byT.iroi;for(i=0;i<A.length;i++)iroiF(A[i]);A=byT.octaves;for(i=0;i<A.length;i++)octavesF(A[i]);A=byT.mex;for(i=0;i<A.length;i++)mexF(A[i]);A=byT.random8;for(i=0;i<A.length;i++)random8F(A[i]);A=byT.midiThingV2;for(i=0;i<A.length;i++)midiThingV2F(A[i]);A=byT.mix;for(i=0;i<A.length;i++)mixF(A[i]);A=byT.out;let L=0,R=0;for(i=0;i<A.length;i++){outF(A[i]);L+=A[i].r.ol;R+=A[i].r.or}OL=Math.tanh(L*.2);OR=Math.tanh(R*.2)}
+function step(){M.ck=M.c>0?5:0;if(M.c>0)M.c--;if(graphExecutionOrder&&processTopologicalRack()){cc=(cc+1)&3;return}let A,i;if(cc===0){A=byT.mid;for(i=0;i<A.length;i++)midF(A[i]);A=byT.pam;for(i=0;i<A.length;i++)pamF(A[i]);A=byT.ex1;for(i=0;i<A.length;i++)ex1F(A[i]);A=byT.ex2;for(i=0;i<A.length;i++)ex1F(A[i]);A=byT.sc;for(i=0;i<A.length;i++)scF(A[i]);A=byT.mout;for(i=0;i<A.length;i++)moF(A[i])}cc=(cc+1)&3;A=byT.atte;for(i=0;i<A.length;i++)atteF(A[i]);A=byT.pl;for(i=0;i<A.length;i++){if(PX&&A[i].q.vi>=0)plW(A[i]);else plF(A[i])}A=byT.po;for(i=0;i<A.length;i++)poF(A[i]);A=byT.bbd;for(i=0;i<A.length;i++)bbdF(A[i]);A=byT.bds;for(i=0;i<A.length;i++)bdsF(A[i]);A=byT.cvThing;for(i=0;i<A.length;i++)cvThingF(A[i]);A=byT.divkidMutesMk2;for(i=0;i<A.length;i++)divkidMutesMk2F(A[i]);A=byT.joystick;for(i=0;i<A.length;i++)joystickF(A[i]);A=byT.dualAt;for(i=0;i<A.length;i++)dualAtenuverterF(A[i]);A=byT.voltio;for(i=0;i<A.length;i++)voltioF(A[i]);A=byT.axbc;for(i=0;i<A.length;i++)axbcF(A[i]);A=byT.abc;for(i=0;i<A.length;i++)abcF(A[i]);A=byT.bypass;for(i=0;i<A.length;i++)bypassF(A[i]);A=byT.mixer2;for(i=0;i<A.length;i++)mixer2F(A[i]);A=byT.mixer;for(i=0;i<A.length;i++)mixerF(A[i]);A=byT.stmix;for(i=0;i<A.length;i++)stmixF(A[i]);A=byT.morphader;for(i=0;i<A.length;i++)morphaderF(A[i]);A=byT.hexmixvca;for(i=0;i<A.length;i++)hexmixvcaF(A[i]);A=byT.hexmix;for(i=0;i<A.length;i++)hexmixF(A[i]);A=byT.hexpander;for(i=0;i<A.length;i++)hexpanderF(A[i]);A=byT.motionmtr;for(i=0;i<A.length;i++)motionmtrF(A[i]);A=byT.slewlimiter;for(i=0;i<A.length;i++)slewlimiterF(A[i]);A=byT.ponyVco;for(i=0;i<A.length;i++)ponyVcoF(A[i]);A=byT.crushDelayV3;for(i=0;i<A.length;i++)crushDelayV3F(A[i]);A=byT.bf22;for(i=0;i<A.length;i++)bf22F(A[i]);A=byT.ponyVcf;for(i=0;i<A.length;i++)ponyVcfF(A[i]);A=byT.stereoStrip;for(i=0;i<A.length;i++)stereoStripF(A[i]);A=byT.adsr;for(i=0;i<A.length;i++)adsrF(A[i]);A=byT.percall;for(i=0;i<A.length;i++)percallF(A[i]);A=byT.mudi;for(i=0;i<A.length;i++)mudiF(A[i]);A=byT.slew;for(i=0;i<A.length;i++)slewF(A[i]);A=byT.burst;for(i=0;i<A.length;i++)burstF(A[i]);A=byT.samplingModulator;for(i=0;i<A.length;i++)samplingModulatorF(A[i]);A=byT.choppingKinky;for(i=0;i<A.length;i++)choppingKinkyF(A[i]);A=byT.evenVco;for(i=0;i<A.length;i++)evenVcoF(A[i]);A=byT.rampage;for(i=0;i<A.length;i++)rampageF(A[i]);A=byT.springReverb;for(i=0;i<A.length;i++)springReverbF(A[i]);A=byT.kickall;for(i=0;i<A.length;i++)kickallF(A[i]);A=byT.noisePlethora;for(i=0;i<A.length;i++)noisePlethoraF(A[i]);A=byT.muxlicer;for(i=0;i<A.length;i++)muxlicerF(A[i]);A=byT.bandit;for(i=0;i<A.length;i++)banditF(A[i]);A=byT.iroi;for(i=0;i<A.length;i++)iroiF(A[i]);A=byT.octaves;for(i=0;i<A.length;i++)octavesF(A[i]);A=byT.mex;for(i=0;i<A.length;i++)mexF(A[i]);A=byT.random8;for(i=0;i<A.length;i++)random8F(A[i]);A=byT.midiThingV2;for(i=0;i<A.length;i++)midiThingV2F(A[i]);A=byT.mix;for(i=0;i<A.length;i++)mixF(A[i]);A=byT.out;let L=0,R=0;for(i=0;i<A.length;i++){outF(A[i]);L+=A[i].r.ol;R+=A[i].r.or}OL=Math.tanh(L*.2);OR=Math.tanh(R*.2)}
 
 </script>
 <script>
@@ -1109,6 +1147,7 @@ PORT_REGISTRY.register({type:'morphader',ports:[{id:'cv1',direction:'input',sign
 PORT_REGISTRY.register({type:'stmix',ports:[{id:'left1',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'right1',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'left2',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'right2',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'left3',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'right3',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'left4',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'right4',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'auxL',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'auxR',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'outL',direction:'output',signal:'audio',channels:1},{id:'outR',direction:'output',signal:'audio',channels:1}]});
 PORT_REGISTRY.register({type:'mixer',ports:[{id:'ch1',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'ch2',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'ch3',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'ch4',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'main',direction:'output',signal:'audio',channels:1},{id:'inverted',direction:'output',signal:'audio',channels:1}]});
 PORT_REGISTRY.register({type:'mixer2',ports:[{id:'ch1',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'ch2',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'ch3',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'ch4',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'mix12',direction:'output',signal:'audio',channels:1},{id:'mix34',direction:'output',signal:'audio',channels:1}]});
+PORT_REGISTRY.register({type:'out',ports:[{id:'l',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'r',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']}]});
 PORT_REGISTRY.register({type:'bypass',ports:[{id:'inL',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'inR',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'fxL',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'fxR',direction:'input',signal:'audio',channels:1,accepts:['audio','cv']},{id:'launch',direction:'input',signal:'gate',channels:1,accepts:['gate','cv']},{id:'sendL',direction:'output',signal:'audio',channels:1},{id:'sendR',direction:'output',signal:'audio',channels:1},{id:'outL',direction:'output',signal:'audio',channels:1},{id:'outR',direction:'output',signal:'audio',channels:1}]});
 PORT_REGISTRY.register({type:'axbc',ports:[{id:'a1',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'b1',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'c1',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'a2',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'b2',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'c2',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'out1',direction:'output',signal:'cv',channels:1},{id:'out2',direction:'output',signal:'cv',channels:1}]});
 PORT_REGISTRY.register({type:'voltio',ports:[{id:'sumIn',direction:'input',signal:'cv',channels:1,accepts:MoldgfModuleGraph.signals},{id:'out',direction:'output',signal:'cv',channels:1}]});
@@ -1142,9 +1181,9 @@ function ensurePortDescriptor(module){
  if(!ports.length)return;
  PORT_REGISTRY.register({type:module.t,ports});
 }
-// Shadow graph scheduler: derive a deterministic topological plan whenever the rack
-// inventory or patch cables change. The audio engine deliberately keeps its legacy
-// sample order until every participating module has a verified runtime adapter.
+// Graph scheduler: derive a deterministic topological plan whenever the rack
+// inventory or patch cables change. Active sample-order execution is deliberately
+// restricted to the verified Atte -> Mixer2 -> Audio Out adapter set; other racks use legacy step().
 let graphPlan={valid:true,order:[],errors:[]};
 function refreshGraphPlan(){
  const modules=[];
@@ -1163,11 +1202,31 @@ function refreshGraphPlan(){
  graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables);
  return graphPlan;
 }
-window.MoldgfGraphPlan=()=>({
- valid:graphPlan.valid,
- order:graphPlan.order.slice(),
- errors:graphPlan.errors.map(e=>Object.assign({},e))
-});
+const ACTIVE_SCHEDULER_TYPES=new Set(['atte','mixer2','out']);
+function activeSchedulerOrder(){
+ const ids=Object.keys(I);
+ if(!ids.length||!graphPlan.valid||graphPlan.order.length!==ids.length)return null;
+ for(const id of ids){const m=I[id];if(!m||!ACTIVE_SCHEDULER_TYPES.has(m.t)||!PORT_REGISTRY.has(m.t))return null}
+ const positions=Object.create(null);
+ for(let i=0;i<graphPlan.order.length;i++)positions[graphPlan.order[i]]=i;
+ for(const c of cab){
+  const from=endpointOfJack(c.a),to=endpointOfJack(c.b);
+  if(!from||!to)return null;
+  const fromIndex=positions[from.module.id],toIndex=positions[to.module.id];
+  if(fromIndex===undefined||toIndex===undefined||fromIndex>=toIndex)return null
+ }
+ return graphPlan.order.slice()
+}
+window.MoldgfGraphPlan=()=>{
+ const executionOrder=activeSchedulerOrder();
+ return {
+  valid:graphPlan.valid,
+  order:graphPlan.order.slice(),
+  executionMode:executionOrder?'topological':'legacy',
+  scheduledOrder:executionOrder||[],
+  errors:graphPlan.errors.map(e=>Object.assign({},e))
+ }
+};
 window.MoldgfJackAudit=()=>{
  const reports=[];
  for(const id of Object.keys(I)){
@@ -1193,9 +1252,9 @@ window.MoldgfJackAudit=()=>{
    issues:reports.filter(report=>!report.valid).length}};
 };
 const reg=()=>{jk={};document.querySelectorAll('.jk').forEach(e=>jk[e.dataset.id]=e);ledEls=[...document.querySelectorAll('[data-v]')];needDr=1};
-function idx(){idxE();reg();refreshGraphPlan()}
-function postCab(){post({t:'cab',cab:cab.map(c=>[c.a,c.b])})}
-const rb=()=>{rebuild();postCab();refreshGraphPlan();needDr=1};
+function idx(){idxE();reg();refreshGraphPlan();postCab()}
+function postCab(){const order=activeSchedulerOrder();if(typeof globalThis.MoldgfSetExecutionOrder==='function')globalThis.MoldgfSetExecutionOrder(order);post({t:'cab',cab:cab.map(c=>[c.a,c.b]),order})}
+const rb=()=>{rebuild();refreshGraphPlan();postCab();needDr=1};
 function flush(){dirty.forEach(id=>{const m=I[id];if(m&&node)node.port.postMessage({t:'sync',id,ty:m.t,s:m.s})});dirty.clear()}
 const ce=(m,s)=>(m.u=m.u||{})[s]||(m.u[s]=m.el.querySelector(s)),cl=(m,s)=>(m.u=m.u||{})['*'+s]||(m.u['*'+s]=[...m.el.querySelectorAll(s)]);
 const st_=(e,t)=>{if(e&&e._t!==t){e._t=t;e.textContent=t}},tg_=(e,c,on)=>{on=!!on;const k=e._c||(e._c={});if(k[c]!==on){k[c]=on;e.classList.toggle(c,on)}};
@@ -1319,8 +1378,8 @@ function onWk(e){const d=e.data;if(d.bx){BXOK=1;return}if(d.mo){midiFlat(d.mo);r
   else if(x[1]==='sc'){if(m){m.r.a=f[p];m.r.b=f[p+1];m.r.pos=f[p+2]}p+=3}else if(x[1]==='mix'){if(m)for(let j=0;j<4;j++)m.r.pk[j]=f[p+j];p+=4}else if(x[1]==='po'){if(m)m.r.cl=f[p];p+=1}else if(x[1]==='out'){if(m){m.r.pk[0]=f[p];m.r.pk[1]=f[p+1]}p+=2}}
  window.PXON=f[f.length-1];for(const v of d.ev){if(v.v)bankStep(I[v.id],v.v);if(v.mask&&I[v.id]){I[v.id].s.mask=v.mask;sync()}if(v.mt&&I[v.id]){const r=I[v.id].r;r.activeVoices=v.mt.activeVoices;r.lastMessage=v.mt.lastMessage;r.peak=v.mt.peak;r.droppedNotes=v.mt.droppedNotes;r.running=v.mt.running}}}
 const WK=`class RackProc extends AudioWorkletProcessor{constructor(){super();sr=sampleRate;this.n=0;BXPORT=this.port;this.port.onmessage=e=>this.msg(e.data)}
-msg(d){switch(d.t){case'sync':{const m=I[d.id];if(m)m.s=d.s;else mkInst(d.id,d.ty,d.s);idxE();break}
-case'del':moKill(I[d.id]);delete I[d.id];idxE();break;case'cab':cab.length=0;for(const c of d.cab)cab.push({a:c[0],b:c[1]});rebuild();break;
+msg(d){switch(d.t){case'sync':{const m=I[d.id];if(m)m.s=d.s;else mkInst(d.id,d.ty,d.s);idxE();setGraphExecutionOrder(pendingGraphExecutionOrder);break}
+case'del':moKill(I[d.id]);delete I[d.id];idxE();setGraphExecutionOrder(pendingGraphExecutionOrder);break;case'cab':cab.length=0;for(const c of d.cab)cab.push({a:c[0],b:c[1]});rebuild();setGraphExecutionOrder(d.order);break;
 case'midi':M.note=d.n;M.gate=d.g;M.mod=d.m;M.vel=d.v;M.run=d.r;break;case'midiThingEvent':for(const m of byT.midiThingV2)MoldgfMidiThingV2DSP.handleMidi(m.r,d.s,d.a,d.b,m.s);break;case'midiThingAllOff':for(const m of byT.midiThingV2)MoldgfMidiThingV2DSP.allNotesOff(m.r);break;case'c':M.c=(sr*.003)|0;break;
 case'pt':if(I[d.id])I[d.id].r.mt=1;break;case'sk':if(I[d.id]){I[d.id].r.kn=d.n;I[d.id].r.kg=d.g}break;
 case'rst':{const m=I[d.id];if(m){m.r.beat=0;m.r.tick=0;for(const q of m.r.o)q.lc=-1}break}case'wasm':pxInit(new Uint8Array(d.buf));break;case'wasmb':bxInit(new Uint8Array(d.buf));break}}
@@ -1345,7 +1404,7 @@ $('#au').onclick=async()=>{if(ac){if(ac.state==='running'){pumping=false;await a
  try{const dspSources=await Promise.all(['atte_dsp.js','dual_atenuverter_dsp.js','voltio_dsp.js','abc_dsp.js','axbc_dsp.js','bypass_dsp.js','mixer2_dsp.js','mixer_dsp.js','stmix_dsp.js','morphader_dsp.js','hexmixvca_dsp.js','motionmtr_dsp.js','slewlimiter_dsp.js','pony_vco_dsp.js','adsr_dsp.js','percall_dsp.js','mudi_dsp.js','slew_dsp.js','burst_dsp.js','sampling_modulator_dsp.js','chopping_kinky_dsp.js','even_vco_dsp.js','rampage_dsp.js','spring_reverb_dsp.js','kickall_dsp.js','noise_plethora_dsp.js','muxlicer_dsp.js','random8_dsp.js','mex_dsp.js','octaves_dsp.js','iroi_dsp.js','bandit_dsp.js','hexmix_dsp.js','hexpander_dsp.js','pony_vcf_dsp.js','stereo_strip_dsp.js','joystick_dsp.js','divkid_mutes_mk2_dsp.js','cv_thing_dsp.js','crush_delay_v3_dsp.js','bf22_dsp.js','midi_thing_v2_dsp.js'].map(path=>fetch(path).then(r=>{if(!r.ok)throw new Error(path+' indisponível');return r.text()})));const url=URL.createObjectURL(new Blob([dspSources.join('\n')+'\n'+document.getElementById('eng').textContent+'\n'+WK],{type:'text/javascript'}));await ac.audioWorklet.addModule(url);
   node=new AudioWorkletNode(ac,'rack',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});node.port.onmessage=onWk;node.connect(ac.destination);
   const u=wasmBytes();if(u)node.port.postMessage({t:'wasm',buf:u.buffer},[u.buffer]);const ub=wasmBytesB();if(ub)node.port.postMessage({t:'wasmb',buf:ub.buffer},[ub.buffer]);
-  for(const id in I)dirty.add(id);postCab();postM();flush();$('#as').textContent='áudio: AudioWorklet '+sr+' Hz'}
+  for(const id in I)dirty.add(id);postM();flush();postCab();$('#as').textContent='áudio: AudioWorklet '+sr+' Hz'}
  catch(err){node=null;const u=wasmBytes();if(u)pxInit(u);const ub=wasmBytesB();if(ub)bxInit(ub);const sp=ac.createScriptProcessor(512,0,2);setInterval(()=>{if(!under&&tgtB>1536)tgtB-=128;under=0},4000);
   sp.onaudioprocess=e=>{const L=e.outputBuffer.getChannelData(0),R2=e.outputBuffer.getChannelData(1);let un=0;for(let n=0;n<L.length;n++){if(rd<wr){L[n]=RL_[rd&16383];R2[n]=RR_[rd&16383];rd++}else{L[n]=0;R2[n]=0;un=1}}if(un){under++;tgtB=Math.min(8192,tgtB+512)}if(wr-rd>tgtB*3)rd=wr-tgtB;mc.port2.postMessage(0)};
   sp.connect(ac.destination);pumping=true;pump();$('#as').textContent='áudio: modo compatível (AudioWorklet falhou: '+(err&&err.name||'?')+') — pode ter falhas';if(window.Native)toast('AudioWorklet indisponível: áudio pode falhar')}

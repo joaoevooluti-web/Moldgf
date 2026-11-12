@@ -16,11 +16,11 @@ function readScripts() {
   return { engine: engine[2], ui: ui[2] };
 }
 
-test("rack inventory changes refresh the shadow topological graph plan", () => {
+test("rack inventory changes refresh the validated topological graph plan before dispatch", () => {
   const { ui } = readScripts();
   assert.match(ui, /function refreshGraphPlan\(\)[\s\S]*?MoldgfModuleGraph\.validateGraph\(PORT_REGISTRY,modules,cables\)/);
-  assert.match(ui, /function idx\(\)\{idxE\(\);reg\(\);refreshGraphPlan\(\)\}/);
-  assert.match(ui, /const rb=\(\)=>\{rebuild\(\);postCab\(\);refreshGraphPlan\(\);needDr=1\}/);
+  assert.match(ui, /function idx\(\)\{idxE\(\);reg\(\);refreshGraphPlan\(\);postCab\(\)\}/);
+  assert.match(ui, /const rb=\(\)=>\{rebuild\(\);refreshGraphPlan\(\);postCab\(\);needDr=1\}/);
   assert.match(ui, /window\.MoldgfGraphPlan=\(\)=>/);
 });
 
@@ -29,20 +29,31 @@ test("legacy jack descriptors are registered only when real jack endpoints exist
   assert.match(ui, /if\(!ports\.length\)return;[\s\S]*?PORT_REGISTRY\.register\(\{type:module\.t,ports\}\)/);
 });
 
-test("shadow planning does not reorder the real-time sample processor", () => {
+test("active scheduler is restricted to verified Atte/Mixer2/Audio Out adapters and keeps the legacy fallback", () => {
   const { engine, ui } = readScripts();
   const stepAt = engine.indexOf("function step(){");
-  assert.ok(stepAt >= 0, "legacy shared DSP step must remain present");
+  assert.ok(stepAt >= 0, "shared DSP step must remain present");
   const stepEnd = engine.indexOf("\n", stepAt);
   const step = engine.slice(stepAt, stepEnd < 0 ? engine.length : stepEnd);
+  assert.match(engine, /function setGraphExecutionOrder\(order\)/);
+  assert.match(engine, /function processTopologicalRack\(\)/);
+  assert.match(engine, /fromIndex>=toIndex/);
+  assert.match(step, /graphExecutionOrder&&processTopologicalRack\(\)/);
   assert.match(step, /A=byT\.atte/);
   assert.match(step, /A=byT\.out/);
-  assert.doesNotMatch(step, /graphPlan|MoldgfGraphPlan/);
-  assert.match(ui, /Shadow graph scheduler/);
+  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['atte','mixer2','out'\]\)/);
+  assert.match(ui, /executionMode:executionOrder\?'topological':'legacy'/);
+  assert.match(ui, /fromIndex>=toIndex/);
+  assert.match(ui, /function postCab\(\)\{const order=activeSchedulerOrder\(\);if\(typeof globalThis\.MoldgfSetExecutionOrder==='function'\)globalThis\.MoldgfSetExecutionOrder\(order\);post\(\{t:'cab'/);
+  assert.match(ui, /setGraphExecutionOrder\(d\.order\)/);
+  assert.match(ui, /setGraphExecutionOrder\(pendingGraphExecutionOrder\)/);
+  assert.match(ui, /postM\(\);flush\(\);postCab\(\)/);
+  assert.match(ui, /process\(i,o\)\{const L=o\[0\]\[0\],R=o\[0\]\[1\];for\(let n=0;n<L.length;n\+\+\)\{step\(\)/);
+  assert.match(ui, /for\(let i=0;i<128;i\+\+\)\{step\(\)/);
 });
 
 
-test("runtime exposes a rendered-jack audit without changing the legacy audio scheduler", () => {
+test("runtime exposes rendered-jack audit while preserving the legacy fallback", () => {
   const { ui, engine } = readScripts();
   assert.match(ui, /window\.MoldgfJackAudit=\(\)=>/);
   assert.match(ui, /MoldgfModuleGraph\.auditRenderedPorts\(descriptor,rendered\)/);
@@ -50,4 +61,17 @@ test("runtime exposes a rendered-jack audit without changing the legacy audio sc
   assert.match(ui, /summary:\{modules:reports\.length,valid:reports\.filter\(report=>report\.valid\)\.length/);
   assert.match(engine, /function step\(\)/);
   assert.doesNotMatch(engine, /MoldgfJackAudit/);
+});
+
+
+test("every module bucket referenced by the shared step is declared for idxE and legacy fallback", () => {
+  const { engine } = readScripts();
+  const start = engine.indexOf("byT={");
+  const end = engine.indexOf("},M={", start);
+  const declaration = engine.slice(start, end);
+  const declared = new Set([...declaration.matchAll(/([A-Za-z0-9_]+):\[\]/g)].map(match => match[1]));
+  const step = engine.slice(engine.indexOf("function step(){"));
+  const referenced = new Set([...step.matchAll(/A=byT\.([A-Za-z0-9_]+)/g)].map(match => match[1]));
+  const missing = [...referenced].filter(type => !declared.has(type));
+  assert.deepEqual(missing, []);
 });
