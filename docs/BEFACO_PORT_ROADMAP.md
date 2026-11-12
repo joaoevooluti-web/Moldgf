@@ -640,14 +640,14 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 - Engine smoke with actual Atte, Mixer2 and Mixer DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` for the 5 V test input; Mixer main/inverted outputs were +5 V/−5 V; reverse cable order was rejected.
 - Runtime inventory smoke: CV Thing, DivKid Mutes and Joystick buckets all initialized and indexed.
 - Generated template audit: 43 descriptors, zero jack ID/direction mismatches.
-- Workflow [#87 / 43236747447](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43236747447) executed the full Node suite: 699/701 passed. The two failures were stale assertions in `index_scripts_syntax.test.cjs` (42 vs 43 descriptors, and the old cable-only post payload); the new engine-level scheduler/fallback tests passed. The test expectations are corrected in the next commit. Emscripten, JUnit and Gradle/APK steps were skipped after the Node gate; no artifact was produced.
+- Workflow [#87 / 43236747447](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43236747447) executed the full Node suite: 699/701 passed. The two failures were stale assertions in `index_scripts_syntax.test.cjs` (42 vs 43 descriptors, and the old cable-only post payload); the new engine-level scheduler/fallback tests passed. The test expectations were corrected in commit `383821b8af07b42bb83aa3953334f35f2f724973`; workflow #88 then passed. Emscripten, JUnit and Gradle/APK steps were skipped in #87; no artifact was produced by that run.
 - Android/device validation: not claimed.
 
 ### Remaining
 
 - Extend the active adapter set only after each module's dependencies, hidden-host links, normaling, state/reset semantics and per-sample behavior are verified.
 - Add parameter-event queue and versioned state/reset/bypass contracts before broader real-time migration.
-- Keep all other module types on legacy `step()` until their adapters are proven. STMix is the next adapter candidate, pending a full dependency/normaling audit.
+- Keep all other module types on legacy `step()` until their adapters are proven. STMix standalone DSP is tested, but its Hexmix expansion link is missing; keep it outside the scheduler until that hidden host path is implemented.
 
 
 ### Workflow #87 — test expectation corrections
