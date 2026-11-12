@@ -619,12 +619,12 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - Current code/test commit: e8655db4d3f7ba68a8739f884177b99ca985a95d. main remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; branch comparison at this point is **586 ahead / 0 behind**.
 
 ### Next Phase 1 objective
-Audit STMix's stereo routing, left-to-right normaling, AUX path and reset/state semantics. Add deterministic runtime tests before widening the scheduler whitelist; retain the legacy fallback for all unverified configurations.
+Implement and test the missing hidden STMix → Hexmix stereo expansion link, including its insertion point in the Hexmix master path and protection against double summing. Keep STMix out of the active scheduler until this dependency is represented and validated.
 
 
 ## Phase 1 runtime scheduler rollout — 2026-11-12
 
-### Implemented in code — Atte, Mixer2 and Mixer scheduler adapters; workflow #89 pending
+### Implemented in code — Atte, Mixer2 and Mixer scheduler adapters; workflow #89 passed
 
 - Added a guarded topological execution path for racks containing only explicitly described `Atte`, `Mixer2`, `Mixer`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
 - Added the explicit internal `out` descriptor (audio inputs L/R), so this route no longer relies on an inferred legacy descriptor.
@@ -656,7 +656,7 @@ Audit STMix's stereo routing, left-to-right normaling, AUX path and reset/state 
 - [x] Node runner executed **701 tests: 699 passed, 2 failed**. The failures were test expectations only: `index_scripts_syntax.test.cjs` still expected 42 explicit descriptors after adding the internal Audio Out descriptor (actual 43), and still expected the previous cable-only `postCab` message instead of the new order-bearing payload.
 - [x] The new topological Atte → Mixer2 → Audio Out runtime test passed, as did the legacy fallback and bucket inventory tests.
 - [x] Emscripten, Android/JUnit, Gradle APK assembly and artifact upload were skipped because the Node gate failed. The final verifier's missing-WASM-wrapper message is downstream of those skipped build steps; workflow #87 produced no APK or WASM artifact.
-- [ ] Full CI validation remains pending on the correction commit. No Android/device validation is claimed.
+- [x] Full CI validation completed successfully in workflow #88. No Android/device validation is claimed.
 
 
 ## Workflow #88 — correction verified in CI
@@ -680,6 +680,29 @@ Audit STMix's stereo routing, left-to-right normaling, AUX path and reset/state 
 - Runtime path: Atte → Mixer2 → Mixer → Audio Out.
 - Deterministic coverage: Mixer main output +5 V, inverted output −5 V, stereo output after master stage, rejection of reverse cable order, and legacy fallback when an unsupported module is present.
 - Local V8 checks passed with the actual Atte, Mixer2 and Mixer DSP helpers; updated inline scripts and test sources compile.
-- GitHub Actions workflow #89 was queued after this code commit; full CI validation is pending.
+- GitHub Actions workflow #89 completed successfully on this code commit; APK contents were inspected for the active Mixer scheduler path. CI evidence only, not an Android device test.
 - AudioWorklet and ScriptProcessor continue to use the same `step()` and synchronized execution-order setter.
-- Next candidate: STMix; do not enable it until stereo normaling and AUX dependencies are audited.
+- STMix standalone DSP is implemented and tested, but its official six-pin Hexmix expansion link is not modeled. Keep it outside the active scheduler until that hidden host dependency is implemented and validated.
+
+
+## Workflow #89 — Mixer scheduler validated
+
+- [x] Workflow [#89 / 43238761546](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43238761546) passed on code commit `c9a5a69ca0e6cd7cb16f4da30934f4a17c3e5590`.
+- [x] Node suite: **701/701 passed**.
+- [x] Android JUnit XML inspected: **13/13 passed** (9 MIDI decoder, 4 MIDI batch encoder; zero failures/errors/skips).
+- [x] Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**; WebAssembly compile checks passed; Beads native self-test reported `SELFTEST OK`.
+- [x] Gradle `assembleDebug`: success.
+- [x] Artifacts inspected:
+  - `eurorack-study-debug-apk`, ID `13953643001`, archive SHA-256 `b7f70b0896d7827cc0c87e6275ef5e9d7658fff7f2557615b510444181154b96`; contained APK SHA-256 `7ed3d25872c3bad0a042b765538ccfeb52efb7a95d0b52815124f18b032fb92d`.
+  - `android-unit-test-report`, ID `13953313230`, SHA-256 `9d03297fadc9847aae2521fba503e7521bcbf76c4ada0c1be11e93f96878e1fc`; XML totals 13 passing tests.
+  - `wasm-log`, ID `13952603606`, SHA-256 `cb2a713f3aa890ef4dc6c30f53cf8a7c8e69f54eace914b8f5b69738b5820446`; inspected build log.
+- [x] APK contents inspected: `index.html` contains the Atte/Mixer2/Mixer/Audio Out scheduler whitelist and `mixerF` dispatch; `mixer_dsp.js` is packaged.
+- CI evidence only. No installation, live audio, MIDI routing or physical Android validation is claimed.
+
+## STMix dependency audit — 2026-11-12
+
+- Standalone DSP implementation is present: four stereo inputs with per-channel gain, right-input-to-left normaling, unity AUX stereo input, stereo outputs and level meters. Existing DSP and graph tests cover these behaviors and are included in the passing #89 Node suite.
+- Official STMix manual: `https://befaco.org/docs/StMix/StMix_User_Manual.pdf`. It states the six-pin ribbon connection sends STMix output into the Hexmix master section; AUX is unattenuated and feeds the output directly.
+- Gap found: current `stmixF` computes standalone stereo outputs, but `hexmixF` only consumes the Hexmix VCA expander's six `hostInputs`; there is no STMix-to-Hexmix stereo host path. Therefore the module is not yet complete as a Hexmix expansion.
+- Decision: do not add STMix to the active scheduler whitelist yet. Its standalone DSP remains on the legacy path; the hidden Hexmix host dependency must be implemented and tested first.
+- Next implementation: trace the official Hexmix/STMix master-bus insertion point, add an explicit internal host link without duplicating patched AUX/cable audio, and test STMix → Hexmix master EQ/volume plus fallback behavior.
