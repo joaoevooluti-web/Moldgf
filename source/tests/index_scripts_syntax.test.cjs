@@ -78,8 +78,8 @@ test("DSP assets and graph descriptors are unique across the complete port set",
   const descriptors = [...html.matchAll(/PORT_REGISTRY\.register\(\{type:'([^']+)'/g)].map((match) => match[1]);
   assert.equal(pageAssets.length, 42, "expected 42 module DSP assets in the page");
   assert.equal(new Set(pageAssets).size, 42, "DSP page assets must be unique");
-  assert.equal(descriptors.length, 42, "expected 42 explicit graph descriptors");
-  assert.equal(new Set(descriptors).size, 42, "graph descriptor types must be unique");
+  assert.equal(descriptors.length, 43, "expected 42 DSP descriptors plus the internal Audio Out descriptor");
+  assert.equal(new Set(descriptors).size, 43, "graph descriptor types must be unique");
 });
 
 
@@ -299,7 +299,7 @@ test("manual jack patching uses live rack IDs, typed BF-22 ports and persists ca
   assert.match(html, /MoldgfModuleGraph\.canConnect\(PORT_REGISTRY,from\.module,from\.port,to\.module,to\.port\)/);
   assert.match(html, /function connect\(x,y\)/);
   assert.match(html, /cab\.push\(\{a,b\}\);rb\(\);return true/);
-  assert.match(html, /post\(\{t:'cab',cab:cab\.map\(c=>\[c\.a,c\.b\]\)\}\)/);
+  assert.match(html, /function postCab\(\)\{const order=activeSchedulerOrder\(\);if\(typeof globalThis\.MoldgfSetExecutionOrder==='function'\)globalThis\.MoldgfSetExecutionOrder\(order\);post\(\{t:'cab',cab:cab\.map\(c=>\[c\.a,c\.b\]\),order\}\)\}/);
   const descriptor = html.slice(html.indexOf("PORT_REGISTRY.register({type:'bf22'"), html.indexOf("PORT_REGISTRY.register({type:'midiThingV2'"));
   assert.ok(descriptor.includes("id:'inA'") && descriptor.includes("id:'inB'"), "BF-22 dual audio inputs missing");
   assert.ok(descriptor.includes("id:'outA'") && descriptor.includes("id:'outB'"), "BF-22 dual audio outputs missing");

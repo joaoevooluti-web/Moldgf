@@ -624,7 +624,7 @@ Audit the Mixer adapter (including output normalization, gain state and reset be
 
 ## Phase 1 runtime scheduler rollout — 2026-11-12
 
-### Implemented in code (CI pending at this commit)
+### Implemented in code (workflow #87 exposed two stale test expectations; correction committed next)
 
 - Added a guarded topological execution path for racks containing only explicitly described `Atte`, `Mixer2`, and the internal `Audio Out` sink. It requires a valid plan covering every rack instance and verifies every cable source precedes its destination; feedback/cycles and unsupported types remain on legacy `step()`.
 - Added the explicit internal `out` descriptor (audio inputs L/R), so this route no longer relies on an inferred legacy descriptor.
@@ -640,7 +640,7 @@ Audit the Mixer adapter (including output normalization, gain state and reset be
 - Engine smoke with actual Atte and Mixer2 DSP helpers: topological output and legacy fallback both produced L/R = `tanh(1)` for the 5 V test input; reverse cable order was rejected.
 - Runtime inventory smoke: CV Thing, DivKid Mutes and Joystick buckets all initialized and indexed.
 - Generated template audit: 43 descriptors, zero jack ID/direction mismatches.
-- Full `node --test`, Kotlin/JUnit, Emscripten, APK and GitHub Actions validation: pending.
+- Workflow [#87 / 43236747447](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43236747447) executed the full Node suite: 699/701 passed. The two failures were stale assertions in `index_scripts_syntax.test.cjs` (42 vs 43 descriptors, and the old cable-only post payload); the new engine-level scheduler/fallback tests passed. The test expectations are corrected in the next commit. Emscripten, JUnit and Gradle/APK steps were skipped after the Node gate; no artifact was produced.
 - Android/device validation: not claimed.
 
 ### Remaining
@@ -648,3 +648,12 @@ Audit the Mixer adapter (including output normalization, gain state and reset be
 - Extend the active adapter set only after each module's dependencies, hidden-host links, normaling, state/reset semantics and per-sample behavior are verified.
 - Add parameter-event queue and versioned state/reset/bypass contracts before broader real-time migration.
 - Keep all other module types on legacy `step()` until their adapters are proven.
+
+
+### Workflow #87 — test expectation corrections
+
+- [x] Workflow [#87 / 43236747447](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43236747447) ran on code commit `e1f87f09efde0a237d709493189cbeadd999ad61`.
+- [x] Node runner executed **701 tests: 699 passed, 2 failed**. The failures were test expectations only: `index_scripts_syntax.test.cjs` still expected 42 explicit descriptors after adding the internal Audio Out descriptor (actual 43), and still expected the previous cable-only `postCab` message instead of the new order-bearing payload.
+- [x] The new topological Atte → Mixer2 → Audio Out runtime test passed, as did the legacy fallback and bucket inventory tests.
+- [x] Emscripten, Android/JUnit, Gradle APK assembly and artifact upload were skipped because the Node gate failed. The final verifier's missing-WASM-wrapper message is downstream of those skipped build steps; workflow #87 produced no APK or WASM artifact.
+- [ ] Full CI validation remains pending on the correction commit. No Android/device validation is claimed.
