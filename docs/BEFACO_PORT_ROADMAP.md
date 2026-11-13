@@ -803,3 +803,11 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - Correction commit: pending in this entry until the GitHub contents API returns the commit SHA. The test now asserts both the host-dependency resolver and its inclusion in the graph validation call.
 - CI status for the correction: pending; no pass is claimed until the replacement workflow completes and its job logs/artifacts are inspected.
 - The graph/runtime implementation itself was not changed by this correction. No Android-device validation is claimed.
+
+
+### Workflow #96 — correction-harness syntax regression
+
+- Workflow #96 / run ID `43439573022` failed before executing the Node tests because the first correction commit (`21d5df75adedfafc106ae3e9b2411999a621a618`) inserted a literal escaped newline token between two JavaScript statements in `graph_scheduler_runtime.test.cjs`. The job log reports `SyntaxError: Invalid or unexpected token` at that line.
+- This was a test-harness syntax defect introduced by the correction, not a failure in the graph runtime. The Emscripten/WASM, Android JUnit, Gradle and APK stages were skipped; the final WASM verifier had no wrappers to inspect. No artifacts were produced by #96.
+- Follow-up correction: pending commit SHA. Replaced the literal backslash-n with a real source newline; the test continues to assert both the indexed-host resolver and the four-argument graph validation call.
+- CI remains pending. No test pass or APK is claimed until the next workflow completes.
