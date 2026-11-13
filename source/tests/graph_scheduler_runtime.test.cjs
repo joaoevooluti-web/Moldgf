@@ -18,7 +18,7 @@ function readScripts() {
 
 test("rack inventory changes refresh the validated topological graph plan before dispatch", () => {
   const { ui } = readScripts();
-  assert.match(ui, /function refreshGraphPlan\(\)[\s\S]*?MoldgfModuleGraph\.validateGraph\(PORT_REGISTRY,modules,cables\)/);
+  assert.match(ui, /function runtimeHostDependencies\(modules\)\{[\s\S]*?MoldgfModuleGraph\.resolveIndexedHostDependencies\(modules,HOST_LINKS\)\}/);\n  assert.match(ui, /function refreshGraphPlan\(\)[\s\S]*?MoldgfModuleGraph\.validateGraph\(PORT_REGISTRY,modules,cables,runtimeHostDependencies\(modules\)\)/);
   assert.match(ui, /function idx\(\)\{idxE\(\);reg\(\);refreshGraphPlan\(\);postCab\(\)\}/);
   assert.match(ui, /const rb=\(\)=>\{rebuild\(\);refreshGraphPlan\(\);postCab\(\);needDr=1\}/);
   assert.match(ui, /window\.MoldgfGraphPlan=\(\)=>/);
