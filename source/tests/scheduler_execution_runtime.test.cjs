@@ -41,7 +41,7 @@ function createEngineHarness() {
       setGraphExecutionOrder,
       output: () => [OL, OR],
       setInput: (port, value) => {
-        const source = sig("fixture.source");
+        const source = sig("fixture.source." + port);
         V[source] = value;
         cs[sig(port)] = [source];
       }
