@@ -740,7 +740,7 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 
 ## STMix → Hexmix internal expansion integration — 2026-11-13
 
-### Implemented in code — CI pending
+### Implemented in code and validated in CI
 
 - Added a persisted `STMIX REAR LINK` selector to Hexmix. It selects one STMix instance and routes its stereo sum into the Hexmix DSP master section; the STMix front-panel OUT L/R remain independently available.
 - The engine's existing legacy `step()` order processes STMix before Hexmix, so the host signal is available in the same sample step. The active topological scheduler is deliberately unchanged and still excludes both STMix and Hexmix.
@@ -761,7 +761,6 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - JUnit report artifact ID `14040253766`, 9,893 bytes, SHA-256 `6f54077a95a3b61c7aba68768b7b66695bb9c22e695d76cc38c6d59c386466d8`; WASM log artifact ID `14038924453`, 1,381 bytes, SHA-256 `052dac41f4f085e171399dca3888e185f067319fc91fb4833f7e9cd98f273f6c`.
 - Regression fixes: run #92 failed three new integration assertions because the test helper reused one fixture signal for both stereo channels; commit `2af48d39c3aef5032dc568e741c872db53a8bc4d` gave each input a distinct source. Run #93 then exposed two cross-realm array assertions; commit `0d2f42fafdbe22ab809334c0ac4cc41179424171` normalizes VM arrays before comparison. Run #94 passed all 707 Node tests.
 - Implementation commit: `fac51a41b28ed71a508fbd1532ec22e3e27dcf7c`; test corrections: `2af48d39c3aef5032dc568e741c872db53a8bc4d`, `0d2f42fafdbe22ab809334c0ac4cc41179424171`. Roadmap validation record added in the following docs-only commit.
-- APK/device validation: not claimed.
 - Android APK/device validation: not claimed.
 - Exact analog insertion point and electrical level calibration: not published in the reviewed official manuals and remain unverified.
 - Keep STMix/Hexmix outside the active topological scheduler until the internal expansion dependency is represented in the execution plan and tested there.
