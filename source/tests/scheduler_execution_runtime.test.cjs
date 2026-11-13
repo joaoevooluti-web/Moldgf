@@ -155,7 +155,7 @@ test("selected STMix rear expansion feeds the Hexmix stereo master bus",()=>{
   const engine=createEngineHarness();
   buildStmixHexmixRack(engine,1);
   engine.step();
-  assert.deepEqual(engine.I.stmix1.r.out,[.5,.25]);
+  assert.deepEqual(Array.from(engine.I.stmix1.r.out),[.5,.25]);
   assert.ok(Math.abs(engine.I.hexmix1.r.result.left-.5)<1e-9);
   assert.ok(Math.abs(engine.I.hexmix1.r.result.right-.25)<1e-9);
 });
@@ -164,7 +164,7 @@ test("STMix remains an independent mixer when no Hexmix rear link is selected",(
   const engine=createEngineHarness();
   buildStmixHexmixRack(engine,0);
   engine.step();
-  assert.deepEqual(engine.I.stmix1.r.out,[.5,.25]);
+  assert.deepEqual(Array.from(engine.I.stmix1.r.out),[.5,.25]);
   assert.equal(engine.I.hexmix1.r.result.left,0);
   assert.equal(engine.I.hexmix1.r.result.right,0);
 });
