@@ -619,7 +619,7 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 - Current code/test commit: e8655db4d3f7ba68a8739f884177b99ca985a95d. main remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; branch comparison at this point is **586 ahead / 0 behind**.
 
 ### Next Phase 1 objective
-Implement and test the missing hidden STMix → Hexmix stereo expansion link, including its insertion point in the Hexmix master path and protection against double summing. Keep STMix out of the active scheduler until this dependency is represented and validated.
+The STMix → Hexmix hidden stereo expansion link is now implemented and CI-tested on the legacy execution order, with a duplicate-sum guard. Its digital insertion is explicitly modeled at the pre-master-EQ sum; exact analog insertion remains unverified. Keep STMix/Hexmix outside the active scheduler until the implicit host dependency is represented in the execution plan and tested there.
 
 
 ## Phase 1 runtime scheduler rollout — 2026-11-12
@@ -647,7 +647,7 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 
 - Extend the active adapter set only after each module's dependencies, hidden-host links, normaling, state/reset semantics and per-sample behavior are verified.
 - Add parameter-event queue and versioned state/reset/bypass contracts before broader real-time migration.
-- Keep all other module types on legacy `step()` until their adapters are proven. STMix standalone DSP is tested, but its Hexmix expansion link is missing; keep it outside the scheduler until that hidden host path is implemented.
+- Keep all other module types on legacy `step()` until their adapters are proven. STMix standalone DSP and its Hexmix rear-link host path now run in legacy `step()` and have integration coverage; keep both outside the scheduler until the implicit host dependency is encoded as an execution edge.
 
 
 ### Workflow #87 — test expectation corrections
@@ -682,7 +682,7 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 - Local V8 checks passed with the actual Atte, Mixer2 and Mixer DSP helpers; updated inline scripts and test sources compile.
 - GitHub Actions workflow #89 completed successfully on this code commit; APK contents were inspected for the active Mixer scheduler path. CI evidence only, not an Android device test.
 - AudioWorklet and ScriptProcessor continue to use the same `step()` and synchronized execution-order setter.
-- STMix standalone DSP is implemented and tested, but its official six-pin Hexmix expansion link is not modeled. Keep it outside the active scheduler until that hidden host dependency is implemented and validated.
+- STMix standalone DSP and selectable Hexmix rear-link integration are implemented and CI-tested. The exact analog insertion node remains unverified, and the scheduler edge remains pending; both modules stay on legacy `step()`.
 
 
 ## Workflow #89 — Mixer scheduler validated
@@ -705,7 +705,7 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 - Official STMix manual: `https://befaco.org/docs/StMix/StMix_User_Manual.pdf`. It states the six-pin ribbon connection sends STMix output into the Hexmix master section; AUX is unattenuated and feeds the output directly.
 - Gap found: current `stmixF` computes standalone stereo outputs, but `hexmixF` only consumes the Hexmix VCA expander's six `hostInputs`; there is no STMix-to-Hexmix stereo host path. Therefore the module is not yet complete as a Hexmix expansion.
 - Decision: do not add STMix to the active scheduler whitelist yet. Its standalone DSP remains on the legacy path; the hidden Hexmix host dependency must be implemented and tested first.
-- Official manuals confirm the STMix signal enters the Hexmix master section, but do not specify the exact insertion node. The available official Hexmix V1 schematic does not show the STMix expansion connector; the STMix V2 schematic shows its six-pin connector but not the Hexmix-side routing. Do not guess the exact pre/post-EQ position. Next: obtain authoritative Hexmix-side pinout/schematic or explicitly document a modeled assumption before implementing the host bus.
+- Official manuals confirm that STMix signal enters the Hexmix master section but do not specify the exact analog insertion node. Moldgf now uses a clearly labeled digital model assumption: master-sum injection before master EQ/level. This is tested as software behavior only and is not claimed to reproduce the analog PCB insertion point.
 
 
 ## Voltio scheduler adapter — workflow #91 validated
@@ -752,7 +752,25 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 
 ### CI and remaining limits
 
-- Workflow validation: pending at this commit.
+- **Validated in CI:** workflow #94, run ID `43432820162`, commit `0d2f42fafdbe22ab809334c0ac4cc41179424171`, conclusion `success`: [GitHub Actions #94](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43432820162).
+- Node suite: **707 tests, 707 passed, 0 failed**.
+- Android JUnit: **13 tests, 13 passed, 0 failures/errors** (MidiMessageDecoderTest 9/9; MidiBatchEncoderTest 4/4).
+- Plaits WASM: **185,636 bytes**, wrapper verified with `WebAssembly.compile`; Beads WASM: **196,726 bytes**, native self-test reported `SELFTEST OK`, wrapper verified with `WebAssembly.compile`.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success.
+- CI artifact `eurorack-study-debug-apk`: ID `14040178939`, 1,677,524-byte ZIP, SHA-256 `24a4cdbdeda8d1219d95c81ef85ea5911c051d32e56b21c28ba450f256370572`; embedded APK SHA-256 `83afda88f01a0c94eea498598a9b27695b0dbb6d942fea50f1d76069055ca236`. Inspected APK contents confirm the new Hexmix selector and `hexmix_dsp.js` expansion input, plus all 42 DSP assets and both WASM wrappers. This is CI packaging evidence only, not an Android-device test.
+- JUnit report artifact ID `14040253766`, 9,893 bytes, SHA-256 `6f54077a95a3b61c7aba68768b7b66695bb9c22e695d76cc38c6d59c386466d8`; WASM log artifact ID `14038924453`, 1,381 bytes, SHA-256 `052dac41f4f085e171399dca3888e185f067319fc91fb4833f7e9cd98f273f6c`.
+- Regression fixes: run #92 failed three new integration assertions because the test helper reused one fixture signal for both stereo channels; commit `2af48d39c3aef5032dc568e741c872db53a8bc4d` gave each input a distinct source. Run #93 then exposed two cross-realm array assertions; commit `0d2f42fafdbe22ab809334c0ac4cc41179424171` normalizes VM arrays before comparison. Run #94 passed all 707 Node tests.
+- Implementation commit: `fac51a41b28ed71a508fbd1532ec22e3e27dcf7c`; test corrections: `2af48d39c3aef5032dc568e741c872db53a8bc4d`, `0d2f42fafdbe22ab809334c0ac4cc41179424171`. Roadmap validation record added in the following docs-only commit.
+- APK/device validation: not claimed.
 - Android APK/device validation: not claimed.
 - Exact analog insertion point and electrical level calibration: not published in the reviewed official manuals and remain unverified.
 - Keep STMix/Hexmix outside the active topological scheduler until the internal expansion dependency is represented in the execution plan and tested there.
+
+
+### Workflow #94 validation record (2026-11-13)
+
+- Implementation commit: `fac51a41b28ed71a508fbd1532ec22e3e27dcf7c`; test-harness correction: `2af48d39c3aef5032dc568e741c872db53a8bc4d`; final cross-realm assertion fix: `0d2f42fafdbe22ab809334c0ac4cc41179424171`.
+- Workflow #94: `43432820162`, success, [Actions run](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43432820162). Node 707/707; JUnit 13/13; Plaits 185,636-byte WASM; Beads 196,726-byte WASM and native `SELFTEST OK`; Gradle tests and debug APK assembly succeeded.
+- Artifacts: APK ZIP `14040178939` (SHA-256 `24a4cdbdeda8d1219d95c81ef85ea5911c051d32e56b21c28ba450f256370572`); JUnit report `14040253766` (SHA-256 `6f54077a95a3b61c7aba68768b7b66695bb9c22e695d76cc38c6d59c386466d8`); WASM log `14038924453` (SHA-256 `052dac41f4f085e171399dca3888e185f067319fc91fb4833f7e9cd98f273f6c`). Embedded APK SHA-256: `83afda88f01a0c94eea498598a9b27695b0dbb6d942fea50f1d76069055ca236`.
+- APK inspection confirmed the `STMIX REAR LINK` selector, the `expansionLeft` DSP path, all 42 DSP assets and the Plaits/Beads WASM wrappers. No Android-device validation is inferred.
+- The #92 and #93 test-only failures and their corrections are recorded in the STMix integration section above.
