@@ -793,3 +793,13 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - Added a runtime integration test that extracts and executes the actual graph-planner code from `index.html`, verifying all three host relationships and their processing order.
 - No workflow has been triggered by this edit yet. CI status and artifacts will be recorded after the source workflow completes.
 - No VCV/Befaco implementation code or proprietary panel artwork was copied or adapted.
+
+
+## Workflow #95 — internal host dependency graph regression and correction (2026-11-13)
+
+- Code under test: `396d437fcd48be12c06aeb3cd48b4745b572d4ee`, which adds Hexmix VCA → Hexmix, STMix → Hexmix, and Hexmix → Hexpander indexed rear-panel dependencies to the typed graph plan.
+- Workflow #95 / run ID `43438126213` failed at the Node gate. The only Node assertion failure identified in the job log was a stale static expectation in `graph_scheduler_runtime.test.cjs`: it still required the old three-argument `validateGraph(PORT_REGISTRY,modules,cables)` call. The runtime now correctly passes the fourth `runtimeHostDependencies(modules)` argument.
+- Because the Node gate failed, Emscripten, Android JUnit, Gradle APK assembly and APK upload were skipped. The final WASM verifier then failed because the wrappers had not been built in this run. Run #95 produced no APK, JUnit or WASM artifacts. This downstream verifier failure is not evidence of a new WASM regression.
+- Correction commit: pending in this entry until the GitHub contents API returns the commit SHA. The test now asserts both the host-dependency resolver and its inclusion in the graph validation call.
+- CI status for the correction: pending; no pass is claimed until the replacement workflow completes and its job logs/artifacts are inspected.
+- The graph/runtime implementation itself was not changed by this correction. No Android-device validation is claimed.
