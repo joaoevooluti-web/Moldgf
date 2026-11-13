@@ -787,11 +787,11 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - The `window.MoldgfGraphPlan()` diagnostic now reports resolved internal dependencies. Changing any of the three host selectors refreshes the graph plan immediately.
 - This is graph/diagnostic integration only. It does **not** activate Hexmix VCA, STMix, Hexmix or Hexpander in the audio scheduler; these modules remain on legacy `step()` until their complete runtime adapters and state/parameter contracts are proven.
 
-### Tests authored; CI pending
+### Tests authored; CI validated in workflow #99
 
 - Added graph tests for 1-based host resolution and deterministic ordering, missing selected host rejection, duplicate dependencies, and cycles combining an internal host edge with a physical cable.
 - Added a runtime integration test that extracts and executes the actual graph-planner code from `index.html`, verifying all three host relationships and their processing order.
-- No workflow has been triggered by this edit yet. CI status and artifacts will be recorded after the source workflow completes.
+- The implementation and test harness were validated by workflow #99 after correcting the static runtime assertions; see the run record below.
 - No VCV/Befaco implementation code or proprietary panel artwork was copied or adapted.
 
 
@@ -800,8 +800,8 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - Code under test: `396d437fcd48be12c06aeb3cd48b4745b572d4ee`, which adds Hexmix VCA → Hexmix, STMix → Hexmix, and Hexmix → Hexpander indexed rear-panel dependencies to the typed graph plan.
 - Workflow #95 / run ID `43438126213` failed at the Node gate. The only Node assertion failure identified in the job log was a stale static expectation in `graph_scheduler_runtime.test.cjs`: it still required the old three-argument `validateGraph(PORT_REGISTRY,modules,cables)` call. The runtime now correctly passes the fourth `runtimeHostDependencies(modules)` argument.
 - Because the Node gate failed, Emscripten, Android JUnit, Gradle APK assembly and APK upload were skipped. The final WASM verifier then failed because the wrappers had not been built in this run. Run #95 produced no APK, JUnit or WASM artifacts. This downstream verifier failure is not evidence of a new WASM regression.
-- Correction commit: pending in this entry until the GitHub contents API returns the commit SHA. The test now asserts both the host-dependency resolver and its inclusion in the graph validation call.
-- CI status for the correction: pending; no pass is claimed until the replacement workflow completes and its job logs/artifacts are inspected.
+- First correction commit: `21d5df75adedfafc106ae3e9b2411999a621a618`. Its attempted assertion update introduced a literal escaped newline, exposed by #96.
+- The follow-up commit `7b33558943e1fb3c9be63a7e694da56a0684b224` fixed that syntax defect; #97 then exposed a stale whitespace-sensitive assertion. The complete correction sequence and final CI evidence are recorded under workflows #97–#99 below.
 - The graph/runtime implementation itself was not changed by this correction. No Android-device validation is claimed.
 
 
@@ -809,5 +809,34 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 
 - Workflow #96 / run ID `43439573022` failed before executing the Node tests because the first correction commit (`21d5df75adedfafc106ae3e9b2411999a621a618`) inserted a literal escaped newline token between two JavaScript statements in `graph_scheduler_runtime.test.cjs`. The job log reports `SyntaxError: Invalid or unexpected token` at that line.
 - This was a test-harness syntax defect introduced by the correction, not a failure in the graph runtime. The Emscripten/WASM, Android JUnit, Gradle and APK stages were skipped; the final WASM verifier had no wrappers to inspect. No artifacts were produced by #96.
-- Follow-up correction: pending commit SHA. Replaced the literal backslash-n with a real source newline; the test continues to assert both the indexed-host resolver and the four-argument graph validation call.
-- CI remains pending. No test pass or APK is claimed until the next workflow completes.
+- Follow-up correction commit: `7b33558943e1fb3c9be63a7e694da56a0684b224`; replaced the literal backslash-n with a real source newline.
+- Workflow #97 then exposed the remaining whitespace-sensitive assertion, and #98 exposed an extra closing parenthesis in the updated regular expression. Both are corrected in `d6b5b60cfff93d332ce92018682adc8d2ffaba9f`; workflow #99 passed the complete CI pipeline.
+
+
+## Workflow #97 — host-dependency assertion still whitespace-sensitive (2026-11-13)
+
+- Workflow #97 / run ID `43439681637` failed at the Node gate on commit `7b33558943e1fb3c9be63a7e694da56a0684b224`.
+- The prior syntax correction succeeded, but the test still required a compact `function runtimeHostDependencies(modules){` shape. The production UI formats the function body over multiple lines. This was a static test assertion defect; no DSP implementation change was involved.
+- Emscripten, Android JUnit, Gradle APK assembly and upload were skipped after the Node gate. No artifacts were produced. The final unconditional WASM verifier also failed because no wrappers had been generated; that downstream failure is not evidence of a WASM regression.
+
+## Workflow #98 — assertion grouping correction (2026-11-13)
+
+- Workflow #98 / run ID `43442659620` failed at the Node gate on commit `e13acd26d92ca831393470fc6dcb04649f734273`.
+- The updated regex correctly tolerated formatting whitespace in `runtimeHostDependencies`, but the `refreshGraphPlan` assertion contained one extra closing parenthesis and therefore did not match the actual four-argument `validateGraph` call.
+- Corrected in commit `d6b5b60cfff93d332ce92018682adc8d2ffaba9f`. No production DSP or graph runtime code was changed by these test-only corrections.
+- Emscripten, JUnit and Gradle/APK stages were skipped in #98; no artifacts were produced. The final verifier failed only because the wrappers were absent after the Node gate stopped the pipeline.
+
+## Workflow #99 — internal host dependency graph tests and full CI validated (2026-11-13)
+
+- Code under test: host-dependency implementation commit `396d437fcd48be12c06aeb3cd48b4745b572d4ee`; final test-harness correction `d6b5b60cfff93d332ce92018682adc8d2ffaba9f`.
+- Workflow #99 / run ID `43443262866` completed with conclusion **success** on `d6b5b60cfff93d332ce92018682adc8d2ffaba9f`.
+- Node suite: **711/711 passed**, including indexed rear-panel host resolution, deterministic topological ordering, missing-host rejection, duplicate/cycle checks and runtime planner extraction.
+- Android JUnit: **13/13 passed** (MidiMessageDecoderTest 9/9; MidiBatchEncoderTest 4/4; zero failures/errors/skips).
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both wrappers passed `WebAssembly.compile`; Beads native self-test reported `SELFTEST OK` for all media/mode combinations, synth output and 44.1 kHz host / 24 kHz media resampling.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success.
+- Artifacts inspected:
+  - `eurorack-study-debug-apk`, ID `14048065195`, ZIP 1,678,731 bytes, SHA-256 `539073c1f38ca57cb69d8a0dd6afb235ba7dedef24b9d3b17f8fb0527dfa0515`; embedded `app-debug.apk` 1,713,295 bytes, SHA-256 `b81d8483583ca5d44d61986cc9d81e54007d5a6bb589d4710fee94fe3f343a63`.
+  - `android-unit-test-report`, ID `14047361675`, ZIP 9,909 bytes, SHA-256 `a1bf39d071ef9bae7888c29fa381313da4de30b1b4f22763d9e537d237a59053`; XML confirms 9/9 decoder and 4/4 batch-encoder tests.
+  - `wasm-log`, ID `14046117117`, ZIP 1,379 bytes, SHA-256 `a0c6c64dc4056ec807f048254620d5dd8c6918e9135fc1475356a2a3bdcbadb1`; inspected build log confirms both WASM outputs and `SELFTEST OK`.
+- APK contents were inspected: the updated `index.html`, `module_graph.js`, all 42 `*_dsp.js` assets and both Plaits/Beads WASM wrappers are present. This is CI packaging evidence only; no Android installation, audio, MIDI, touch or physical-device validation is claimed.
+- No VCV/Befaco implementation code or proprietary panel artwork was copied in this graph integration.
