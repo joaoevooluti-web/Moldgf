@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createRegistry, canConnect, validateGraph } = require("../app/src/main/assets/module_graph.js");
+const { createRegistry, canConnect, validateGraph, resolveIndexedHostDependencies } = require("../app/src/main/assets/module_graph.js");
 
 function fixture() {
   return createRegistry([
@@ -173,4 +173,73 @@ test("rendered jack audit accepts matching descriptor and faceplate endpoints", 
   assert.equal(result.valid, true);
   assert.deepEqual(result.missingRendered, []);
   assert.deepEqual(result.unregistered, []);
+});
+
+
+test("indexed rear-panel hosts become deterministic topological dependencies", () => {
+  const registry = createRegistry([
+    { type: "hexmix", ports: [] },
+    { type: "hexmixvca", ports: [] },
+    { type: "stmix", ports: [] },
+    { type: "hexpander", ports: [] }
+  ]);
+  const modules = [
+    { id: "hexmix1", t: "hexmix", s: { vcaHost: 1, stmixHost: 1 } },
+    { id: "stmix1", t: "stmix", s: {} },
+    { id: "vca1", t: "hexmixvca", s: {} },
+    { id: "hexpander1", t: "hexpander", s: { hexmixHost: 1 } }
+  ];
+  const dependencies = resolveIndexedHostDependencies(modules, [
+    { sourceType: "hexmixvca", targetType: "hexmix", stateKey: "vcaHost", kind: "hexmix-vca-expansion" },
+    { sourceType: "stmix", targetType: "hexmix", stateKey: "stmixHost", kind: "stmix-rear-expansion" },
+    { sourceType: "hexmix", targetType: "hexpander", stateKey: "hexmixHost", kind: "hexpander-host" }
+  ]);
+  assert.deepEqual(dependencies.map(({ from, to, kind }) => [from, to, kind]), [
+    ["vca1", "hexmix1", "hexmix-vca-expansion"],
+    ["stmix1", "hexmix1", "stmix-rear-expansion"],
+    ["hexmix1", "hexpander1", "hexpander-host"]
+  ]);
+  const result = validateGraph(registry, modules, [], dependencies);
+  assert.equal(result.valid, true);
+  assert.deepEqual(result.order, ["stmix1", "vca1", "hexmix1", "hexpander1"]);
+  assert.equal(result.dependencies.length, 3);
+});
+
+test("an unavailable selected rear-panel host invalidates the execution plan", () => {
+  const registry = createRegistry([
+    { type: "hexmix", ports: [] },
+    { type: "stmix", ports: [] }
+  ]);
+  const modules = [
+    { id: "hexmix1", t: "hexmix", s: { stmixHost: 2 } },
+    { id: "stmix1", t: "stmix", s: {} }
+  ];
+  const dependencies = resolveIndexedHostDependencies(modules, [
+    { sourceType: "stmix", targetType: "hexmix", stateKey: "stmixHost", kind: "stmix-rear-expansion" }
+  ]);
+  const result = validateGraph(registry, modules, [], dependencies);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some(error => error.code === "missing-host-module" && error.requestedIndex === 2));
+});
+
+test("host dependencies participate in cycle and duplicate-edge validation", () => {
+  const registry = createRegistry([
+    { type: "host", ports: [{ id: "in", direction: "input", signal: "cv" }] },
+    { type: "expander", ports: [
+      { id: "in", direction: "input", signal: "cv" },
+      { id: "out", direction: "output", signal: "cv" }
+    ] }
+  ]);
+  const modules = [
+    { id: "host1", t: "host" },
+    { id: "expander1", t: "expander", s: { host: 1 } }
+  ];
+  const link = { sourceType: "host", targetType: "expander", stateKey: "host", kind: "internal-host" };
+  const dependencies = resolveIndexedHostDependencies(modules, [link]);
+  const cycle = validateGraph(registry, modules, [
+    { from: { module: "expander1", port: "out" }, to: { module: "host1", port: "in" } }
+  ], dependencies);
+  assert.ok(cycle.errors.some(error => error.code === "cycle-without-feedback-delay"));
+  const duplicate = validateGraph(registry, modules, [], dependencies.concat(dependencies));
+  assert.ok(duplicate.errors.some(error => error.code === "duplicate-dependency"));
 });

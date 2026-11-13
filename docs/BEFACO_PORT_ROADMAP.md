@@ -773,3 +773,23 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - Artifacts: APK ZIP `14040178939` (SHA-256 `24a4cdbdeda8d1219d95c81ef85ea5911c051d32e56b21c28ba450f256370572`); JUnit report `14040253766` (SHA-256 `6f54077a95a3b61c7aba68768b7b66695bb9c22e695d76cc38c6d59c386466d8`); WASM log `14038924453` (SHA-256 `052dac41f4f085e171399dca3888e185f067319fc91fb4833f7e9cd98f273f6c`). Embedded APK SHA-256: `83afda88f01a0c94eea498598a9b27695b0dbb6d942fea50f1d76069055ca236`.
 - APK inspection confirmed the `STMIX REAR LINK` selector, the `expansionLeft` DSP path, all 42 DSP assets and the Plaits/Beads WASM wrappers. No Android-device validation is inferred.
 - The #92 and #93 test-only failures and their corrections are recorded in the STMix integration section above.
+
+
+## Phase 1 — Explicit internal host dependencies in the graph plan (2026-11-13)
+
+### Implemented in code
+
+- Added `resolveIndexedHostDependencies` to the typed graph library. It resolves persisted 1-based host selections into dependency edges, distinguishes invalid indices from missing host instances, validates source/target module types, rejects duplicate/self edges, and includes internal links in cycle detection and deterministic topological sorting.
+- The live rack planner now declares the three rear-panel relationships already consumed by the DSP:
+  - Hexmix VCA → selected Hexmix (`vcaHost`);
+  - STMix → selected Hexmix (`stmixHost`);
+  - selected Hexmix → Hexpander (`hexmixHost`).
+- The `window.MoldgfGraphPlan()` diagnostic now reports resolved internal dependencies. Changing any of the three host selectors refreshes the graph plan immediately.
+- This is graph/diagnostic integration only. It does **not** activate Hexmix VCA, STMix, Hexmix or Hexpander in the audio scheduler; these modules remain on legacy `step()` until their complete runtime adapters and state/parameter contracts are proven.
+
+### Tests authored; CI pending
+
+- Added graph tests for 1-based host resolution and deterministic ordering, missing selected host rejection, duplicate dependencies, and cycles combining an internal host edge with a physical cable.
+- Added a runtime integration test that extracts and executes the actual graph-planner code from `index.html`, verifying all three host relationships and their processing order.
+- No workflow has been triggered by this edit yet. CI status and artifacts will be recorded after the source workflow completes.
+- No VCV/Befaco implementation code or proprietary panel artwork was copied or adapted.

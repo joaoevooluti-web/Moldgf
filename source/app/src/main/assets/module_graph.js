@@ -78,7 +78,51 @@
     return { ok: true, source, target };
   }
 
-  function validateGraph(registry, modules, cables) {
+  function resolveIndexedHostDependencies(modules, links) {
+    const instances = Array.isArray(modules) ? modules : [];
+    const byType = new Map();
+    instances.forEach((module) => {
+      const type = moduleTypeOf(module);
+      if (!type) return;
+      if (!byType.has(type)) byType.set(type, []);
+      byType.get(type).push(module);
+    });
+    const dependencies = [];
+    (Array.isArray(links) ? links : []).forEach((link) => {
+      if (!link || typeof link.sourceType !== "string" || !link.sourceType.trim() ||
+          typeof link.targetType !== "string" || !link.targetType.trim() ||
+          typeof link.stateKey !== "string" || !link.stateKey.trim() ||
+          typeof link.kind !== "string" || !link.kind.trim()) {
+        fail("host link requires sourceType, targetType, stateKey and kind");
+      }
+      instances.forEach((target) => {
+        if (moduleTypeOf(target) !== link.targetType) return;
+        const state = target && target.state && typeof target.state === "object" ? target.state :
+          (target && target.s && typeof target.s === "object" ? target.s : {});
+        const rawIndex = state[link.stateKey];
+        const index = rawIndex === undefined || rawIndex === null ? 0 : Number(rawIndex);
+        const dependency = {
+          from: null, to: target.id, kind: link.kind,
+          sourceType: link.sourceType, targetType: link.targetType,
+          requestedIndex: rawIndex === undefined || rawIndex === null ? 0 : rawIndex
+        };
+        if (!Number.isInteger(index) || index < 0) {
+          dependency.error = "invalid-host-index";
+          dependencies.push(dependency);
+          return;
+        }
+        if (index === 0) return;
+        const source = (byType.get(link.sourceType) || [])[index - 1];
+        if (!source) dependency.error = "missing-host-module";
+        else dependency.from = source.id;
+        dependency.requestedIndex = index;
+        dependencies.push(dependency);
+      });
+    });
+    return dependencies;
+  }
+
+  function validateGraph(registry, modules, cables, dependencies) {
     const errors = [];
     const byId = new Map();
     const seenIds = new Set();
@@ -122,6 +166,47 @@
       edges.push({ from: from.module, to: to.module, feedback });
     });
 
+    const resolvedDependencies = [];
+    const dependencyKeys = new Set();
+    if (dependencies !== undefined && !Array.isArray(dependencies)) errors.push({ code: "invalid-dependencies" });
+    (Array.isArray(dependencies) ? dependencies : []).forEach((dependency) => {
+      if (!dependency || typeof dependency !== "object") {
+        errors.push({ code: "invalid-dependency" }); return;
+      }
+      if (dependency.error) {
+        errors.push({ code: dependency.error, from: dependency.from, to: dependency.to,
+          kind: dependency.kind, sourceType: dependency.sourceType, targetType: dependency.targetType,
+          requestedIndex: dependency.requestedIndex });
+        return;
+      }
+      const from = dependency.from, to = dependency.to;
+      const sourceModule = typeof from === "string" ? byId.get(from) : null;
+      const targetModule = typeof to === "string" ? byId.get(to) : null;
+      if (!sourceModule || !targetModule) {
+        errors.push({ code: "unknown-dependency-endpoint", from, to, kind: dependency.kind }); return;
+      }
+      if (from === to) {
+        errors.push({ code: "self-dependency", from, to, kind: dependency.kind }); return;
+      }
+      if (typeof dependency.kind !== "string" || !dependency.kind.trim()) {
+        errors.push({ code: "invalid-dependency-kind", from, to }); return;
+      }
+      const sourceType = moduleTypeOf(sourceModule), targetType = moduleTypeOf(targetModule);
+      if ((dependency.sourceType && dependency.sourceType !== sourceType) ||
+          (dependency.targetType && dependency.targetType !== targetType)) {
+        errors.push({ code: "dependency-type-mismatch", from, to, kind: dependency.kind,
+          sourceType, targetType }); return;
+      }
+      const key = [from, to, dependency.kind].join("|");
+      if (dependencyKeys.has(key)) {
+        errors.push({ code: "duplicate-dependency", from, to, kind: dependency.kind }); return;
+      }
+      dependencyKeys.add(key);
+      const resolved = { from, to, kind: dependency.kind, sourceType, targetType };
+      if (Number.isInteger(dependency.requestedIndex)) resolved.requestedIndex = dependency.requestedIndex;
+      resolvedDependencies.push(resolved);
+      edges.push({ from, to, feedback: false, dependency: true, kind: dependency.kind });
+    });
     const indegree = new Map(Array.from(byId.keys(), (id) => [id, 0]));
     const outgoing = new Map(Array.from(byId.keys(), (id) => [id, []]));
     edges.forEach((edge) => {
@@ -140,7 +225,7 @@
       });
     }
     if (order.length !== byId.size) errors.push({ code: "cycle-without-feedback-delay" });
-    return { valid: errors.length === 0, errors, order: errors.length ? [] : order };
+    return { valid: errors.length === 0, errors, order: errors.length ? [] : order, dependencies: resolvedDependencies };
   }
 
   function auditRenderedPorts(descriptorInput, renderedPorts) {
@@ -174,5 +259,5 @@
     };
   }
 
-  return Object.freeze({ createRegistry, normalizeDescriptor, canConnect, validateGraph, auditRenderedPorts, signals: Object.freeze(Array.from(SIGNALS)) });
+  return Object.freeze({ createRegistry, normalizeDescriptor, canConnect, validateGraph, resolveIndexedHostDependencies, auditRenderedPorts, signals: Object.freeze(Array.from(SIGNALS)) });
 });

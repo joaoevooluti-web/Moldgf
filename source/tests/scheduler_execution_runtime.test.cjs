@@ -184,3 +184,42 @@ test("manual STMix output patch into the selected Hexmix suppresses the internal
   assert.ok(Math.abs(engine.I.hexmix1.r.result.left-expected)<1e-9);
   assert.ok(Math.abs(engine.I.hexmix1.r.result.right-expected)<1e-9);
 });
+
+
+test("runtime graph planner includes selected Hexmix rear-panel host dependencies", () => {
+  const uiScript = scripts.find(match => match[2].includes("const PORT_REGISTRY=MoldgfModuleGraph.createRegistry()"))?.[2];
+  assert.ok(uiScript, "rack UI script must contain the live module registry");
+  const start = uiScript.indexOf("const LEGACY_SIGNAL_TYPES=MoldgfModuleGraph.signals;");
+  const end = uiScript.indexOf("const ACTIVE_SCHEDULER_TYPES", start);
+  assert.ok(start >= 0 && end > start, "runtime graph planner section must be extractable");
+  const registry = createRegistry([
+    { type: "hexmix", ports: [] },
+    { type: "hexmixvca", ports: [] },
+    { type: "stmix", ports: [] },
+    { type: "hexpander", ports: [] }
+  ]);
+  const context = {
+    MoldgfModuleGraph: require("../app/src/main/assets/module_graph.js"),
+    PORT_REGISTRY: registry,
+    I: {
+      hexmix1: { id: "hexmix1", t: "hexmix", s: { vcaHost: 1, stmixHost: 1 } },
+      stmix1: { id: "stmix1", t: "stmix", s: {} },
+      vca1: { id: "vca1", t: "hexmixvca", s: {} },
+      hexpander1: { id: "hexpander1", t: "hexpander", s: { hexmixHost: 1 } }
+    },
+    jk: {},
+    cab: []
+  };
+  vm.createContext(context);
+  vm.runInContext(uiScript.slice(start, end) + "\nglobalThis.__PLAN = refreshGraphPlan();", context, { timeout: 1000 });
+  const plan = context.__PLAN;
+  assert.equal(plan.valid, true);
+  assert.deepEqual(Array.from(plan.order), ["stmix1", "vca1", "hexmix1", "hexpander1"]);
+  assert.deepEqual(Array.from(plan.dependencies, dependency => [dependency.from, dependency.to, dependency.kind]), [
+    ["vca1", "hexmix1", "hexmix-vca-expansion"],
+    ["stmix1", "hexmix1", "stmix-rear-expansion"],
+    ["hexmix1", "hexpander1", "hexpander-host"]
+  ]);
+  assert.ok(uiScript.includes("['vcaHost','stmixHost','hexmixHost'].includes(t.dataset.k)"),
+    "changing an internal host selector must refresh the graph plan");
+});

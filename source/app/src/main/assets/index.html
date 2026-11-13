@@ -1183,17 +1183,26 @@ function ensurePortDescriptor(module){
  if(!ports.length)return;
  PORT_REGISTRY.register({type:module.t,ports});
 }
-// Graph scheduler: derive a deterministic topological plan whenever the rack
-// inventory or patch cables change. Active sample-order execution is deliberately
-// restricted to the verified Voltio/Atte/Mixer2 -> Mixer -> Audio Out adapter set; other racks use legacy step().
-let graphPlan={valid:true,order:[],errors:[]};
+// Rear-panel links are graph dependencies rather than patch cables. They encode
+// selected host/expander processing order without changing the legacy DSP path.
+const HOST_LINKS=Object.freeze([
+ {sourceType:'hexmixvca',targetType:'hexmix',stateKey:'vcaHost',kind:'hexmix-vca-expansion'},
+ {sourceType:'stmix',targetType:'hexmix',stateKey:'stmixHost',kind:'stmix-rear-expansion'},
+ {sourceType:'hexmix',targetType:'hexpander',stateKey:'hexmixHost',kind:'hexpander-host'}
+]);
+function runtimeHostDependencies(modules){
+ return MoldgfModuleGraph.resolveIndexedHostDependencies(modules,HOST_LINKS);
+}
+// Active sample-order execution remains restricted to the verified
+// Voltio/Atte/Mixer2 -> Mixer -> Audio Out adapter set.
+let graphPlan={valid:true,order:[],errors:[],dependencies:[]};
 function refreshGraphPlan(){
  const modules=[];
  for(const id of Object.keys(I)){
   const m=I[id];
   if(!m)continue;
   ensurePortDescriptor(m);
-  if(PORT_REGISTRY.has(m.t))modules.push({id:m.id,t:m.t});
+  if(PORT_REGISTRY.has(m.t))modules.push({id:m.id,t:m.t,s:m.s});
  }
  const cables=[];
  for(const c of cab){
@@ -1201,7 +1210,7 @@ function refreshGraphPlan(){
   if(!from||!to)continue;
   cables.push({from:{module:from.module.id,port:from.port},to:{module:to.module.id,port:to.port}});
  }
- graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables);
+ graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables,runtimeHostDependencies(modules));
  return graphPlan;
 }
 const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','mixer2','mixer','out']);
@@ -1226,6 +1235,7 @@ window.MoldgfGraphPlan=()=>{
   order:graphPlan.order.slice(),
   executionMode:executionOrder?'topological':'legacy',
   scheduledOrder:executionOrder||[],
+  dependencies:(graphPlan.dependencies||[]).map(e=>Object.assign({},e)),
   errors:graphPlan.errors.map(e=>Object.assign({},e))
  }
 };
@@ -1276,6 +1286,11 @@ function sync(){document.querySelectorAll('[data-k]').forEach(e=>{if(e.classList
  document.querySelectorAll('[data-ck]').forEach(e=>{const[o,k]=tgt(e),t=e.querySelector('text'),v=o[k],op=t.dataset.opts;t.textContent=t.dataset.l+': '+(op?op.split('|')[v]:v)+' ▾'});
  document.querySelectorAll('[data-vt]').forEach(e=>{const[o,k]=tgt(e);e.textContent=Math.round(o[k]*100)/100})}
 rk.addEventListener('input',e=>{const t=e.target;if(t.dataset.k){const[o,k]=tgt(t,1);o[k]=+t.value;sync()}});
+rk.addEventListener('change',e=>{
+ const t=e.target;
+ if(!t.dataset.k||!['vcaHost','stmixHost','hexmixHost'].includes(t.dataset.k))return;
+ const[o,k]=tgt(t,1);o[k]=+t.value;sync();refreshGraphPlan();postCab()
+});
 function bankStep(m,v){m.s.bk=((m.s.bk+v)%64+64)%64;try{const t=JSON.parse(LS.getItem('pb'+m.s.bk)||'null');if(t){m.s.bpm=t.bpm;m.s.o=t.o}}catch(x){}dirty.add(m.id);sync()}
 function axPress(m,k){const h=byT.pam[m.s.host|0];if(!h)return;const P=h.s,fn=k?m.s.fb:m.s.fa;
  switch(fn){case 1:P.o[P.sel].mu^=1;break;case 2:P.sel=(P.sel+7)%8;break;case 3:P.sel=(P.sel+1)%8;break;
