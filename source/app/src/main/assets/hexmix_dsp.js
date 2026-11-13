@@ -56,6 +56,11 @@
    left+=z*Math.cos(angle);right+=z*Math.sin(angle);
    c.peak=Math.abs(z);s.meters[n]=c.peak;
   }
+  // The official manuals confirm that the STMix rear connector feeds the Hexmix master section.
+  // The exact analog insertion node is not published; Moldgf models it at the master-sum input,
+  // before master EQ and level, and keeps this assumption isolated to these two scalar inputs.
+  left += finite(i.expansionLeft);
+  right += finite(i.expansionRight);
   const masterLow=clamp(p.masterLow,-6,6,0),masterMid=clamp(p.masterMid,-6,6,0),masterHigh=clamp(p.masterHigh,-6,6,0);
   const ml=s.master[0],mr=s.master[1];
   left=biquad(ml.low,left,"low",100,masterLow,sr);left=biquad(ml.mid,left,"mid",1000,masterMid,sr);left=biquad(ml.high,left,"high",10000,masterHigh,sr);

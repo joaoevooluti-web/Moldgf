@@ -736,3 +736,23 @@ Implement and test the missing hidden STMix → Hexmix stereo expansion link, in
 - Voltio is a stateless CV source/precision-adder adapter in the scheduler. Its output is computed before downstream modules according to the typed graph order.
 - Deterministic route tested in the engine harness: Voltio set to +5 V → Mixer2 → Mixer → Audio Out; output is `tanh(1)` on both channels, Mixer main/inverted remain +5 V/−5 V.
 - Unsupported rack types still disable topological mode and use the legacy `step()`; no broader scheduler activation is implied.
+
+
+## STMix → Hexmix internal expansion integration — 2026-11-13
+
+### Implemented in code — CI pending
+
+- Added a persisted `STMIX REAR LINK` selector to Hexmix. It selects one STMix instance and routes its stereo sum into the Hexmix DSP master section; the STMix front-panel OUT L/R remain independently available.
+- The engine's existing legacy `step()` order processes STMix before Hexmix, so the host signal is available in the same sample step. The active topological scheduler is deliberately unchanged and still excludes both STMix and Hexmix.
+- Added a duplicate-sum guard: if either STMix front-panel output is explicitly patched into one of the selected Hexmix's six channel inputs, the internal rear-link injection is suppressed for that host. The patch path remains active.
+- Added scalar `expansionLeft` / `expansionRight` inputs to `hexmix_dsp.js`. They are summed before the Hexmix master EQ and master-level/output-level stage.
+- The official STMix manual says its six-pin connector places the STMix output into the Hexmix master section; the official Hexmix manual confirms a dedicated STMix expansion port. Neither document publishes the exact analog insertion node. Moldgf therefore documents a deliberate digital model assumption: inject at the master-sum input, before master EQ and level. This is not a claim of analog circuit equivalence.
+- Added deterministic DSP tests for stereo expansion, master-level scaling, master-EQ processing, non-finite input handling, host selection, standalone mode and suppression of duplicate front-panel patch summing.
+- No upstream VCV/Befaco implementation code or proprietary panel artwork was copied for this integration.
+
+### CI and remaining limits
+
+- Workflow validation: pending at this commit.
+- Android APK/device validation: not claimed.
+- Exact analog insertion point and electrical level calibration: not published in the reviewed official manuals and remain unverified.
+- Keep STMix/Hexmix outside the active topological scheduler until the internal expansion dependency is represented in the execution plan and tested there.

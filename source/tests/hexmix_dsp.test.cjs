@@ -20,3 +20,31 @@ test("channel meters and master clipping indicator follow signal level",()=>{con
 test("sample-rate changes rebuild all six channel and master filters",()=>{const s=Hexmix.createState(48000);Hexmix.process(params(),{inputs:[.2,0,0,0,0,0]},s,48000);Hexmix.process(params(),{inputs:[.2,0,0,0,0,0]},s,44100);assert.equal(s.sampleRate,44100);assert.ok(s.channels.every(c=>Number.isFinite(c.low.coeff.b0)))});
 test("invalid controls and inputs remain finite",()=>{const s=Hexmix.createState(48000),r=Hexmix.process({volume:[NaN],low:[NaN],mid:[NaN],high:[NaN],pan:[NaN],mute:[NaN],masterVolume:NaN,outputLevel:NaN},{inputs:[NaN]},s,48000);assert.ok(Number.isFinite(r.left)&&Number.isFinite(r.right))});
 test("Hexmix reuses its result object and expansion buffers",()=>{const s=Hexmix.createState(48000),a=Hexmix.process(params(),{inputs:[.2,0,0,0,0,0]},s,48000),b=Hexmix.process(params(),{inputs:[.3,0,0,0,0,0]},s,48000);assert.equal(a,b);assert.equal(a.pre,s.pre);assert.equal(a.post,s.post)});
+
+
+test("STMix rear expansion is summed into the Hexmix master section before master level",()=>{
+ const s=Hexmix.createState(48000);
+ const r=Hexmix.process(params({masterVolume:.5}),{
+  inputs:[0,0,0,0,0,0],expansionLeft:.5,expansionRight:-.25
+ },s,48000);
+ assert.ok(Math.abs(r.left-.25)<1e-9);
+ assert.ok(Math.abs(r.right+.125)<1e-9);
+});
+
+test("master EQ also processes the modeled STMix expansion bus",()=>{
+ const flat=Hexmix.createState(48000),eq=Hexmix.createState(48000);
+ let a=0,b=0;
+ for(let n=0;n<1024;n++){
+  const v=Math.sin(n*.11);
+  a=Hexmix.process(params(),{expansionLeft:v,expansionRight:v},flat,48000).left;
+  b=Hexmix.process(params({masterLow:6}),{expansionLeft:v,expansionRight:v},eq,48000).left;
+ }
+ assert.notEqual(a,b);
+});
+
+test("non-finite STMix expansion values are treated as silence",()=>{
+ const s=Hexmix.createState(48000);
+ const r=Hexmix.process(params(),{expansionLeft:NaN,expansionRight:Infinity},s,48000);
+ assert.equal(r.left,0);
+ assert.equal(r.right,0);
+});

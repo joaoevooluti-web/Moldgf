@@ -11,6 +11,8 @@ const VoltioDSP = require("../app/src/main/assets/voltio_dsp.js");
 const CVThingDSP = require("../app/src/main/assets/cv_thing_dsp.js");
 const DivKidMutesDSP = require("../app/src/main/assets/divkid_mutes_mk2_dsp.js");
 const JoystickDSP = require("../app/src/main/assets/joystick_dsp.js");
+const STMixDSP = require("../app/src/main/assets/stmix_dsp.js");
+const HexmixDSP = require("../app/src/main/assets/hexmix_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -28,7 +30,9 @@ function createEngineHarness() {
     MoldgfVoltioDSP: VoltioDSP,
     MoldgfCVThingDSP: CVThingDSP,
     MoldgfDivKidMutesMK2DSP: DivKidMutesDSP,
-    MoldgfJoystickDSP: JoystickDSP
+    MoldgfJoystickDSP: JoystickDSP,
+    MoldgfSTMixDSP: STMixDSP,
+    MoldgfHexmixDSP: HexmixDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -129,4 +133,54 @@ test("legacy bucket inventory includes CV Thing, DivKid Mutes and Joystick proce
   assert.equal(engine.byT.cvThing.length, 1);
   assert.equal(engine.byT.divkidMutesMk2.length, 1);
   assert.equal(engine.byT.joystick.length, 1);
+});
+
+
+const hexmixParams = (overrides = {}) => Object.assign({
+  volume:Array(6).fill(1),low:Array(6).fill(0),mid:Array(6).fill(0),
+  high:Array(6).fill(0),pan:Array(6).fill(0),mute:Array(6).fill(0),
+  masterVolume:1,masterLow:0,masterMid:0,masterHigh:0,outputLevel:0,
+  vcaHost:0,stmixHost:0
+},overrides);
+
+function buildStmixHexmixRack(engine, hostIndex = 1) {
+  engine.mkInst("hexmix1","hexmix",hexmixParams({stmixHost:hostIndex}));
+  engine.mkInst("stmix1","stmix",{gain:[1,0,0,0]});
+  engine.idxE();
+  engine.setInput("stmix1.left1",.5);
+  engine.setInput("stmix1.right1",.25);
+}
+
+test("selected STMix rear expansion feeds the Hexmix stereo master bus",()=>{
+  const engine=createEngineHarness();
+  buildStmixHexmixRack(engine,1);
+  engine.step();
+  assert.deepEqual(engine.I.stmix1.r.out,[.5,.25]);
+  assert.ok(Math.abs(engine.I.hexmix1.r.result.left-.5)<1e-9);
+  assert.ok(Math.abs(engine.I.hexmix1.r.result.right-.25)<1e-9);
+});
+
+test("STMix remains an independent mixer when no Hexmix rear link is selected",()=>{
+  const engine=createEngineHarness();
+  buildStmixHexmixRack(engine,0);
+  engine.step();
+  assert.deepEqual(engine.I.stmix1.r.out,[.5,.25]);
+  assert.equal(engine.I.hexmix1.r.result.left,0);
+  assert.equal(engine.I.hexmix1.r.result.right,0);
+});
+
+test("manual STMix output patch into the selected Hexmix suppresses the internal link to prevent double summing",()=>{
+  const engine=createEngineHarness();
+  buildStmixHexmixRack(engine,1);
+  engine.cab.push(
+    {a:"stmix1.outL",b:"hexmix1.in1"},
+    {a:"stmix1.outR",b:"hexmix1.in2"}
+  );
+  engine.rebuild();
+  engine.setInput("stmix1.left1",.5);
+  engine.setInput("stmix1.right1",.25);
+  engine.step();
+  const expected=(.5+.25)*Math.SQRT1_2;
+  assert.ok(Math.abs(engine.I.hexmix1.r.result.left-expected)<1e-9);
+  assert.ok(Math.abs(engine.I.hexmix1.r.result.right-expected)<1e-9);
 });
