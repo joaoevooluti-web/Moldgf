@@ -112,7 +112,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [x] The rack now rebuilds a deterministic topological execution plan through the existing typed registry whenever modules are added/removed or cables change. Legacy module descriptors are generated only when actual jack endpoints exist.
 - [x] Exposed `window.MoldgfGraphPlan()` with validity, topological order, scheduled order, execution mode and graph errors. The graph remains diagnostic for unsupported racks; eligible fully typed racks activate the guarded order in the shared audio engine.
 - [x] Added runtime tests for graph-plan refresh, UI/engine allowlist parity, actual topological DSP execution, reverse-order rejection and legacy fallback. AudioWorklet and ScriptProcessor still call the same shared `step()` implementation.
-- [~] Active scheduler adoption is incremental, not global. The current verified set is Voltio, Atte, Dual Atenuverter (legacy), A*B+C V4 (`abc`), current A*B+C (`axbc`), Molten Bypass, Mixer2, Mixer and the internal Audio Out sink. Remaining modules stay on legacy `step()` until their normaling, hidden dependencies, state/reset and sample-rate contracts are verified.
+- [~] Active scheduler adoption is incremental, not global. The current verified set is Voltio, Atte, Joystick, Dual Atenuverter (legacy), A*B+C V4 (`abc`), current A*B+C (`axbc`), Molten Bypass, Mixer2, Mixer and the internal Audio Out sink. Remaining modules stay on legacy `step()` until their normaling, hidden dependencies, state/reset and sample-rate contracts are verified.
 - Workflow [#76 / 42829050147](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829050147) was a failed intermediate run: 690 existing tests passed and only the three new assertions failed because the test assumed the UI inline script had an `id=ui`; the page uses its final inline script instead. The selector was corrected in commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`. Emscripten, Gradle/JUnit and APK steps were skipped after the Node gate; the final verifier consequently had no generated wrappers. No existing DSP/graph regression failed.
 - [x] The correction and scheduler integration passed the complete feature workflow [#77 / 42829232566](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829232566) on commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`: 693/693 Node tests, Gradle/JUnit, Plaits/Beads WASM, `WebAssembly.compile`, `assembleDebug` and APK artifact upload all succeeded.
 
@@ -556,7 +556,7 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 
 ### Phase 1 scheduler status and next safe step
 - [x] Shadow topological plan and generated faceplate audit are integrated; the generated-template audit covers 42 DSP module descriptors plus the internal Audio Out sink (43 total). A live DOM audit in a physical WebView remains unverified.
-- [x] Active topological execution is enabled only for a fully typed, acyclic rack whose module types are in the verified adapter set: Voltio, Atte, Dual Atenuverter, ABC, AxBC, Bypass, Mixer2 and Mixer, plus the internal Audio Out sink. Cable order is checked in the UI and engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use legacy `step()`.
+- [x] Active topological execution is enabled only for a fully typed, acyclic rack whose module types are in the verified adapter set: Voltio, Atte, Joystick, Dual Atenuverter, ABC, AxBC, Bypass, Mixer2 and Mixer, plus the internal Audio Out sink. Cable order is checked in the UI and engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use legacy `step()`.
 - [x] AudioWorklet receives the validated order with cable updates and holds it until module sync completes. ScriptProcessor fallback uses the same shared engine setter and the same `step()`.
 - [ ] Broaden the active adapter set only after each module's input normaling, hidden host links, state/reset semantics and sample-rate behavior are audited. Parameter-event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
 
@@ -885,7 +885,7 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - At code commit `d7280f98`, branch comparison was **616 ahead / 0 behind** with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`. No merge, force-push or write to `main`.
 - CI evidence only: no APK installation, physical audio output, MIDI reception, touch, screen or Android-device validation is claimed.
 
-**Phase 1 status:** guarded topological DSP execution now covers the eight listed utility/mixer module types plus Audio Out. The other Befaco modules remain on legacy `step()` until their dependencies, state/reset behavior and sample-rate contracts are verified. The 34-module DSP/graph inventory remains broader than the active scheduler set; no claim of full 34-module hardware parity is made.
+**Phase 1 status:** guarded topological DSP execution now covers the nine listed utility/mixer/controller module types plus Audio Out. The other Befaco modules remain on legacy `step()` until their dependencies, state/reset behavior and sample-rate contracts are verified. The 34-module DSP/graph inventory remains broader than the active scheduler set; no claim of full 34-module hardware parity is made.
 
 
 ## Workflow #104 — Atte fixed normaling and allocation-conscious scheduled execution (2026-11-14)
@@ -926,4 +926,43 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 ### Repository protection
 
 - At code commit `149d39ce0e9de7f513c579274b24d7516c0574c1`, compare `main...feature/befaco-modules` reported **618 ahead / 0 behind**, with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified. No merge or force-push was performed.
+
+
+## Workflow #105 — Joystick scheduler adapter and caller-owned result buffer (2026-11-14)
+
+### Implemented in code
+
+- Code commit: `cb85781f7cb7b6d1da4921d7b36bb4cca8c31044` on `feature/befaco-modules`.
+- Added `MoldgfJoystickDSP.processInto(params, xIn, yIn, result)`. It writes X/Y CV, independent 0/10 V gate outputs, mode and peak into the existing result object. The existing `process(params, inputs, state)` API remains as a compatibility wrapper.
+- Reworked `joystickF` to pass scalar jack samples and `m.r.result` directly, removing the per-sample temporary `{xIn, yIn}` object.
+- Added Joystick to both UI and engine scheduler allowlists and to the topological dispatcher. Its graph contract is already typed: two CV inputs, two CV outputs and two gate outputs. Unsupported module types still force the legacy `step()` path.
+- Added a deterministic scheduled chain `Voltio → Joystick → Atte → Mixer → Audio Out`. It verifies the 3.5 V source, attenuverter-mode X output (−1.75 V), independent Y/gate outputs, Atte output (−0.875 V), final stereo master level and result-object identity across processing.
+- Added two direct DSP tests for `processInto` output reuse, manual/CV modes, independent gates and invalid output handling. The existing stateful `process` API and legacy engine bucket dispatch remain covered.
+- No firmware/VCV implementation source or proprietary panel artwork was copied.
+
+### Test and CI evidence
+
+- Workflow [#105 / run 43602659981](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43602659981) completed with conclusion **success** on code commit `cb85781f7cb7b6d1da4921d7b36bb4cca8c31044`.
+- Node suite: **724/724 passed**, 0 failures. The actual runtime-harness test `topological Voltio -> Joystick -> Atte -> Mixer -> Audio Out preserves CV and gate outputs` passed.
+- Android JUnit: **13/13 passed**, 0 failures/errors/skips. Inspected XML report: `MidiMessageDecoderTest` 9/9 and `MidiBatchEncoderTest` 4/4.
+- Plaits WASM: **185,641 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed `WebAssembly.compile`; Beads native self-test reported `SELFTEST OK` for all eight media/mode combinations, synth output and host/media resampling.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success. APK artifact uploaded and inspected; it contains the updated `joystickF` adapter, `joystick_dsp.js`, Atte DSP, `module_graph.js`, both Plaits/Beads wrappers and **42** DSP assets.
+- Artifacts:
+  - `wasm-log`, ID **14116613603**, ZIP 1,382 bytes, SHA-256 `d54594a476f72d8913fcd647c06643056a179f0e49e548e32e57d0c51f37576d`.
+  - `android-unit-test-report`, ID **14116044973**, ZIP 9,912 bytes, SHA-256 `3bab1f08c73f8828c38dc819ca597b0225f35b323f2bec905269f54847b1d8c5`.
+  - `eurorack-study-debug-apk`, ID **14116264836**, ZIP 1,679,944 bytes, SHA-256 `e13cd0dd04d41f39b9e5a812401d78ab166cfaa50350284b903e8bc8701a9c0a`; embedded `app-debug.apk` 1,714,347 bytes, SHA-256 `fa3014a806ade827274d7d2187f78ad78971b6df02d0c892b537e709bee94ef1`.
+- The Plaits build log retains the non-fatal `PAGE_SIZE` macro-redefinition warning; the WASM build and payload checks passed.
+- CI evidence only: no APK installation, physical CV/audio, gate voltage, MIDI, touch, visual or Android-device validation is claimed.
+
+### Phase 1 status after #105
+
+- **Implemented:** Atte and Joystick caller-owned runtime buffers; Joystick's guarded topological adapter and mixed CV/gate routing.
+- **Tested:** 724 Node tests and 13 Android JUnit tests.
+- **Validated in CI:** workflow #105; Plaits/Beads WASM build and verifier; Beads native self-test; Gradle unit tests and APK assembly; artifact upload and APK content inspection.
+- **Pending:** parameter-event queue; explicit versioned state/reset/bypass contracts; sample-rate and hidden-host dependency audits before admitting additional modules; full 34-module hardware parity and physical validation.
+
+### Repository protection
+
+- At code commit `cb85781f7cb7b6d1da4921d7b36bb4cca8c31044`, compare `main...feature/befaco-modules` reported **620 ahead / 0 behind**, with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
