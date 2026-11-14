@@ -21,8 +21,9 @@
   function saturate(value) {
     return Math.tanh(finite(value) / 10) * 10;
   }
-  function process(params, inputs, state, sampleTime) {
+  function processInto(params, inL, inR, fxL, fxR, launch, state, sampleTime, out) {
     const s = state || createState(params.active);
+    const result = out || s;
     if (!s.initialized) {
       s.active = !!params.active;
       s.gateHigh = false;
@@ -30,7 +31,7 @@
       s.sendActive = 0;
       s.initialized = true;
     }
-    const gate = finite(inputs.launch);
+    const gate = finite(launch);
     const wasGateHigh = s.gateHigh;
     if (gate >= 1) s.gateHigh = true;
     else if (gate <= 0.1) s.gateHigh = false;
@@ -48,10 +49,10 @@
     s.sendActive += ((s.active ? 1 : 0) - s.sendActive) * alpha;
     s.sendActive = clamp(s.sendActive, 0, 1, 0);
 
-    const left = finite(inputs.inL);
-    const right = inputs.inR === null || inputs.inR === undefined ? left : finite(inputs.inR);
-    const fxLeft = finite(inputs.fxL) * returnGain(params.fxGain);
-    const fxRight = finite(inputs.fxR) * returnGain(params.fxGain);
+    const left = finite(inL);
+    const right = inR === null || inR === undefined ? left : finite(inR);
+    const fxLeft = finite(fxL) * returnGain(params.fxGain);
+    const fxRight = finite(fxR) * returnGain(params.fxGain);
     const sendLeft = left * s.sendActive;
     const sendRight = right * s.sendActive;
     let outLeft, outRight;
@@ -62,11 +63,25 @@
       outLeft = left * (1 - s.sendActive) + fxLeft * s.sendActive;
       outRight = right * (1 - s.sendActive) + fxRight * s.sendActive;
     }
-    if (params.saturation !== false) {
+    if (params.saturation !== false && params.saturation !== 0) {
       outLeft = saturate(outLeft);
       outRight = saturate(outRight);
     }
-    return { sendLeft, sendRight, outLeft, outRight, active: s.active, sendActive: s.sendActive, state: s };
+    result.sendLeft = sendLeft;
+    result.sendRight = sendRight;
+    result.outLeft = outLeft;
+    result.outRight = outRight;
+    result.active = s.active;
+    result.sendActive = s.sendActive;
+    return result;
   }
-  return Object.freeze({ finite, clamp, returnGain, createState, saturate, process });
+  function process(params, inputs, state, sampleTime) {
+    const s = state || createState(params.active);
+    const result = {};
+    processInto(params, inputs.inL, inputs.inR, inputs.fxL, inputs.fxR,
+      inputs.launch, s, sampleTime, result);
+    result.state = s;
+    return result;
+  }
+  return Object.freeze({ finite, clamp, returnGain, createState, saturate, processInto, process });
 });

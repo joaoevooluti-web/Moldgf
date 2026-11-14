@@ -25,14 +25,23 @@
     const gainC = bipolarCurve(cLevel);
     return clipVoltage(a * (b / 5) * gainB + c * gainC);
   }
+  function processPairInto(a1, b1, c1, a2, b2, c2, bLevel1, cLevel1, bLevel2, cLevel2, out1Patched, out) {
+    const out1 = processChannel(a1, b1, c1, bLevel1, cLevel1);
+    const out2 = processChannel(a2, b2, c2, bLevel2, cLevel2);
+    out[0] = out1;
+    out[1] = out1Patched ? out2 : clipVoltage(out1 + out2);
+    return out;
+  }
   function processPair(inputs, controls, out1Patched) {
-    const out1 = processChannel(inputs.a1, inputs.b1, inputs.c1, controls[0].bLevel, controls[0].cLevel);
-    const out2 = processChannel(inputs.a2, inputs.b2, inputs.c2, controls[1].bLevel, controls[1].cLevel);
-    return [out1, out1Patched ? out2 : clipVoltage(out1 + out2)];
+    return processPairInto(
+      inputs.a1, inputs.b1, inputs.c1, inputs.a2, inputs.b2, inputs.c2,
+      controls[0].bLevel, controls[0].cLevel, controls[1].bLevel, controls[1].cLevel,
+      out1Patched, [0, 0]
+    );
   }
   function ledPolarity(output, threshold = 0.01) {
     if (!Number.isFinite(output) || Math.abs(output) < Math.max(0, threshold)) return "off";
     return output > 0 ? "positive" : "negative";
   }
-  return Object.freeze({ clamp, clipVoltage, bipolarCurve, processChannel, processPair, ledPolarity });
+  return Object.freeze({ clamp, clipVoltage, bipolarCurve, processChannel, processPairInto, processPair, ledPolarity });
 });

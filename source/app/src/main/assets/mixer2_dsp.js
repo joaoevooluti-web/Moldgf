@@ -9,17 +9,31 @@
     return Math.max(min, Math.min(max, Number.isFinite(value) ? value : fallback));
   }
   function clipVoltage(value) { return clamp(value, -10, 10, 0); }
-  function process(inputs, gains, mix12Patched, clipEnabled) {
-    const level = gains.map(g => clamp(g, 0, 1, 1));
-    const group12 = finite(inputs[0]) * level[0] + finite(inputs[1]) * level[1];
-    const group34 = finite(inputs[2]) * level[2] + finite(inputs[3]) * level[3];
+  function processInto(input1, input2, input3, input4, gains, mix12Patched, clipEnabled, out) {
+    const g0 = clamp(gains[0], 0, 1, 1);
+    const g1 = clamp(gains[1], 0, 1, 1);
+    const g2 = clamp(gains[2], 0, 1, 1);
+    const g3 = clamp(gains[3], 0, 1, 1);
+    const group12 = finite(input1) * g0 + finite(input2) * g1;
+    const group34 = finite(input3) * g2 + finite(input4) * g3;
     const out1 = mix12Patched ? group12 : 0;
     const out2 = mix12Patched ? group34 : group12 + group34;
-    return clipEnabled ? [clipVoltage(out1), clipVoltage(out2)] : [out1, out2];
+    out[0] = clipEnabled ? clipVoltage(out1) : out1;
+    out[1] = clipEnabled ? clipVoltage(out2) : out2;
+    return out;
+  }
+  function process(inputs, gains, mix12Patched, clipEnabled) {
+    return processInto(inputs[0], inputs[1], inputs[2], inputs[3], gains, mix12Patched, clipEnabled, [0, 0]);
+  }
+  function meterInto(value, out) {
+    const magnitude = Math.abs(finite(value));
+    out.positive = value > 0.01;
+    out.negative = value < -0.01;
+    out.level = Math.min(1, magnitude / 10);
+    return out;
   }
   function meter(value) {
-    const magnitude = Math.abs(finite(value));
-    return { positive: value > 0.01, negative: value < -0.01, level: Math.min(1, magnitude / 10) };
+    return meterInto(value, { positive: false, negative: false, level: 0 });
   }
-  return Object.freeze({ finite, clamp, clipVoltage, process, meter });
+  return Object.freeze({ finite, clamp, clipVoltage, processInto, process, meterInto, meter });
 });
