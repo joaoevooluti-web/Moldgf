@@ -41,6 +41,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(engine, /fromIndex>=toIndex/);
   assert.match(engine, /!\['voltio','atte','dualAt','abc','axbc','bypass','mixer2','mixer','out'\]\.includes\(m\.t\)/);
   assert.match(engine, /if\(m\.t==='voltio'\)voltioF\(m\)/);
+  assert.match(engine, /function atteF\(m\)\{[^}]*MoldgfAtteDSP\.processInto\(/);
   assert.match(engine, /else if\(m\.t==='dualAt'\)dualAtenuverterF\(m\)/);
   assert.match(engine, /else if\(m\.t==='abc'\)abcF\(m\)/);
   assert.match(engine, /else if\(m\.t==='axbc'\)axbcF\(m\)/);

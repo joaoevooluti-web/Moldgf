@@ -2,11 +2,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const Atte = require("../app/src/main/assets/atte_dsp.js");
 
-test("Atte provides selectable +1V, +5V and +10V first-channel normaling", () => {
-  assert.equal(Atte.normalledVoltage(0), 1);
-  assert.equal(Atte.normalledVoltage(1), 5);
-  assert.equal(Atte.normalledVoltage(2), 10);
-  assert.equal(Atte.normalledVoltage(99), 10);
+test("Atte first input is fixed at +10V and ignores legacy normal-voltage selectors", () => {
+  for (const legacyValue of [undefined, 0, 1, 2, 99]) {
+    assert.equal(Atte.normalledVoltage(legacyValue), 10);
+  }
 });
 
 test("unpatched inputs inherit the previous channel input, not its output", () => {
@@ -38,4 +37,20 @@ test("gain spans zero to unity and mode selects positive or inverted attenuation
 test("gain is bounded to the physical 0..1 control range without clipping the signal", () => {
   assert.equal(Atte.applyGain(12, 2, true), 12);
   assert.equal(Atte.applyGain(-12, -1, true), 0);
+});
+
+
+test("processInto reuses the caller output buffer and cascades the previous input", () => {
+  const output = [0, 0, 0, 0];
+  const gains = [0.5, 1, 1, 1];
+  const modes = [1, 0, 1, 1];
+  const returned = Atte.processInto(null, 3.5, null, null, gains, modes, output);
+  assert.strictEqual(returned, output);
+  assert.deepEqual(output, [5, -3.5, 3.5, 3.5]);
+  assert.strictEqual(Atte.processInto(-2, null, null, null, gains, modes, output), output);
+  assert.deepEqual(output, [-1, 2, -2, -2]);
+});
+
+test("processInto rejects an undersized output buffer without allocating a replacement", () => {
+  assert.equal(Atte.processInto(null, null, null, null, [1, 1, 1, 1], [1, 1, 1, 1], [0, 0, 0]), null);
 });

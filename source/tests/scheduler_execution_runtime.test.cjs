@@ -323,3 +323,75 @@ test("runtime graph planner includes selected Hexmix rear-panel host dependencie
   assert.ok(uiScript.includes("['vcaHost','stmixHost','hexmixHost'].includes(t.dataset.k)"),
     "changing an internal host selector must refresh the graph plan");
 });
+
+
+function makeAtteCascadePlan() {
+  const cvIn = id => ({ id, direction: "input", signal: "cv", channels: 1,
+    accepts: ["audio", "cv", "gate", "trigger", "clock", "midi"] });
+  const audioIn = id => ({ id, direction: "input", signal: "audio", channels: 1,
+    accepts: ["audio", "cv"] });
+  const registry = createRegistry([
+    { type: "voltio", ports: [cvIn("sumIn"), { id: "out", direction: "output", signal: "cv" }] },
+    { type: "atte", ports: ["inA", "inB", "inC", "inD"].map(cvIn)
+      .concat(["a", "b", "c", "d"].map(id => ({ id, direction: "output", signal: "cv" }))) },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn)
+      .concat([{ id: "main", direction: "output", signal: "audio" },
+        { id: "inverted", direction: "output", signal: "audio" }]) },
+    { type: "out", ports: [audioIn("l"), audioIn("r")] }
+  ]);
+  const modules = [
+    { id: "out1", type: "out" }, { id: "mixer1", type: "mixer" },
+    { id: "atte1", type: "atte" }, { id: "voltio1", type: "voltio" }
+  ];
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  return validateGraph(registry, modules, [
+    cable("voltio1", "out", "atte1", "inB"),
+    cable("atte1", "a", "mixer1", "ch1"),
+    cable("atte1", "b", "mixer1", "ch2"),
+    cable("atte1", "c", "mixer1", "ch3"),
+    cable("atte1", "d", "mixer1", "ch4"),
+    cable("mixer1", "main", "out1", "l")
+  ]);
+}
+
+function buildAtteCascadeRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [0.25, 0.25, 0.25, 0.25] });
+  engine.mkInst("atte1", "atte", {
+    gain: [0.5, 1, 1, 1], mode: [1, 0, 1, 1], normalledVoltage: 0
+  });
+  engine.mkInst("voltio1", "voltio", { octave: 3, semitone: 6, range: 0 });
+  engine.idxE();
+  engine.cab.push(
+    { a: "voltio1.out", b: "atte1.inB" },
+    { a: "atte1.a", b: "mixer1.ch1" },
+    { a: "atte1.b", b: "mixer1.ch2" },
+    { a: "atte1.c", b: "mixer1.ch3" },
+    { a: "atte1.d", b: "mixer1.ch4" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+}
+
+test("topological Voltio -> Atte cascade -> Mixer -> Audio Out uses fixed +10V normaling and caller-owned output", () => {
+  const engine = createEngineHarness();
+  const plan = makeAtteCascadePlan();
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["voltio1", "atte1", "mixer1", "out1"]);
+  buildAtteCascadeRack(engine);
+  const outputBuffer = engine.I.atte1.r.out;
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  engine.step();
+  assert.deepEqual(Array.from(outputBuffer), [5, -3.5, 3.5, 3.5]);
+  assert.strictEqual(engine.I.atte1.r.out, outputBuffer);
+  assert.equal(engine.V[engine.sig("atte1.a")], 5);
+  assert.equal(engine.V[engine.sig("atte1.b")], -3.5);
+  assert.equal(engine.V[engine.sig("atte1.c")], 3.5);
+  assert.equal(engine.V[engine.sig("atte1.d")], 3.5);
+  const expected = Math.tanh(2.125 * 0.2);
+  const [left, right] = engine.output();
+  assert.ok(Math.abs(left - expected) < 1e-9);
+  assert.ok(Math.abs(right - expected) < 1e-9);
+});
