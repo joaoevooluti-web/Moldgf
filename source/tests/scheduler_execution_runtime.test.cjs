@@ -5,6 +5,10 @@ const path = require("node:path");
 const vm = require("node:vm");
 const { createRegistry, validateGraph } = require("../app/src/main/assets/module_graph.js");
 const AtteDSP = require("../app/src/main/assets/atte_dsp.js");
+const DualAtenuverterDSP = require("../app/src/main/assets/dual_atenuverter_dsp.js");
+const ABCDSP = require("../app/src/main/assets/abc_dsp.js");
+const AxBCDSP = require("../app/src/main/assets/axbc_dsp.js");
+const BypassDSP = require("../app/src/main/assets/bypass_dsp.js");
 const Mixer2DSP = require("../app/src/main/assets/mixer2_dsp.js");
 const MixerDSP = require("../app/src/main/assets/mixer_dsp.js");
 const VoltioDSP = require("../app/src/main/assets/voltio_dsp.js");
@@ -25,6 +29,10 @@ assert.ok(engineSource, "shared audio engine script must exist");
 function createEngineHarness() {
   const context = {
     MoldgfAtteDSP: AtteDSP,
+    MoldgfDualAtenuverterDSP: DualAtenuverterDSP,
+    MoldgfABCDSP: ABCDSP,
+    MoldgfAxBCDSP: AxBCDSP,
+    MoldgfBypassDSP: BypassDSP,
     MoldgfMixer2DSP: Mixer2DSP,
     MoldgfMixerDSP: MixerDSP,
     MoldgfVoltioDSP: VoltioDSP,
@@ -135,6 +143,98 @@ test("legacy bucket inventory includes CV Thing, DivKid Mutes and Joystick proce
   assert.equal(engine.byT.joystick.length, 1);
 });
 
+
+function makeExpandedUtilityPlan() {
+  const cvIn = id => ({ id, direction: "input", signal: "cv", channels: 1, accepts: ["audio", "cv", "gate", "trigger", "clock", "midi"] });
+  const audioIn = id => ({ id, direction: "input", signal: "audio", channels: 1, accepts: ["audio", "cv"] });
+  const registry = createRegistry([
+    { type: "dualAt", ports: [cvIn("inA"), cvIn("inB"), { id: "outA", direction: "output", signal: "cv" }, { id: "outB", direction: "output", signal: "cv" }] },
+    { type: "abc", ports: ["a1", "b1", "c1", "a2", "b2", "c2"].map(cvIn).concat([{ id: "out1", direction: "output", signal: "cv" }, { id: "out2", direction: "output", signal: "cv" }]) },
+    { type: "axbc", ports: ["a1", "b1", "c1", "a2", "b2", "c2"].map(cvIn).concat([{ id: "out1", direction: "output", signal: "cv" }, { id: "out2", direction: "output", signal: "cv" }]) },
+    { type: "bypass", ports: [audioIn("inL"), audioIn("inR"), audioIn("fxL"), audioIn("fxR"),
+      { id: "launch", direction: "input", signal: "gate", accepts: ["gate", "cv"] },
+      { id: "sendL", direction: "output", signal: "audio" }, { id: "sendR", direction: "output", signal: "audio" },
+      { id: "outL", direction: "output", signal: "audio" }, { id: "outR", direction: "output", signal: "audio" }] },
+    { type: "mixer2", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn).concat([{ id: "mix12", direction: "output", signal: "audio" }, { id: "mix34", direction: "output", signal: "audio" }]) },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn).concat([{ id: "main", direction: "output", signal: "audio" }, { id: "inverted", direction: "output", signal: "audio" }]) },
+    { type: "out", ports: [audioIn("l"), audioIn("r")] }
+  ]);
+  const modules = [
+    { id: "out1", type: "out" }, { id: "mixer1", type: "mixer" },
+    { id: "mixer21", type: "mixer2" }, { id: "bypass1", type: "bypass" },
+    { id: "axbc1", type: "axbc" }, { id: "abc1", type: "abc" }, { id: "dual1", type: "dualAt" }
+  ];
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  return validateGraph(registry, modules, [
+    cable("dual1", "outA", "abc1", "a1"),
+    cable("abc1", "out1", "axbc1", "a1"),
+    cable("axbc1", "out1", "bypass1", "inL"),
+    cable("bypass1", "outL", "mixer21", "ch1"),
+    cable("mixer21", "mix12", "mixer1", "ch1"),
+    cable("mixer1", "main", "out1", "l")
+  ]);
+}
+
+function buildExpandedUtilityRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("mixer21", "mixer2", { gain: [1, 0, 0, 0], clip: 0 });
+  engine.mkInst("bypass1", "bypass", { active: 0, button: 0, launchMode: 0, returnMode: 0, fxGain: 0, slew: 0.01, saturation: 0 });
+  engine.mkInst("axbc1", "axbc", { bLevel: [1, 1], bMode: [0, 0], cLevel: [0, 0], cMode: [0, 0], mode: 0 });
+  engine.mkInst("abc1", "abc", { bLevel: [1, 0], cLevel: [0, 0] });
+  engine.mkInst("dual1", "dualAt", { gain: [1, -1], offset: [0, 0] });
+  engine.idxE();
+  engine.cab.push(
+    { a: "dual1.outA", b: "abc1.a1" },
+    { a: "abc1.out1", b: "axbc1.a1" },
+    { a: "axbc1.out1", b: "bypass1.inL" },
+    { a: "bypass1.outL", b: "mixer21.ch1" },
+    { a: "mixer21.mix12", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+  engine.setInput("dual1.inA", 5);
+}
+
+test("topological Dual Atenuverter -> A*B+C -> AxBC -> Bypass -> Mixer2 -> Mixer -> Audio Out chain executes real DSP adapters", () => {
+  const engine = createEngineHarness();
+  const plan = makeExpandedUtilityPlan();
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["dual1", "abc1", "axbc1", "bypass1", "mixer21", "mixer1", "out1"]);
+  buildExpandedUtilityRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(["out1", "mixer1", "mixer21", "bypass1", "axbc1", "abc1", "dual1"]), false);
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  engine.step();
+  const [left, right] = engine.output();
+  assert.equal(engine.V[engine.sig("dual1.outA")], 5);
+  assert.equal(engine.V[engine.sig("dual1.outB")], -5);
+  assert.equal(engine.V[engine.sig("abc1.out1")], 10);
+  assert.equal(engine.V[engine.sig("axbc1.out1")], 10);
+  assert.equal(engine.V[engine.sig("bypass1.outL")], 10);
+  assert.equal(engine.V[engine.sig("mixer21.mix12")], 10);
+  assert.equal(engine.V[engine.sig("mixer1.main")], 10);
+  assert.ok(Math.abs(left - Math.tanh(2)) < 1e-9);
+  assert.ok(Math.abs(right - Math.tanh(2)) < 1e-9);
+});
+
+test("scheduled Bypass preserves gate/button edge state across sample calls", () => {
+  const engine = createEngineHarness();
+  const plan = makeExpandedUtilityPlan();
+  buildExpandedUtilityRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  const state = engine.I.bypass1.r;
+  engine.I.bypass1.s.button = 1;
+  engine.step();
+  assert.equal(state.active, true);
+  engine.I.bypass1.s.button = 0;
+  engine.step();
+  assert.equal(state.active, true, "button release must not toggle the latched state");
+  for (let i = 0; i < 1000; i++) engine.step();
+  assert.ok(state.sendActive > 0.98, "the send crossfade must converge using the persisted state object");
+  assert.strictEqual(engine.I.bypass1.r, state);
+});
 
 const hexmixParams = (overrides = {}) => Object.assign({
   volume:Array(6).fill(1),low:Array(6).fill(0),mid:Array(6).fill(0),

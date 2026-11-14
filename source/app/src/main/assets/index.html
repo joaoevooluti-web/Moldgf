@@ -436,7 +436,7 @@ po:()=>({s1:0,s2:0,s3:0,s4:0,cl:0,G:.1,oc:1e9,qc:-1,k:0,dx:0,dy:0}),
 mout:()=>({g:0,n:-1,on:0,vv:100,cv:[-1,-1,-1,-1],cd:[0,0,0,0]}),
 bbd:()=>({buf:new Float32Array(4096),w:0,ph:0,upi:0,yh:0,dx:0,dy:0,wet:0,fc:0,vk:-1,rk:-1,xh:new Float64Array(16),xi:0,ho:new Float64Array(64),oi:0,l1:0,l2:0,ac:.5}),
 bds:()=>({buf:null,wp:0,bl:0,pr:0,na:0,tp:0,idl:0,op:0,pk:0,g:1,f1l:0,f1r:0,f2l:0,f2r:0,qp:0,hl:0,hr:0,sdl:0,hl2:0,hdl:0,tc:0,ta:1e9,tapT:0,cd:0,cn:0,rnd:0,ph1:0,ph2:0,sn:0,dly:0,so:0,fl:0,li:0,igk:-1,igv:1,cdn:-1,cdv:-1,cper:0,bdn:-1,bdv:-1,bbase:0,nb:-1,nm:1,ptk:-1,ptv:0,bi:-1,binit:0,k:0,bv:null,ib:0}),
-out:()=>({ol:0,or:0,pk:[0,0]}),atte:()=>({out:[0,0,0,0]}),dualAt:()=>({out:[0,0],led:["off","off"]}),voltio:()=>({out:0}),axbc:()=>({out:[0,0],led:["off","off"]}),abc:()=>({out:[0,0],led:["off","off"]}),bypass:()=>({}),mixer2:()=>({out:[0,0],meter:[0,0]}),mixer:()=>({out:[0,0],meter:[0,0]}),stmix:()=>({out:[0,0],meter:[0,0]}),morphader:()=>({out:[0,0,0,0],fader:0}),hexmixvca:()=>({out:[0,0,0,0,0,0]}),motionmtr:()=>({out:[0,0,0]}),slewlimiter:()=>({out:0}),ponyVco:()=>({out:0,frequency:0}),adsr:()=>({env:0,stage:0,gates:[0,0,0,0]}),percall:()=>({out:[0,0,0,0],env:[0,0,0,0],stage:[0,0,0,0]}),mudi:()=>({states:[false,false,false,false,false]}),slew:()=>({out:0}),burst:()=>MoldgfBurstDSP.createState(),samplingModulator:()=>MoldgfSamplingModulatorDSP.createState(),choppingKinky:()=>MoldgfChoppingKinkyDSP.createState(),evenVco:()=>MoldgfEvenVCODSP.createState(),rampage:()=>Object.assign(MoldgfRampageDSP.createState(),{manualA:0,manualB:0}),springReverb:()=>MoldgfSpringReverbDSP.createState(48000),kickall:()=>Object.assign(MoldgfKickallDSP.createState(),{manualTrigger:0}),noisePlethora:()=>MoldgfNoisePlethoraDSP.createState(),muxlicer:()=>MoldgfMuxlicerDSP.createState()};
+out:()=>({ol:0,or:0,pk:[0,0]}),atte:()=>({out:[0,0,0,0]}),dualAt:()=>({out:[0,0],led:["off","off"]}),voltio:()=>({out:0}),axbc:()=>({out:[0,0],led:["off","off"]}),abc:()=>({out:[0,0],led:["off","off"]}),bypass:()=>MoldgfBypassDSP.createState(),mixer2:()=>({out:[0,0],meter:[{positive:false,negative:false,level:0},{positive:false,negative:false,level:0}]}),mixer:()=>({out:[0,0],meter:[{positive:false,negative:false,magnitude:0},{positive:false,negative:false,magnitude:0}]}),stmix:()=>({out:[0,0],meter:[0,0]}),morphader:()=>({out:[0,0,0,0],fader:0}),hexmixvca:()=>({out:[0,0,0,0,0,0]}),motionmtr:()=>({out:[0,0,0]}),slewlimiter:()=>({out:0}),ponyVco:()=>({out:0,frequency:0}),adsr:()=>({env:0,stage:0,gates:[0,0,0,0]}),percall:()=>({out:[0,0,0,0],env:[0,0,0,0],stage:[0,0,0,0]}),mudi:()=>({states:[false,false,false,false,false]}),slew:()=>({out:0}),burst:()=>MoldgfBurstDSP.createState(),samplingModulator:()=>MoldgfSamplingModulatorDSP.createState(),choppingKinky:()=>MoldgfChoppingKinkyDSP.createState(),evenVco:()=>MoldgfEvenVCODSP.createState(),rampage:()=>Object.assign(MoldgfRampageDSP.createState(),{manualA:0,manualB:0}),springReverb:()=>MoldgfSpringReverbDSP.createState(48000),kickall:()=>Object.assign(MoldgfKickallDSP.createState(),{manualTrigger:0}),noisePlethora:()=>MoldgfNoisePlethoraDSP.createState(),muxlicer:()=>MoldgfMuxlicerDSP.createState()};
 const newQ=()=>({p:0,q:0,l2:0,lp:0,lg:0,s1:0,ns:0,tc:0,en:0,pe:0,sf:1000,ex:0,bi:0,bu:0,sH:.5,sT:.5,sM:.5,sk:36,dc:.99,ldc:-1,md:-1,
 b:new Float32Array(4096),ph:new Float64Array(8),me:new Float64Array(8),g:new Float64Array(8).fill(1),d:new Float64Array(8),r:new Float64Array(8).fill(1),s:new Float64Array(6),v:new Float64Array(4),
 v1:{mp:0,sp:0,ns:0,pp:.5,hi:0},v2:{mp:0,sp:0,ns:0,pp:.5,hi:0},vi:-1,tm:0,ro:new Float32Array(64),ra:new Float32Array(64),wi:0,rp:0,inited:0});
@@ -451,7 +451,7 @@ function setGraphExecutionOrder(order){
  const seen=new Set(),positions=Object.create(null);
  for(let i=0;i<pendingGraphExecutionOrder.length;i++){
   const id=pendingGraphExecutionOrder[i],m=I[id];
-  if(!m||seen.has(id)||!['voltio','atte','mixer2','mixer','out'].includes(m.t)){graphExecutionOrder=null;return false}
+  if(!m||seen.has(id)||!['voltio','atte','dualAt','abc','axbc','bypass','mixer2','mixer','out'].includes(m.t)){graphExecutionOrder=null;return false}
   seen.add(id);positions[id]=i
  }
  for(let i=0;i<cab.length;i++){
@@ -473,6 +473,10 @@ function processTopologicalRack(){
   if(!m){graphExecutionOrder=null;return false}
   if(m.t==='voltio')voltioF(m);
   else if(m.t==='atte')atteF(m);
+  else if(m.t==='dualAt')dualAtenuverterF(m);
+  else if(m.t==='abc')abcF(m);
+  else if(m.t==='axbc')axbcF(m);
+  else if(m.t==='bypass')bypassF(m);
   else if(m.t==='mixer2')mixer2F(m);
   else if(m.t==='mixer')mixerF(m);
   else if(m.t!=='out'){graphExecutionOrder=null;return false}
@@ -652,11 +656,48 @@ function divkidMutesMk2F(m){const P=m.s,R=m.r,o=MoldgfDivKidMutesMK2DSP.process(
 function joystickF(m){const P=m.s,R=m.r,o=MoldgfJoystickDSP.process(P,{xIn:inp(K(m,'xIn')),yIn:inp(K(m,'yIn'))},R);V[K(m,'x')]=o.x;V[K(m,'y')]=o.y;V[K(m,'gateX')]=o.gateX;V[K(m,'gateY')]=o.gateY;R.peak=o.peak}
 function dualAtenuverterF(m){const P=m.s,R=m.r;const inputA=inp(K(m,'inA'));const inputB=MoldgfDualAtenuverterDSP.resolveInput(inp(K(m,'inB')),inputA);const a=MoldgfDualAtenuverterDSP.processChannel(inputA,P.gain[0],P.offset[0]);const b=MoldgfDualAtenuverterDSP.processChannel(inputB,P.gain[1],P.offset[1]);V[K(m,'outA')]=R.out[0]=a;V[K(m,'outB')]=R.out[1]=b;R.led[0]=MoldgfDualAtenuverterDSP.ledPolarity(a);R.led[1]=MoldgfDualAtenuverterDSP.ledPolarity(b)}
 function voltioF(m){const P=m.s,R=m.r;const output=MoldgfVoltioDSP.process(inp(K(m,'sumIn')),P.octave,P.semitone,P.range===1);V[K(m,'out')]=R.out=output}
-function axbcF(m){const P=m.s,R=m.r,mode=P.mode|0;const result=MoldgfAxBCDSP.processPair({a1:inp(K(m,'a1')),b1:inp(K(m,'b1')),c1:inp(K(m,'c1')),a2:inp(K(m,'a2')),b2:inp(K(m,'b2')),c2:inp(K(m,'c2'))},[{bLevel:P.bLevel[0],bMode:P.bMode[0],cLevel:P.cLevel[0],cMode:P.cMode[0]},{bLevel:P.bLevel[1],bMode:P.bMode[1],cLevel:P.cLevel[1],cMode:P.cMode[1]}],mode,!!SU[K(m,'out1')]);V[K(m,'out1')]=R.out[0]=result[0];V[K(m,'out2')]=R.out[1]=result[1];R.led[0]=MoldgfAxBCDSP.ledPolarity?MoldgfAxBCDSP.ledPolarity(result[0]):(result[0]>0?'positive':result[0]<0?'negative':'off');R.led[1]=MoldgfAxBCDSP.ledPolarity?MoldgfAxBCDSP.ledPolarity(result[1]):(result[1]>0?'positive':result[1]<0?'negative':'off')}
-function abcF(m){const P=m.s,R=m.r;const result=MoldgfABCDSP.processPair({a1:inp(K(m,'a1')),b1:inp(K(m,'b1')),c1:inp(K(m,'c1')),a2:inp(K(m,'a2')),b2:inp(K(m,'b2')),c2:inp(K(m,'c2'))},[{bLevel:P.bLevel[0],cLevel:P.cLevel[0]},{bLevel:P.bLevel[1],cLevel:P.cLevel[1]}],!!SU[K(m,'out1')]);V[K(m,'out1')]=R.out[0]=result[0];V[K(m,'out2')]=R.out[1]=result[1];R.led[0]=MoldgfABCDSP.ledPolarity(result[0]);R.led[1]=MoldgfABCDSP.ledPolarity(result[1])}
-function bypassF(m){const P=m.s,R=m.r,q=MoldgfBypassDSP.process({active:!!P.active,button:!!P.button,launchMode:P.launchMode|0,returnMode:P.returnMode|0,fxGain:P.fxGain,slew:P.slew,saturation:P.saturation===1},{inL:inp(K(m,'inL')),inR:inp(K(m,'inR')),fxL:inp(K(m,'fxL')),fxR:inp(K(m,'fxR')),launch:inp(K(m,'launch'))},R,1/sr);V[K(m,'sendL')]=q.sendLeft;V[K(m,'sendR')]=q.sendRight;V[K(m,'outL')]=q.outLeft;V[K(m,'outR')]=q.outRight;V[K(m,'state')]=q.active?10:0}
-function mixer2F(m){const P=m.s,R=m.r,o=MoldgfMixer2DSP.process([inp(K(m,'ch1')),inp(K(m,'ch2')),inp(K(m,'ch3')),inp(K(m,'ch4'))],P.gain,!!SU[K(m,'mix12')],P.clip===1);V[K(m,'mix12')]=R.out[0]=o[0];V[K(m,'mix34')]=R.out[1]=o[1];R.meter[0]=MoldgfMixer2DSP.meter(o[0]);R.meter[1]=MoldgfMixer2DSP.meter(o[1])}
-function mixerF(m){const P=m.s,R=m.r,o=MoldgfMixerDSP.process([inp(K(m,'ch1')),inp(K(m,'ch2')),inp(K(m,'ch3')),inp(K(m,'ch4'))],P.gain);V[K(m,'main')]=R.out[0]=o[0];V[K(m,'inverted')]=R.out[1]=o[1];R.meter[0]=MoldgfMixerDSP.meter(o[0]);R.meter[1]=MoldgfMixerDSP.meter(o[1])}
+function axbcF(m){
+ const P=m.s,R=m.r;
+ MoldgfAxBCDSP.processPairInto(
+  inp(K(m,'a1')),inp(K(m,'b1')),inp(K(m,'c1')),
+  inp(K(m,'a2')),inp(K(m,'b2')),inp(K(m,'c2')),
+  P.bLevel[0],P.bMode[0],P.cLevel[0],P.cMode[0],
+  P.bLevel[1],P.bMode[1],P.cLevel[1],P.cMode[1],
+  P.mode|0,!!SU[K(m,'out1')],R.out
+ );
+ V[K(m,'out1')]=R.out[0];V[K(m,'out2')]=R.out[1];
+ R.led[0]=MoldgfAxBCDSP.ledPolarity(R.out[0]);R.led[1]=MoldgfAxBCDSP.ledPolarity(R.out[1])
+}
+function abcF(m){
+ const P=m.s,R=m.r;
+ MoldgfABCDSP.processPairInto(
+  inp(K(m,'a1')),inp(K(m,'b1')),inp(K(m,'c1')),
+  inp(K(m,'a2')),inp(K(m,'b2')),inp(K(m,'c2')),
+  P.bLevel[0],P.cLevel[0],P.bLevel[1],P.cLevel[1],
+  !!SU[K(m,'out1')],R.out
+ );
+ V[K(m,'out1')]=R.out[0];V[K(m,'out2')]=R.out[1];
+ R.led[0]=MoldgfABCDSP.ledPolarity(R.out[0]);R.led[1]=MoldgfABCDSP.ledPolarity(R.out[1])
+}
+function bypassF(m){
+ const P=m.s,R=m.r;
+ MoldgfBypassDSP.processInto(P,inp(K(m,'inL')),inp(K(m,'inR')),inp(K(m,'fxL')),inp(K(m,'fxR')),inp(K(m,'launch')),R,1/sr,R);
+ V[K(m,'sendL')]=R.sendLeft;V[K(m,'sendR')]=R.sendRight;
+ V[K(m,'outL')]=R.outLeft;V[K(m,'outR')]=R.outRight;V[K(m,'state')]=R.active?10:0
+}
+function mixer2F(m){
+ const P=m.s,R=m.r;
+ MoldgfMixer2DSP.processInto(inp(K(m,'ch1')),inp(K(m,'ch2')),inp(K(m,'ch3')),inp(K(m,'ch4')),
+  P.gain,!!SU[K(m,'mix12')],P.clip===1,R.out);
+ V[K(m,'mix12')]=R.out[0];V[K(m,'mix34')]=R.out[1];
+ MoldgfMixer2DSP.meterInto(R.out[0],R.meter[0]);MoldgfMixer2DSP.meterInto(R.out[1],R.meter[1])
+}
+function mixerF(m){
+ const P=m.s,R=m.r;
+ MoldgfMixerDSP.processInto(inp(K(m,'ch1')),inp(K(m,'ch2')),inp(K(m,'ch3')),inp(K(m,'ch4')),P.gain,R.out);
+ V[K(m,'main')]=R.out[0];V[K(m,'inverted')]=R.out[1];
+ MoldgfMixerDSP.meterInto(R.out[0],R.meter[0]);MoldgfMixerDSP.meterInto(R.out[1],R.meter[1])
+}
 function stmixF(m){const P=m.s,R=m.r,o=MoldgfSTMixDSP.process([inp(K(m,'left1')),inp(K(m,'right1')),inp(K(m,'left2')),inp(K(m,'right2')),inp(K(m,'left3')),inp(K(m,'right3')),inp(K(m,'left4')),inp(K(m,'right4')),inp(K(m,'auxL')),inp(K(m,'auxR'))],P.gain);V[K(m,'outL')]=R.out[0]=o[0];V[K(m,'outR')]=R.out[1]=o[1];R.meter[0]=MoldgfSTMixDSP.meter(o[0]);R.meter[1]=MoldgfSTMixDSP.meter(o[1])}
 function morphaderF(m){const P=m.s,R=m.r,o=MoldgfMorphaderDSP.process({cv:[inp(K(m,'cv1')),inp(K(m,'cv2')),inp(K(m,'cv3')),inp(K(m,'cv4'))],a:[inp(K(m,'a1')),inp(K(m,'a2')),inp(K(m,'a3')),inp(K(m,'a4'))],b:[inp(K(m,'b1')),inp(K(m,'b2')),inp(K(m,'b3')),inp(K(m,'b4'))],outputPatched:[!!SU[K(m,'out1')],!!SU[K(m,'out2')],!!SU[K(m,'out3')]]},{cvAtt:P.cvAtt,aLevel:P.aLevel,bLevel:P.bLevel,mode:P.mode,fader:P.fader,lag:P.lag},R,1/sr);for(let i=0;i<4;i++){V[K(m,'out'+(i+1))]=R.out[i]=o.outputs[i]}R.fader=o.fader}
 function hexpanderF(m){const P=m.s,R=m.r,host=byT.hexmix[(P.hexmixHost|0)-1],h=host?{preEq:host.r.postEq,post:host.r.post,pan:host.s.pan,left:host.r.result.left,right:host.r.result.right,outputLevel:host.s.outputLevel}:null,o=MoldgfHexpanderDSP.process(P,{returns:[[inp(K(m,'return1L')),inp(K(m,'return1R'))],[inp(K(m,'return2L')),inp(K(m,'return2R'))],[inp(K(m,'return3L')),inp(K(m,'return3R'))]]},R,h);for(let n=1;n<=3;n++){V[K(m,'send'+n+'Pre')]=o.sendPre[n-1];V[K(m,'send'+n+'Post')]=o.sendPost[n-1]}for(let n=1;n<=6;n++)V[K(m,'direct'+n)]=o.direct[n-1];V[K(m,'mainL')]=o.mainL;V[K(m,'mainR')]=o.mainR;V[K(m,'headL')]=o.headL;V[K(m,'headR')]=o.headR;R.peak=o.peak;R.pflActive=o.pflActive}
@@ -1213,7 +1254,7 @@ function refreshGraphPlan(){
  graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables,runtimeHostDependencies(modules));
  return graphPlan;
 }
-const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','mixer2','mixer','out']);
+const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','dualAt','abc','axbc','bypass','mixer2','mixer','out']);
 function activeSchedulerOrder(){
  const ids=Object.keys(I);
  if(!ids.length||!graphPlan.valid||graphPlan.order.length!==ids.length)return null;

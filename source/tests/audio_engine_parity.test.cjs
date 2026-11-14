@@ -28,6 +28,11 @@ test("AudioWorklet and ScriptProcessor fallback execute the same DSP step per ou
 
   assert.equal((engine.match(/function step\(\)\{/g) || []).length, 1,
     "there must be one shared per-sample DSP step implementation");
+  for (const adapter of ["dualAtenuverterF", "abcF", "axbcF", "bypassF"]) {
+    assert.ok(engine.includes(adapter + "(m)"), "shared topological scheduler must dispatch " + adapter);
+  }
+  assert.match(engine, /if\(graphExecutionOrder&&processTopologicalRack\(\)\)/,
+    "both audio paths must enter the same guarded topological scheduler through step()");
   assert.match(worklet, /process\(i,o\)\{const L=o\[0\]\[0\],R=o\[0\]\[1\];for\(let n=0;n<L\.length;n\+\+\)\{step\(\);L\[n\]=OL;R\[n\]=OR\}/,
     "Worklet must call shared step once and write left/right in order");
   assert.match(pump, /for\(let i=0;i<128;i\+\+\)\{step\(\);RL_\[wr&16383\]=OL;RR_\[wr&16383\]=OR;wr\+\+\}/,
