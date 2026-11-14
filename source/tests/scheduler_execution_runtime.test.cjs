@@ -395,3 +395,79 @@ test("topological Voltio -> Atte cascade -> Mixer -> Audio Out uses fixed +10V n
   assert.ok(Math.abs(left - expected) < 1e-9);
   assert.ok(Math.abs(right - expected) < 1e-9);
 });
+
+
+function makeJoystickAttePlan() {
+  const cvIn = id => ({ id, direction: "input", signal: "cv", channels: 1,
+    accepts: ["audio", "cv", "gate", "trigger", "clock", "midi"] });
+  const audioIn = id => ({ id, direction: "input", signal: "audio", channels: 1,
+    accepts: ["audio", "cv"] });
+  const registry = createRegistry([
+    { type: "voltio", ports: [cvIn("sumIn"), { id: "out", direction: "output", signal: "cv" }] },
+    { type: "joystick", ports: [cvIn("xIn"), cvIn("yIn"),
+      { id: "x", direction: "output", signal: "cv" }, { id: "y", direction: "output", signal: "cv" },
+      { id: "gateX", direction: "output", signal: "gate" }, { id: "gateY", direction: "output", signal: "gate" }] },
+    { type: "atte", ports: ["inA", "inB", "inC", "inD"].map(cvIn)
+      .concat(["a", "b", "c", "d"].map(id => ({ id, direction: "output", signal: "cv" }))) },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn)
+      .concat([{ id: "main", direction: "output", signal: "audio" },
+        { id: "inverted", direction: "output", signal: "audio" }]) },
+    { type: "out", ports: [audioIn("l"), audioIn("r")] }
+  ]);
+  const modules = [
+    { id: "out1", type: "out" }, { id: "mixer1", type: "mixer" },
+    { id: "atte1", type: "atte" }, { id: "joy1", type: "joystick" },
+    { id: "voltio1", type: "voltio" }
+  ];
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  return validateGraph(registry, modules, [
+    cable("voltio1", "out", "joy1", "xIn"),
+    cable("joy1", "x", "atte1", "inA"),
+    cable("atte1", "a", "mixer1", "ch1"),
+    cable("mixer1", "main", "out1", "l")
+  ]);
+}
+
+function buildJoystickAtteRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("atte1", "atte", {
+    gain: [0.5, 1, 1, 1], mode: [1, 1, 1, 1], normalledVoltage: 2
+  });
+  engine.mkInst("joy1", "joystick", {
+    x: 0, y: 0, mode: 1, range: 1, offsetX: 0, offsetY: 0,
+    attenX: -0.5, attenY: 0.25, gateX: 1, gateY: 0
+  });
+  engine.mkInst("voltio1", "voltio", { octave: 3, semitone: 6, range: 0 });
+  engine.idxE();
+  engine.cab.push(
+    { a: "voltio1.out", b: "joy1.xIn" },
+    { a: "joy1.x", b: "atte1.inA" },
+    { a: "atte1.a", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+}
+
+test("topological Voltio -> Joystick -> Atte -> Mixer -> Audio Out preserves CV and gate outputs", () => {
+  const engine = createEngineHarness();
+  const plan = makeJoystickAttePlan();
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["voltio1", "joy1", "atte1", "mixer1", "out1"]);
+  buildJoystickAtteRack(engine);
+  const joystickResult = engine.I.joy1.r.result;
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  engine.step();
+  assert.strictEqual(engine.I.joy1.r.result, joystickResult);
+  assert.equal(engine.V[engine.sig("joy1.x")], -1.75);
+  assert.equal(engine.V[engine.sig("joy1.y")], 0);
+  assert.equal(engine.V[engine.sig("joy1.gateX")], 10);
+  assert.equal(engine.V[engine.sig("joy1.gateY")], 0);
+  assert.equal(engine.V[engine.sig("atte1.a")], -0.875);
+  const expected = Math.tanh(-0.875 * 0.2);
+  const [left, right] = engine.output();
+  assert.ok(Math.abs(left - expected) < 1e-9);
+  assert.ok(Math.abs(right - expected) < 1e-9);
+});

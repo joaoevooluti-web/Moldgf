@@ -451,7 +451,7 @@ function setGraphExecutionOrder(order){
  const seen=new Set(),positions=Object.create(null);
  for(let i=0;i<pendingGraphExecutionOrder.length;i++){
   const id=pendingGraphExecutionOrder[i],m=I[id];
-  if(!m||seen.has(id)||!['voltio','atte','dualAt','abc','axbc','bypass','mixer2','mixer','out'].includes(m.t)){graphExecutionOrder=null;return false}
+  if(!m||seen.has(id)||!['voltio','atte','joystick','dualAt','abc','axbc','bypass','mixer2','mixer','out'].includes(m.t)){graphExecutionOrder=null;return false}
   seen.add(id);positions[id]=i
  }
  for(let i=0;i<cab.length;i++){
@@ -473,6 +473,7 @@ function processTopologicalRack(){
   if(!m){graphExecutionOrder=null;return false}
   if(m.t==='voltio')voltioF(m);
   else if(m.t==='atte')atteF(m);
+  else if(m.t==='joystick')joystickF(m);
   else if(m.t==='dualAt')dualAtenuverterF(m);
   else if(m.t==='abc')abcF(m);
   else if(m.t==='axbc')axbcF(m);
@@ -653,7 +654,7 @@ function plW(m){const Z=m.s,Q=m.q,R=m.r,ti=inp(K(m,'t')),vi=Q.vi;if(ti!==null&&t
 function atteF(m){const P=m.s,R=m.r;MoldgfAtteDSP.processInto(inp(K(m,'inA')),inp(K(m,'inB')),inp(K(m,'inC')),inp(K(m,'inD')),P.gain,P.mode,R.out);V[K(m,'a')]=R.out[0];V[K(m,'b')]=R.out[1];V[K(m,'c')]=R.out[2];V[K(m,'d')]=R.out[3]}
 function cvThingF(m){const P=m.s,R=m.r,inputs={};for(let i=0;i<8;i++)inputs['cv'+(i+1)]=inp(K(m,'cv'+(i+1)));const events=MoldgfCVThingDSP.process(P,inputs,R,sr);for(const e of events){const ch=(e.channel||P.channel||1)-1;if(e.type==='cc')mq(176|(ch&15),e.controller&127,e.value&127);else if(e.type==='noteOn')mq(144|(ch&15),e.note&127,e.velocity&127);else if(e.type==='noteOff')mq(128|(ch&15),e.note&127,0);else if(e.type==='programChange')mq(192|(ch&15),e.program&127,0);else if(e.type==='pitchBend')mq(224|(ch&15),e.value&127,(e.value>>7)&127);else if(e.type==='nrpn'){mq(176|(ch&15),99,(e.parameter>>7)&127);mq(176|(ch&15),98,e.parameter&127);mq(176|(ch&15),6,(e.value>>7)&127);mq(176|(ch&15),38,e.value&127)}else if(e.type==='clock')mq(248,0,0);else if(e.type==='start')mq(250,0,0);else if(e.type==='stop')mq(252,0,0)}}
 function divkidMutesMk2F(m){const P=m.s,R=m.r,o=MoldgfDivKidMutesMK2DSP.process(P,{input:[inp(K(m,'in1')),inp(K(m,'in2')),inp(K(m,'in3')),inp(K(m,'in4'))]},R,sr);for(let i=0;i<4;i++)V[K(m,'out'+(i+1))]=o.outputs[i]}
-function joystickF(m){const P=m.s,R=m.r,o=MoldgfJoystickDSP.process(P,{xIn:inp(K(m,'xIn')),yIn:inp(K(m,'yIn'))},R);V[K(m,'x')]=o.x;V[K(m,'y')]=o.y;V[K(m,'gateX')]=o.gateX;V[K(m,'gateY')]=o.gateY;R.peak=o.peak}
+function joystickF(m){const P=m.s,R=m.r,o=MoldgfJoystickDSP.processInto(P,inp(K(m,'xIn')),inp(K(m,'yIn')),R.result);V[K(m,'x')]=o.x;V[K(m,'y')]=o.y;V[K(m,'gateX')]=o.gateX;V[K(m,'gateY')]=o.gateY;R.peak=o.peak}
 function dualAtenuverterF(m){const P=m.s,R=m.r;const inputA=inp(K(m,'inA'));const inputB=MoldgfDualAtenuverterDSP.resolveInput(inp(K(m,'inB')),inputA);const a=MoldgfDualAtenuverterDSP.processChannel(inputA,P.gain[0],P.offset[0]);const b=MoldgfDualAtenuverterDSP.processChannel(inputB,P.gain[1],P.offset[1]);V[K(m,'outA')]=R.out[0]=a;V[K(m,'outB')]=R.out[1]=b;R.led[0]=MoldgfDualAtenuverterDSP.ledPolarity(a);R.led[1]=MoldgfDualAtenuverterDSP.ledPolarity(b)}
 function voltioF(m){const P=m.s,R=m.r;const output=MoldgfVoltioDSP.process(inp(K(m,'sumIn')),P.octave,P.semitone,P.range===1);V[K(m,'out')]=R.out=output}
 function axbcF(m){
@@ -1254,7 +1255,7 @@ function refreshGraphPlan(){
  graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables,runtimeHostDependencies(modules));
  return graphPlan;
 }
-const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','dualAt','abc','axbc','bypass','mixer2','mixer','out']);
+const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','joystick','dualAt','abc','axbc','bypass','mixer2','mixer','out']);
 function activeSchedulerOrder(){
  const ids=Object.keys(I);
  if(!ids.length||!graphPlan.valid||graphPlan.order.length!==ids.length)return null;

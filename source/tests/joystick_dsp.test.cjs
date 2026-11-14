@@ -60,3 +60,21 @@ test("result object is reused across calls", () => {
   const s = DSP.createState(), first = DSP.process({ x: .5 }, {}, s), second = DSP.process({ x: -.5 }, {}, s);
   assert.equal(first, second); assert.equal(second.x, -2.5);
 });
+
+
+test("processInto writes into the caller-owned result and preserves independent gate outputs", () => {
+  const state = DSP.createState();
+  const result = state.result;
+  const first = DSP.processInto({ mode: 1, attenX: -0.5, attenY: 0.25, gateX: true },
+    5, -5, result);
+  assert.strictEqual(first, result);
+  assert.deepEqual(first, { x: -2.5, y: -1.25, gateX: 10, gateY: 0, mode: 1, peak: 2.5 });
+  const second = DSP.processInto({ mode: 0, x: 0.5, y: -0.5, range: 0.4, gateY: true },
+    100, 100, result);
+  assert.strictEqual(second, result);
+  assert.deepEqual(second, { x: 1, y: -1, gateX: 0, gateY: 10, mode: 0, peak: 1 });
+});
+
+test("processInto safely rejects a missing result buffer", () => {
+  assert.equal(DSP.processInto({}, 0, 0, null), null);
+});
