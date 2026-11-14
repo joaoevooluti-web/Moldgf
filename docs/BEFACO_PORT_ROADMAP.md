@@ -117,7 +117,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [x] The correction and scheduler integration passed the complete feature workflow [#77 / 42829232566](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829232566) on commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`: 693/693 Node tests, Gradle/JUnit, Plaits/Beads WASM, `WebAssembly.compile`, `assembleDebug` and APK artifact upload all succeeded.
 
 ### Phase 2 — Utility and routing modules
-- [x] Atte — four attenuator/inverter channels, cascaded input normaling, fixed +10 V first-channel normal in the hardware-style panel, individual outputs and saved control state. The DSP helper retains +1/+5/+10 V normal selection only for legacy-state compatibility; the dedicated DSP tests and shared routing smoke passed.
+- [x] Atte — four attenuator/inverter channels, cascaded input normaling, fixed +10 V first-channel normal in the hardware-style panel, individual outputs and saved control state. The DSP normal is fixed at +10 V to match the hardware; the obsolete persisted normalledVoltage selector is ignored for saved-state compatibility. The dedicated DSP tests and scheduled runtime chain passed in workflow #104.
 - [~] Dual Atenuverter — DSP core, two input/output channels, IN A→IN B normaling, bipolar attenuverter, ±10 V offset, output polarity indicators, graph descriptor, rack UI, five DSP tests and three graph-port tests authored; DSP boundary assertions and all inline-script syntax checks passed in the local V8 validation, and the complete Node, Gradle/JUnit, WASM and APK pipeline passed in workflow #77.
 - [~] Voltio — clean-room 1 V/oct source, 12-tone semitone steps, selectable 0–10 V / ±5 V octave range, precision sum input, graph routing, rack controls and four DSP tests plus three graph-port tests authored; DSP/graph tests and the full CI/APK pipeline passed in workflow #77; physical voltage calibration remains unverified.
 - [~] A*B+C (ABC) — dual four-quadrant VCA/ring-modulator sections; B normalled to +5 V and C to +10 V; B gain spans −2×..+2×, C offset −1×..+1× with bipolar response; ±10 V clipping; OUT2 sums channel 1 until OUT1 is patched; graph ports and six DSP tests plus two graph tests authored. Node/Gradle CI validation passed in workflow #77; visual and physical hardware validation remain separate.
@@ -191,7 +191,7 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 - Existing engine audit: the approximately 278 KB `index.html` embeds the engine and rack UI, with AudioWorklet plus ScriptProcessor fallback, a string-keyed signal store, summed input lookup, cable list, and hard-coded `step()` processing order. Current module registration and UI remain distributed across `INIT`, `INITR`, `byT`, `mkInst`, `idxE`, `step`, `TY`, and handlers.
 - Existing rack types include the original MIDI→CV, Pamela PRO, Scales, Plaits, Mixer 4→2, Axon-2, PPEXP1/PPEXP2, Polaris, CV→MIDI, BBD, Beads and Audio Out, alongside the Befaco ports listed in the phase inventory. The current HTML has 37 DSP asset references and 36 unique graph module types; legacy/revision variants must be reconciled separately against the 34-module catalogue rather than counted as new products.
 - The new graph contract validates live jack endpoints and output-to-input direction. Legacy ports are mapped to the engine's actual mono channel model and permissive signal compatibility; typed audio/CV/gate semantics and cycle scheduling will be enabled module-by-module.
-- Befaco Atte is implemented in the rack and audio engine: four independent attenuator/inverter channels, cascaded input normaling, hardware-faithful fixed +10 V first-channel normal in the UI, per-channel gain/polarity controls, independent outputs, live polarity LEDs, and voltage readouts. The DSP helper retains its selectable normaling function for legacy-state compatibility, but the panel no longer exposes non-hardware +1/+5 V options. Five dedicated DSP tests and the inline WebView/AudioWorklet syntax test passed in workflow [42539523295](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539523295); the debug APK artifact is [13641045420](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539523295). Workflow [42539485722](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539485722) also succeeded and published APK artifact [13641021006](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539485722). These runs validate CI packaging, not installation/audio on a physical device. The engine currently processes mono signals, so polyphonic parity remains future work.
+- Befaco Atte is implemented in the rack and audio engine: four independent attenuator/inverter channels, cascaded input normaling, hardware-faithful fixed +10 V first-channel normal in the UI, per-channel gain/polarity controls, independent outputs, live polarity LEDs, and voltage readouts. The DSP now supplies fixed +10 V normaling and ignores the obsolete saved normalledVoltage selector. Seven dedicated DSP tests and the scheduled engine integration passed in workflow [#104 / 43602193521](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43602193521); the debug APK artifact is [13641045420](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539523295). Workflow [42539485722](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539485722) also succeeded and published APK artifact [13641021006](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42539485722). These runs validate CI packaging, not installation/audio on a physical device. The engine currently processes mono signals, so polyphonic parity remains future work.
 - Historical Atte/utility and 21-module counts above refer to earlier checkpoints. The later Phase 7 inventory adds Hexmix, Hexpander, Pony VCF, Stereo Strip and MIDI Thing V2. The latest repository-wide Node count before run #30 was 554; run #30's Node step has passed, while the final count and APK result are being read from the completed run. The branch's current full validation is tracked below rather than inferred from old local harness totals.
 - Android host uses WebViewAssetLoader, Android MIDI APIs, SharedPreferences bridge, and document picker. Plaits and Beads have optional WASM builds with JS fallbacks; Beads also has a native self-test in the build script.
 
@@ -242,7 +242,7 @@ The VCVRack/Befaco repository identifies its plugin as GPL-3.0-or-later. If Mold
 
 - [x] Replaced the generic Atte rows with a dedicated narrow four-channel front panel: channel A–D identity, paired IN/OUT jacks, individual LEVEL controls, per-channel polarity selector, fixed +10 V normal indication, and cascaded-input labeling.
 - [x] Added per-channel live polarity indicators: green for positive output and red for negative output, driven by the actual DSP output values.
-- [x] Removed the user-selectable +1/+5/+10 V normal control from the front panel. The official Atte specification normalled first input is +10 V; the existing DSP default remains index 2 (+10 V), and no UI control now advertises non-hardware alternatives.
+- [x] Removed the user-selectable +1/+5/+10 V normal control from the front panel. The official Atte specification normalled first input is +10 V; the DSP now enforces this fixed normal and ignores the obsolete saved normalledVoltage selector, while preserving the legacy state field for compatibility.
 - [x] Preserved the existing port IDs, parameter keys, DSP function, save-state shape, and cable compatibility.
 - [ ] Run the full Node suite and WebView visual/device validation in the next permitted consolidated CI cycle; no build was started for this visual-only commit.
 - Commit: `dfb4706ea9b8d16202036d827e1ca5fb4dce316d` on `feature/befaco-modules` (`[skip ci]`). `main` was not modified.
@@ -886,3 +886,44 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - CI evidence only: no APK installation, physical audio output, MIDI reception, touch, screen or Android-device validation is claimed.
 
 **Phase 1 status:** guarded topological DSP execution now covers the eight listed utility/mixer module types plus Audio Out. The other Befaco modules remain on legacy `step()` until their dependencies, state/reset behavior and sample-rate contracts are verified. The 34-module DSP/graph inventory remains broader than the active scheduler set; no claim of full 34-module hardware parity is made.
+
+
+## Workflow #104 — Atte fixed normaling and allocation-conscious scheduled execution (2026-11-14)
+
+### Implemented in code
+
+- Code commit: `149d39ce0e9de7f513c579274b24d7516c0574c1` on `feature/befaco-modules`.
+- Corrected Atte's first input normal to a fixed **+10 V**, matching Befaco's official user manual and product specification: https://www.befaco.org/atte/ and https://www.befaco.org/docs/ATTE/ATTE_User_Manual.pdf.
+- Kept the legacy `normalledVoltage` state field when deserializing/saving old patches, but the DSP no longer reads it. Historical values 0/+1 V or 1/+5 V cannot change the hardware normal; the signal is always +10 V when IN A is unpatched.
+- Added `MoldgfAtteDSP.processInto`, which accepts four scalar input samples and writes all four channel outputs into the caller-owned buffer. Each unpatched channel inherits the preceding **input** (not preceding output), while a patched input overrides the cascade.
+- Replaced the Atte engine adapter's per-sample temporary channel-name/output arrays with the preallocated `m.r.out` buffer and direct output-jack writes. The adapter remains on the guarded topological scheduler and preserves the legacy `step()` fallback for unsupported racks.
+- No Befaco firmware, VCV source or proprietary panel artwork was copied or adapted in this change.
+
+### Test evidence
+
+- `atte_dsp.test.cjs`: **7 deterministic tests**, including fixed +10 V normaling, patched-input override, inverted/attenuated output, caller-buffer identity, cascade behavior and undersized-buffer rejection.
+- `scheduler_execution_runtime.test.cjs`: actual engine-harness chain `Voltio → Atte → Mixer → Audio Out`; verifies the 3.5 V patched B input, A/B/C/D outputs `[5, -3.5, 3.5, 3.5]`, stable caller-owned output buffer and final stereo master level.
+- `graph_scheduler_runtime.test.cjs`: asserts the Atte scheduler adapter uses `processInto`.
+- Workflow [#104 / run 43602193521](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43602193521) completed with conclusion **success** on code commit `149d39ce0e9de7f513c579274b24d7516c0574c1`.
+- Node: **721/721 passed**, 0 failures.
+- Android JUnit: **13/13 passed**, 0 failures/errors/skips. Inspected XML report: `MidiMessageDecoderTest` 9/9 and `MidiBatchEncoderTest` 4/4.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed `WebAssembly.compile`; Beads native self-test reported `SELFTEST OK` for all eight media/mode combinations, synth output and host/media resampling.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success. The APK artifact was uploaded and its contents inspected; it contains the updated Atte adapter and DSP asset, `module_graph.js`, both WASM wrappers and **42** DSP assets.
+- Artifacts:
+  - `wasm-log`, ID **14116956669**, ZIP 1,381 bytes, SHA-256 `a029731af582714398a1123127b790a46473d306f5af589febdd8640ab9a4031`.
+  - `android-unit-test-report`, ID **14116907052**, ZIP 9,908 bytes, SHA-256 `8d5e95fd635e62791aa4852dd8dd506d236ee0b0ddfb432bc1853669a752b6c9`.
+  - `eurorack-study-debug-apk`, ID **14116837180**, ZIP 1,679,516 bytes, SHA-256 `58d68dcca8f99c1a9955ea98f41aabedef9386cae42d3a78ce119b9a821fa610`; embedded `app-debug.apk` 1,713,959 bytes, SHA-256 `08018fc533b945b63d6494bbc47e209d0f165263ce025145372ade85a98c416a`.
+- The Emscripten log contains one non-fatal `PAGE_SIZE` macro-redefinition warning in Plaits; both WASM builds and the final payload verifier succeeded.
+- CI evidence only: no APK installation, physical audio, MIDI, touch, visual or Android-device validation is claimed.
+
+### Phase 1 status after #104
+
+- **Implemented:** fixed Atte hardware normaling; allocation-conscious Atte runtime adapter; scheduled Voltio → Atte → Mixer → Audio Out path.
+- **Tested:** 721 Node tests and 13 Android JUnit tests.
+- **Validated in CI:** workflow #104; WASM builds/verifier; Gradle unit tests and APK assembly; artifact upload and package-content inspection.
+- **Pending:** expand the active scheduler to further modules only after their parameter/state/reset, hidden-host dependency, normaling, sample-rate and no-allocation contracts are tested. The 34-module inventory is not evidence that all 34 run through the active scheduler or achieve hardware-level parity.
+
+### Repository protection
+
+- At code commit `149d39ce0e9de7f513c579274b24d7516c0574c1`, compare `main...feature/befaco-modules` reported **618 ahead / 0 behind**, with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified. No merge or force-push was performed.
