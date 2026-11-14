@@ -858,8 +858,8 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - **Implemented:** code commits `bcbcbbe3d16de88003be942a1e4a57b1dff0082d` (reusable DSP APIs), `019370a680c4074d141af19beda80f7d04e350a3` (engine adapters, scheduler allowlists and runtime harness), and `bbd7fa37563c4aa11eff5e7d78c90f7d087b166c` (DSP buffer tests).
 - **Tested in CI, but not yet fully passing:** workflow [#100 / 43600762843](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600762843) ran 718 Node tests: 715 passed, 3 failed due to incorrect new test expectations (AxBC MIX test left A2 unpatched, Bypass exponential slew asserted exact 1, and the convergence test used too few samples). No WASM/JUnit/Gradle/APK stages ran because the Node gate stopped the job.
 - Correction commit `80c2d46b5dc74223dc9a1ac2906e7e68d1240c22` fixed those three expectations. Workflow [#101 / 43600897378](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600897378) then reached 717/718 passing; the remaining failure was another exact-equality assertion on the asymptotic Bypass send value. No WASM/JUnit/Gradle/APK stages ran.
-- Correction commit `68c38e103120bd3d87709b6861a5ea2f98876fe8` changes the Bypass output assertions to numeric tolerances. Workflow [#102 / 43600988774](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600988774) is queued/in progress at the time of this roadmap update. **No pass, APK or WASM artifact is claimed for #102 yet.**
-- **Pending CI:** complete Node suite, Android/JUnit, Plaits/Beads WASM, WebAssembly payload checks, Gradle debug APK and artifact inspection on #102.
+- Correction commit `68c38e103120bd3d87709b6861a5ea2f98876fe8` fixed the exact-equality checks on smoothed Bypass values. Workflow [#102 / 43600988774](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600988774) still failed 717/718 because the wet-return output tolerance was slightly narrower than the exponential crossfade's residual. No WASM/JUnit/Gradle/APK stages ran.
+- Final test-only correction commit `d7280f98b278346769e050ef11f0b4e61b324b81` widened only the Bypass output comparison tolerance to (10^{-6}). Workflow [#103 / 43601171376](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43601171376) completed with **success**.
 - No Android-device installation, physical audio, MIDI, touch or visual validation is claimed.
 
 ### Remaining Phase 1 work
@@ -867,3 +867,22 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - Add a bounded parameter-event queue and explicit versioned state/reset/bypass contract before migrating modules with more complex state or host dependencies.
 - Add scheduler-side validation for internal host edges (not only physical cable order) before admitting STMix/Hexmix/Hexmix VCA/Hexpander.
 - Continue the next adapters only after sample-rate, normaling, output-patch behavior and no-allocation contracts are covered by deterministic runtime tests.
+
+
+### Workflow #103 — utility scheduler expansion validated (2026-11-14)
+
+- [x] Workflow [#103 / 43601171376](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43601171376) completed with conclusion **success** on code commit `d7280f98b278346769e050ef11f0b4e61b324b81`.
+- [x] Node suite: **718/718 passed**, including reusable DSP output/meter buffer tests, the topological Dual Atenuverter → ABC → AxBC → Bypass → Mixer2 → Mixer → Audio Out runtime chain, Bypass latch/crossfade state persistence, scheduler reverse-order rejection, and legacy fallback.
+- [x] Android/JUnit: **13/13 passed**. Downloaded XML report artifact and inspected both suites: `MidiMessageDecoderTest` 9/9 and `MidiBatchEncoderTest` 4/4, zero failures/errors/skips.
+- [x] Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed `WebAssembly.compile`. Downloaded and inspected the WASM log: Beads native self-test reported `SELFTEST OK` for all eight media/mode combinations, synth output and 44.1 kHz host / 24 kHz media resampling.
+- [x] Gradle `testDebugUnitTest` and `assembleDebug`: success.
+- [x] Artifacts:
+  - `eurorack-study-debug-apk`, ID **14116710738**, ZIP **1,679,441 bytes**, SHA-256 `7de7aa1f3c13e6464904bf98be850e954bc8bc4000830e1e3e0729dc857c3c7a`; embedded `app-debug.apk` **1,713,835 bytes**, SHA-256 `bf549b9f2a6226d68f2e9749596b06d2bf6383f7297a6835b466a69134e1bbde`.
+  - `android-unit-test-report`, ID **14116815293**, ZIP **9,914 bytes**, SHA-256 `53534a6550211be88f3a7693f1e1ed847587275b2c78ed6e00956df4ff3d0f62`.
+  - `wasm-log`, ID **14115874829**, ZIP **1,379 bytes**, SHA-256 `1d121ceeb14c635f41ec30c431e3b0a4894b408158426f1be4da8591bc29a2ba`.
+- [x] Downloaded APK archive inspected: contains `assets/index.html`, `assets/module_graph.js`, **42** DSP assets, Plaits/Beads wrappers, new DualAt/ABC/AxBC/Bypass scheduler dispatch and `processInto` paths for Mixer2, Mixer and Bypass.
+- Code commits in this stage: `bcbcbbe3d16de88003be942a1e4a57b1dff0082d`, `019370a680c4074d141af19beda80f7d04e350a3`, `bbd7fa37563c4aa11eff5e7d78c90f7d087b166c`, `80c2d46b5dc74223dc9a1ac2906e7e68d1240c22`, `68c38e103120bd3d87709b6861a5ea2f98876fe8`, and final correction `d7280f98b278346769e050ef11f0b4e61b324b81`. The documentation update that preceded the final test correction is `0b528773b6b7ec85e077dc1b6ea295319c5f07d5`.
+- At code commit `d7280f98`, branch comparison was **616 ahead / 0 behind** with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`. No merge, force-push or write to `main`.
+- CI evidence only: no APK installation, physical audio output, MIDI reception, touch, screen or Android-device validation is claimed.
+
+**Phase 1 status:** guarded topological DSP execution now covers the eight listed utility/mixer module types plus Audio Out. The other Befaco modules remain on legacy `step()` until their dependencies, state/reset behavior and sample-rate contracts are verified. The 34-module DSP/graph inventory remains broader than the active scheduler set; no claim of full 34-module hardware parity is made.
