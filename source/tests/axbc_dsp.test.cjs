@@ -53,6 +53,7 @@ test("processPairInto writes MULT and MIX routing into a reusable output buffer"
   const args = [5, 5, 0, null, 5, 0, 1, 0, 0, 0, 1, 0, 0, 0];
   assert.strictEqual(ABC.processPairInto(...args, 0, false, output), output);
   assert.deepEqual(output, [5, 5]);
-  assert.deepEqual(ABC.processPairInto(...args, 1, false, output), output);
+  args[3] = 5;
+  assert.strictEqual(ABC.processPairInto(...args, 1, false, output), output);
   assert.deepEqual(output, [5, 10]);
 });

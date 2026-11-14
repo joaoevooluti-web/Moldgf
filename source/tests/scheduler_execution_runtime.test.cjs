@@ -231,8 +231,8 @@ test("scheduled Bypass preserves gate/button edge state across sample calls", ()
   engine.I.bypass1.s.button = 0;
   engine.step();
   assert.equal(state.active, true, "button release must not toggle the latched state");
-  for (let i = 0; i < 1000; i++) engine.step();
-  assert.ok(state.sendActive > 0.98, "the send crossfade must converge using the persisted state object");
+  for (let i = 0; i < 2500; i++) engine.step();
+  assert.ok(state.sendActive > 0.99, "the send crossfade must converge using the persisted state object");
   assert.strictEqual(engine.I.bypass1.r, state);
 });
 

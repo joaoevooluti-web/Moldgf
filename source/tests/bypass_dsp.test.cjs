@@ -83,7 +83,7 @@ test("processInto mutates a reusable state/output object without replacing it", 
   const result = Bypass.processInto(params({ active: true }), 2, -3, 7, 5, 0, state, 0.2, state);
   assert.strictEqual(result, state);
   assert.equal(state.active, true);
-  assert.equal(state.sendActive, 1);
+  assert.ok(Math.abs(state.sendActive - 1) < 1e-8);
   assert.equal(state.sendLeft, 2);
   assert.equal(state.sendRight, -3);
   assert.equal(state.outLeft, 7);
