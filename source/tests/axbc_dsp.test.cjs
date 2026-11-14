@@ -47,3 +47,12 @@ test("bipolar output indicator follows the output voltage sign", () => {
   assert.equal(ABC.ledPolarity(-3), "negative");
   assert.equal(ABC.ledPolarity(0.001), "off");
 });
+
+test("processPairInto writes MULT and MIX routing into a reusable output buffer", () => {
+  const output = [0, 0];
+  const args = [5, 5, 0, null, 5, 0, 1, 0, 0, 0, 1, 0, 0, 0];
+  assert.strictEqual(ABC.processPairInto(...args, 0, false, output), output);
+  assert.deepEqual(output, [5, 5]);
+  assert.deepEqual(ABC.processPairInto(...args, 1, false, output), output);
+  assert.deepEqual(output, [5, 10]);
+});

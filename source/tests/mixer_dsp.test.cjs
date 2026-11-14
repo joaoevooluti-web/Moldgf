@@ -25,3 +25,12 @@ test("meter reports bipolar polarity and bounded brightness", () => {
   assert.deepEqual(Mixer.meter(-10), { positive: false, negative: true, magnitude: 1 });
   assert.deepEqual(Mixer.meter(0), { positive: false, negative: false, magnitude: 0 });
 });
+
+test("processInto and meterInto reuse caller-owned output objects", () => {
+  const output = [0, 0];
+  const meter = { positive: false, negative: false, magnitude: 0 };
+  assert.strictEqual(Mixer.processInto(1, 2, 3, 4, [1, 1, 1, 1], output), output);
+  assert.deepEqual(output, [10, -10]);
+  assert.strictEqual(Mixer.meterInto(-10, meter), meter);
+  assert.deepEqual(meter, { positive: false, negative: true, magnitude: 1 });
+});

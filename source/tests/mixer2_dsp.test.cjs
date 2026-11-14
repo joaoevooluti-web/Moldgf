@@ -24,3 +24,12 @@ test("meter reports polarity and bounded level", () => {
   assert.deepEqual(Mixer2.meter(-20), { positive: false, negative: true, level: 1 });
   assert.deepEqual(Mixer2.meter(0), { positive: false, negative: false, level: 0 });
 });
+
+test("processInto and meterInto reuse caller-owned output objects", () => {
+  const output = [0, 0];
+  const meter = { positive: false, negative: false, level: 0 };
+  assert.strictEqual(Mixer2.processInto(2, 3, 5, 7, [1, 1, 1, 1], true, false, output), output);
+  assert.deepEqual(output, [5, 12]);
+  assert.strictEqual(Mixer2.meterInto(-20, meter), meter);
+  assert.deepEqual(meter, { positive: false, negative: true, level: 1 });
+});

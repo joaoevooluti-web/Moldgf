@@ -43,3 +43,11 @@ test("output indicator follows positive and negative signal polarity", () => {
   assert.equal(ABC.ledPolarity(-2), "negative");
   assert.equal(ABC.ledPolarity(0.001), "off");
 });
+
+test("processPairInto writes both channels into a reusable output buffer", () => {
+  const output = [0, 0];
+  const inputs = { a1: 2, b1: 5, c1: 0, a2: 3, b2: 5, c2: 0 };
+  const controls = [{ bLevel: 0.5, cLevel: 0 }, { bLevel: 0.5, cLevel: 0 }];
+  assert.strictEqual(ABC.processPairInto(2, 5, 0, 3, 5, 0, 0.5, 0, 0.5, 0, false, output), output);
+  assert.deepEqual(output, ABC.processPair(inputs, controls, false));
+});
