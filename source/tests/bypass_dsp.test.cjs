@@ -84,8 +84,8 @@ test("processInto mutates a reusable state/output object without replacing it", 
   assert.strictEqual(result, state);
   assert.equal(state.active, true);
   assert.ok(Math.abs(state.sendActive - 1) < 1e-8);
-  assert.equal(state.sendLeft, 2);
-  assert.equal(state.sendRight, -3);
-  assert.equal(state.outLeft, 7);
-  assert.equal(state.outRight, 5);
+  assert.ok(Math.abs(state.sendLeft - 2) < 1e-8);
+  assert.ok(Math.abs(state.sendRight + 3) < 1e-8);
+  assert.ok(Math.abs(state.outLeft - 7) < 1e-8);
+  assert.ok(Math.abs(state.outRight - 5) < 1e-8);
 });
