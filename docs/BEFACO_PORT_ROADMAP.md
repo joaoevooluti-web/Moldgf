@@ -103,16 +103,16 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [x] Add a standalone module descriptor registry and typed-port/graph validation contract.
 - [x] Add automated Node tests for registry validation, signal direction/types, channel compatibility, topological order, and explicit feedback-delay handling (6/6 passed in workflow 42539116720, commit c231aaa4ecb3601f1423c84dbfa0710f7e59edc4).
 - [x] Integrate endpoint/port-direction validation with the existing jack/cable model. Legacy ports retain permissive signal compatibility until their true audio/CV/gate metadata is declared, preserving existing patch behavior.
-- [~] Integrate a shadow topological scheduler into rack inventory/cable updates; active audio-order scheduling remains gated on verified per-module adapters. The legacy `step()` order is intentionally unchanged.
+- [x] Integrate the deterministic graph plan and guarded active topological scheduler. Audio order is now enabled only when every rack instance is in the verified adapter set and all physical cable edges follow the validated plan; every unsupported or invalid rack retains the legacy `step()` fallback.
 - [ ] Add the parameter event queue, per-module state schema/versioning, and explicit reset/bypass contract.
 - [ ] Migrate existing module types through adapters; keep Worklet and ScriptProcessor paths behaviorally aligned.
 
-#### Phase 1 incremental milestone — shadow scheduler
+#### Phase 1 incremental milestone — graph plan and guarded scheduler
 
 - [x] The rack now rebuilds a deterministic topological execution plan through the existing typed registry whenever modules are added/removed or cables change. Legacy module descriptors are generated only when actual jack endpoints exist.
-- [x] Exposed a read-only diagnostic snapshot as `window.MoldgfGraphPlan()` containing validity, topological order and graph errors. This is a shadow plan: it does not reject existing patches or change the real-time DSP order.
-- [x] Added `graph_scheduler_runtime.test.cjs` to guard graph-plan refresh on rack/cable changes and prove the shared audio `step()` remains on its existing legacy order; all three new assertions passed in workflow #77.
-- [ ] Active scheduler adoption remains pending. Before any DSP reordering, audit all 34 Befaco descriptors against rendered jack IDs, classify feedback-safe modules, and migrate only adapters whose input/output and state contracts are proven.
+- [x] Exposed `window.MoldgfGraphPlan()` with validity, topological order, scheduled order, execution mode and graph errors. The graph remains diagnostic for unsupported racks; eligible fully typed racks activate the guarded order in the shared audio engine.
+- [x] Added runtime tests for graph-plan refresh, UI/engine allowlist parity, actual topological DSP execution, reverse-order rejection and legacy fallback. AudioWorklet and ScriptProcessor still call the same shared `step()` implementation.
+- [~] Active scheduler adoption is incremental, not global. The current verified set is Voltio, Atte, Dual Atenuverter (legacy), A*B+C V4 (`abc`), current A*B+C (`axbc`), Molten Bypass, Mixer2, Mixer and the internal Audio Out sink. Remaining modules stay on legacy `step()` until their normaling, hidden dependencies, state/reset and sample-rate contracts are verified.
 - Workflow [#76 / 42829050147](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829050147) was a failed intermediate run: 690 existing tests passed and only the three new assertions failed because the test assumed the UI inline script had an `id=ui`; the page uses its final inline script instead. The selector was corrected in commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`. Emscripten, Gradle/JUnit and APK steps were skipped after the Node gate; the final verifier consequently had no generated wrappers. No existing DSP/graph regression failed.
 - [x] The correction and scheduler integration passed the complete feature workflow [#77 / 42829232566](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829232566) on commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`: 693/693 Node tests, Gradle/JUnit, Plaits/Beads WASM, `WebAssembly.compile`, `assembleDebug` and APK artifact upload all succeeded.
 
@@ -556,7 +556,7 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 
 ### Phase 1 scheduler status and next safe step
 - [x] Shadow topological plan and generated faceplate audit are integrated; the generated-template audit covers 42 DSP module descriptors plus the internal Audio Out sink (43 total). A live DOM audit in a physical WebView remains unverified.
-- [x] Active topological execution is enabled only for a fully typed, acyclic rack containing Atte, Mixer2, Mixer and/or the internal Audio Out sink. Cable order is checked in the UI and audio engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use the legacy `step()`.
+- [x] Active topological execution is enabled only for a fully typed, acyclic rack whose module types are in the verified adapter set: Voltio, Atte, Dual Atenuverter, ABC, AxBC, Bypass, Mixer2 and Mixer, plus the internal Audio Out sink. Cable order is checked in the UI and engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use legacy `step()`.
 - [x] AudioWorklet receives the validated order with cable updates and holds it until module sync completes. ScriptProcessor fallback uses the same shared engine setter and the same `step()`.
 - [ ] Broaden the active adapter set only after each module's input normaling, hidden host links, state/reset semantics and sample-rate behavior are audited. Parameter-event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
 
@@ -840,3 +840,30 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
   - `wasm-log`, ID `14046117117`, ZIP 1,379 bytes, SHA-256 `a0c6c64dc4056ec807f048254620d5dd8c6918e9135fc1475356a2a3bdcbadb1`; inspected build log confirms both WASM outputs and `SELFTEST OK`.
 - APK contents were inspected: the updated `index.html`, `module_graph.js`, all 42 `*_dsp.js` assets and both Plaits/Beads WASM wrappers are present. This is CI packaging evidence only; no Android installation, audio, MIDI, touch or physical-device validation is claimed.
 - No VCV/Befaco implementation code or proprietary panel artwork was copied in this graph integration.
+
+
+## Phase 1 — allocation-conscious utility scheduler expansion (2026-11-14)
+
+### Implemented in code
+
+- Added caller-owned output-buffer APIs to Mixer2 and Mixer (`processInto`, `meterInto`). Their engine adapters now write into per-instance output/meter objects allocated at module creation instead of constructing input arrays, result arrays and meter objects on every sample.
+- Added `processPairInto` to both A*B+C revisions (`abc` and `axbc`). The shared engine adapters pass scalar jack values and write into each module's preallocated `r.out` buffer.
+- Added `MoldgfBypassDSP.processInto`; its adapter mutates the existing per-module runtime state/output object, preserving launch/button edge state and crossfade state without allocating a result object per sample. Bypass runtime state is now created explicitly in `INITR`.
+- Extended the guarded topological scheduler's UI and engine allowlists to Dual Atenuverter, both A*B+C revisions, and Molten Bypass. The legacy `step()` still handles all modules when any unsupported type is present.
+- Added an actual engine-harness chain test: Dual Atenuverter → A*B+C V4 → current AxBC → Bypass → Mixer2 → Mixer → Audio Out. It checks topological order, reverse-order rejection, real DSP outputs, and the final stereo master output. A second test exercises Bypass latch state across successive sample calls.
+- The AudioWorklet/ScriptProcessor parity test now asserts that these adapters are dispatched inside the one shared engine `step()`.
+
+### Test status and CI history
+
+- **Implemented:** code commits `bcbcbbe3d16de88003be942a1e4a57b1dff0082d` (reusable DSP APIs), `019370a680c4074d141af19beda80f7d04e350a3` (engine adapters, scheduler allowlists and runtime harness), and `bbd7fa37563c4aa11eff5e7d78c90f7d087b166c` (DSP buffer tests).
+- **Tested in CI, but not yet fully passing:** workflow [#100 / 43600762843](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600762843) ran 718 Node tests: 715 passed, 3 failed due to incorrect new test expectations (AxBC MIX test left A2 unpatched, Bypass exponential slew asserted exact 1, and the convergence test used too few samples). No WASM/JUnit/Gradle/APK stages ran because the Node gate stopped the job.
+- Correction commit `80c2d46b5dc74223dc9a1ac2906e7e68d1240c22` fixed those three expectations. Workflow [#101 / 43600897378](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600897378) then reached 717/718 passing; the remaining failure was another exact-equality assertion on the asymptotic Bypass send value. No WASM/JUnit/Gradle/APK stages ran.
+- Correction commit `68c38e103120bd3d87709b6861a5ea2f98876fe8` changes the Bypass output assertions to numeric tolerances. Workflow [#102 / 43600988774](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43600988774) is queued/in progress at the time of this roadmap update. **No pass, APK or WASM artifact is claimed for #102 yet.**
+- **Pending CI:** complete Node suite, Android/JUnit, Plaits/Beads WASM, WebAssembly payload checks, Gradle debug APK and artifact inspection on #102.
+- No Android-device installation, physical audio, MIDI, touch or visual validation is claimed.
+
+### Remaining Phase 1 work
+
+- Add a bounded parameter-event queue and explicit versioned state/reset/bypass contract before migrating modules with more complex state or host dependencies.
+- Add scheduler-side validation for internal host edges (not only physical cable order) before admitting STMix/Hexmix/Hexmix VCA/Hexpander.
+- Continue the next adapters only after sample-rate, normaling, output-patch behavior and no-allocation contracts are covered by deterministic runtime tests.
