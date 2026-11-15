@@ -112,7 +112,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [x] The rack now rebuilds a deterministic topological execution plan through the existing typed registry whenever modules are added/removed or cables change. Legacy module descriptors are generated only when actual jack endpoints exist.
 - [x] Exposed `window.MoldgfGraphPlan()` with validity, topological order, scheduled order, execution mode and graph errors. The graph remains diagnostic for unsupported racks; eligible fully typed racks activate the guarded order in the shared audio engine.
 - [x] Added runtime tests for graph-plan refresh, UI/engine allowlist parity, actual topological DSP execution, reverse-order rejection and legacy fallback. AudioWorklet and ScriptProcessor still call the same shared `step()` implementation.
-- [~] Active scheduler adoption is incremental, not global. The current verified set is Voltio, Atte, Joystick, Dual Atenuverter (legacy), A*B+C V4 (`abc`), current A*B+C (`axbc`), Molten Bypass, Mixer2, Mixer and the internal Audio Out sink. Remaining modules stay on legacy `step()` until their normaling, hidden dependencies, state/reset and sample-rate contracts are verified.
+- [~] Active scheduler adoption is incremental, not global. The current verified set is Voltio, Atte, Joystick, Motion MTR, Dual Atenuverter (legacy), A*B+C V4 (`abc`), current A*B+C (`axbc`), Molten Bypass, Mixer2, Mixer and the internal Audio Out sink. Remaining modules stay on legacy `step()` until their normaling, hidden dependencies, state/reset and sample-rate contracts are verified.
 - Workflow [#76 / 42829050147](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829050147) was a failed intermediate run: 690 existing tests passed and only the three new assertions failed because the test assumed the UI inline script had an `id=ui`; the page uses its final inline script instead. The selector was corrected in commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`. Emscripten, Gradle/JUnit and APK steps were skipped after the Node gate; the final verifier consequently had no generated wrappers. No existing DSP/graph regression failed.
 - [x] The correction and scheduler integration passed the complete feature workflow [#77 / 42829232566](https://github.com/joaoevooluti-web/Moldgf/actions/runs/42829232566) on commit `29c7dbb408b26851b3b2a5ea7fb5418e66002013`: 693/693 Node tests, Gradle/JUnit, Plaits/Beads WASM, `WebAssembly.compile`, `assembleDebug` and APK artifact upload all succeeded.
 
@@ -128,7 +128,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
 - [~] STMix — four stereo channels plus unity AUX, right-to-left normaling per channel, four gain controls, stereo output and meters; five DSP plus three graph tests authored; DSP/graph tests passed in workflow #77.
 - [~] Morphader — four A/B crossfader channels, master fader with lag, per-channel CV and CV1 normaling, audio equal-power/CV equal-sum modes, individual outs and OUT4 master summing; six DSP plus two graph tests authored; DSP/graph tests passed in workflow #77.
 - [~] Hexmix VCA — six CV-controlled VCAs, normalized +10 V CV, exponential/linear/logarithmic response shaping, five-channel mix normaling into output 6 with selectable independent mode; six DSP plus two graph tests authored; DSP/graph tests passed in workflow #77.
-- [~] Motion MTR — three channel modes (CV inversion, CV attenuation and audio gain), 10 V input normaling with configurable break in audio mode, independent outputs and OUT3 mix normalization; six DSP plus three graph tests authored; DSP/graph tests passed in workflow #77.
+- [~] Motion MTR — three channels with CV INV, CV ATT and Audio modes; all inputs normalled to +10 V; individual outputs and OUT3 sum that removes OUT1/OUT2 when patched. The allocation-free `processInto` adapter now uses caller-owned input, patch-state and output buffers, exposes deterministic reset, and is admitted to the guarded topological scheduler. Ten direct DSP tests, four graph tests and three scheduled-runtime/fallback cases pass in workflow #107. The optional break-normal-in-audio-mode setting is an app-level compatibility/safety option; Befaco's hardware documentation describes +10 V normaling on every input.
 - [~] Automated gain-staging, polarity, summing, stereo-routing and clipping tests passed in workflow #77; hardware-level signal validation remains pending.
 
 ### Phase 3 — Modulation, envelopes, and timing
@@ -556,7 +556,7 @@ This snapshot supersedes older pending-CI notes above where they refer to tests 
 
 ### Phase 1 scheduler status and next safe step
 - [x] Shadow topological plan and generated faceplate audit are integrated; the generated-template audit covers 42 DSP module descriptors plus the internal Audio Out sink (43 total). A live DOM audit in a physical WebView remains unverified.
-- [x] Active topological execution is enabled only for a fully typed, acyclic rack whose module types are in the verified adapter set: Voltio, Atte, Joystick, Dual Atenuverter, ABC, AxBC, Bypass, Mixer2 and Mixer, plus the internal Audio Out sink. Cable order is checked in the UI and engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use legacy `step()`.
+- [x] Active topological execution is enabled only for a fully typed, acyclic rack whose module types are in the verified adapter set: Voltio, Atte, Joystick, Motion MTR, Dual Atenuverter, ABC, AxBC, Bypass, Mixer2 and Mixer, plus the internal Audio Out sink. Cable order is checked in the UI and engine; unsupported modules, missing instances, cycles, invalid plans or incomplete worker sync automatically use legacy `step()`.
 - [x] AudioWorklet receives the validated order with cable updates and holds it until module sync completes. ScriptProcessor fallback uses the same shared engine setter and the same `step()`.
 - [ ] Broaden the active adapter set only after each module's input normaling, hidden host links, state/reset semantics and sample-rate behavior are audited. Parameter-event queue, versioned per-module state and explicit reset/bypass contracts remain pending.
 
@@ -885,7 +885,7 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 - At code commit `d7280f98`, branch comparison was **616 ahead / 0 behind** with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`. No merge, force-push or write to `main`.
 - CI evidence only: no APK installation, physical audio output, MIDI reception, touch, screen or Android-device validation is claimed.
 
-**Phase 1 status:** guarded topological DSP execution now covers the nine listed utility/mixer/controller module types plus Audio Out. The other Befaco modules remain on legacy `step()` until their dependencies, state/reset behavior and sample-rate contracts are verified. The 34-module DSP/graph inventory remains broader than the active scheduler set; no claim of full 34-module hardware parity is made.
+**Phase 1 status:** guarded topological DSP execution now covers the ten listed utility/mixer/controller module types plus Audio Out. The other Befaco modules remain on legacy `step()` until their dependencies, state/reset behavior and sample-rate contracts are verified. The 34-module DSP/graph inventory remains broader than the active scheduler set; no claim of full 34-module hardware parity is made.
 
 
 ## Workflow #104 — Atte fixed normaling and allocation-conscious scheduled execution (2026-11-14)
@@ -965,4 +965,50 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 ### Repository protection
 
 - At code commit `cb85781f7cb7b6d1da4921d7b36bb4cca8c31044`, compare `main...feature/befaco-modules` reported **620 ahead / 0 behind**, with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified. No merge or force-push was performed.
+
+
+## Workflow #107 — Motion MTR allocation-free scheduler adapter (2026-11-15)
+
+### Implemented in code
+
+- DSP/engine commit: `5aed3d0dc3688818beede12f22be386eeefead91`.
+- Test-fixture correction commit: `530e3b09c7c8cdd3cd155c89b550ece17f153727`.
+- Added `MoldgfMotionMTRDSP.createState()`, `processInto()` and `reset()`. The runtime state owns a reusable three-input array, two output-patched flags and a three-value Float64 output buffer. The real-time adapter no longer constructs input/output arrays per sample; the old `process()` array-returning API remains as a compatibility wrapper.
+- Implemented the documented three modes: CV inversion, CV attenuation and audio gain. Inputs 1–3 normalize to +10 V when unpatched; the existing optional break-normal-in-audio-mode behavior is preserved as an app-level setting. OUT3 sums channels 1 and 2 only while OUT1 and OUT2 are unpatched, then adds channel 3.
+- Added Motion MTR to the engine allowlist, UI allowlist and topological dispatcher. Its graph input accepts audio and CV sources; its output routing is exercised into an audio mixer/sink. Unsupported racks still use the unchanged legacy `step()` path.
+- Added deterministic DSP tests for mode polarity, gain, +10 V normaling, optional audio-mode normal break, OUT3 sum/removal, buffer identity/reuse, parameter/input boundaries, finite outputs and reset.
+- Added graph tests for audio/CV input compatibility and OUT3 routing, plus actual engine-harness tests for the Voltio → Motion MTR → Mixer → Audio Out chain, patched OUT1/OUT2 removal from OUT3, and legacy fallback when an unsupported module is present.
+- Official behavior references: https://www.befaco.org/motion_mtr/ and https://www.befaco.org/docs/Motion_MTR/mmm-manual.pdf. No Befaco firmware/VCV implementation source, logo or proprietary faceplate artwork was copied.
+
+### Intermediate failure and correction
+
+- Workflow [#106 / run 43719136010](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43719136010) was a failed test-only intermediate run: 730/732 Node tests passed. The two failures were test-fixture mistakes, not existing DSP regressions: the new graph test called a registry object as a function, and the boundary test forgot that an unpatched OUT2 is correctly included in OUT3's sum.
+- Corrected both expectations in `530e3b09c7c8cdd3cd155c89b550ece17f153727`. No Gradle, WASM or APK gate ran in #106 because the Node test gate stopped the workflow.
+
+### Test and CI evidence
+
+- Workflow [#107 / run 43719206896](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43719206896) completed with conclusion **success** on commit `530e3b09c7c8cdd3cd155c89b550ece17f153727`.
+- Node suite: **732/732 passed**, 0 failures. This includes all Motion MTR DSP, graph, scheduled-runtime and legacy-fallback cases.
+- Android JUnit: **13/13 passed**, 0 failures/errors/skips. The downloaded XML report confirms `MidiMessageDecoderTest` 9/9 and `MidiBatchEncoderTest` 4/4.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed the workflow's `WebAssembly.compile` verifier. Beads native self-test reported `SELFTEST OK` across its media/mode, synth and resampling checks.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success. The final WASM payload verification step also completed successfully.
+- Artifact records:
+  - `wasm-log`, ID **14163353882**, ZIP 1,380 bytes, SHA-256 `2f0cb3ca9e1748a8fdf797d3bbbe12dfa2dc6cf7bc94b17d68375a564e3bbb5b`.
+  - `android-unit-test-report`, ID **14163956103**, ZIP 9,880 bytes, SHA-256 `6cc2d0014d2dbda2c2ba96ad9a16f5065e2a5f3ccc79fb856d329b7e5dbe97c0`.
+  - `eurorack-study-debug-apk`, ID **14163891471**, ZIP 1,680,039 bytes, SHA-256 `35a1b194c4a622285674a467e0ef06eb42cc395f8132d70b7213f081b57495b1`; embedded `app-debug.apk` 1,714,591 bytes, SHA-256 `3c7ed8ce08a588d61c95e301665f3d5fe21f7905e397436566b7c7bfa3d172ef`.
+- Inspected the APK ZIP contents: `assets/index.html` (335,551 bytes), `assets/motionmtr_dsp.js` (2,900 bytes), `assets/module_graph.js` (12,560 bytes), Plaits/Beads wrappers and **42 DSP assets** are present.
+- The Plaits log retains a non-fatal Emscripten `PAGE_SIZE` macro-redefinition warning. Node also emits upstream `punycode` and `url.parse()` deprecation warnings; neither failed the workflow.
+- CI evidence only: no APK installation, hardware CV voltage, audio output, MIDI reception, touch, visual or Android-device validation is claimed.
+
+### Phase 1 status after #107
+
+- **Implemented:** Motion MTR caller-owned DSP buffers, deterministic reset, audio/CV processing modes, +10 V normaling, OUT3 patch-aware summing and guarded topological adapter.
+- **Tested:** 732 Node tests and 13 Android JUnit tests; the Motion MTR-specific scheduled chain and unsupported-rack fallback both passed.
+- **Validated in CI:** workflow #107; Plaits/Beads WASM builds and payload compilation; Beads native self-test; Gradle unit tests and APK assembly; artifact upload and APK content inspection.
+- **Pending:** broaden the scheduler only after each module's normaling, sample-rate, reset/state, hidden-host and no-allocation contracts are audited. Dynamic audio/CV output typing remains a graph-contract limitation to revisit; the current Motion MTR descriptor declares its outputs as audio for compatibility. Parameter-event queue, versioned state schema and explicit global reset/bypass contracts remain pending. Full 34-module hardware parity and physical validation are not claimed.
+
+### Repository protection
+
+- At code commit `530e3b09c7c8cdd3cd155c89b550ece17f153727`, `main...feature/befaco-modules` was **623 commits ahead / 0 behind**, with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
