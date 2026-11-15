@@ -27,7 +27,7 @@ test("Motion MTR rejects reverse cable direction", () => {
 
 
 test("Motion MTR accepts both audio and CV sources and routes OUT3 to an audio sink", () => {
-  const r = registry();
+  const r = registry;
   assert.equal(canConnect(r, { type: "source" }, "out", { type: "motionmtr" }, "in1").ok, true);
   assert.equal(canConnect(r, { type: "cvSource" }, "out", { type: "motionmtr" }, "in2").ok, true);
   assert.equal(canConnect(r, { type: "motionmtr" }, "out3", { type: "sink" }, "in").ok, true);

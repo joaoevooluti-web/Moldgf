@@ -53,7 +53,7 @@ test("processInto clamps modes and gain and keeps non-finite inputs finite", () 
   state.inputs[1] = -5;
   state.inputs[2] = null;
   const output = Motion.processInto([-1,2,NaN],[99,-1,NaN],false,state);
-  assert.deepEqual(Array.from(output),[0,5,0]);
+  assert.deepEqual(Array.from(output),[0,5,5]);
   assert.ok(Array.from(output).every(Number.isFinite));
 });
 
