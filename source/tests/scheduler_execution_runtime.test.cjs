@@ -17,6 +17,7 @@ const DivKidMutesDSP = require("../app/src/main/assets/divkid_mutes_mk2_dsp.js")
 const JoystickDSP = require("../app/src/main/assets/joystick_dsp.js");
 const STMixDSP = require("../app/src/main/assets/stmix_dsp.js");
 const HexmixDSP = require("../app/src/main/assets/hexmix_dsp.js");
+const MotionMTRDSP = require("../app/src/main/assets/motionmtr_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -40,7 +41,8 @@ function createEngineHarness() {
     MoldgfDivKidMutesMK2DSP: DivKidMutesDSP,
     MoldgfJoystickDSP: JoystickDSP,
     MoldgfSTMixDSP: STMixDSP,
-    MoldgfHexmixDSP: HexmixDSP
+    MoldgfHexmixDSP: HexmixDSP,
+    MoldgfMotionMTRDSP: MotionMTRDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -470,4 +472,118 @@ test("topological Voltio -> Joystick -> Atte -> Mixer -> Audio Out preserves CV 
   const [left, right] = engine.output();
   assert.ok(Math.abs(left - expected) < 1e-9);
   assert.ok(Math.abs(right - expected) < 1e-9);
+});
+
+
+function makeMotionMTRPlan(patchIndividualOutputs = false) {
+  const cvIn = id => ({ id, direction: "input", signal: "cv", channels: 1,
+    accepts: ["audio", "cv", "gate", "trigger", "clock", "midi"] });
+  const audioIn = id => ({ id, direction: "input", signal: "audio", channels: 1,
+    accepts: ["audio", "cv"] });
+  const registry = createRegistry([
+    { type: "voltio", ports: [cvIn("sumIn"), { id: "out", direction: "output", signal: "cv" }] },
+    { type: "motionmtr", ports: [
+      ...["in1", "in2", "in3"].map(id => ({ id, direction: "input", signal: "audio", channels: 1, accepts: ["audio", "cv"] })),
+      ...["out1", "out2", "out3"].map(id => ({ id, direction: "output", signal: "audio", channels: 1 }))
+    ] },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn)
+      .concat([{ id: "main", direction: "output", signal: "audio" },
+        { id: "inverted", direction: "output", signal: "audio" }]) },
+    { type: "out", ports: [audioIn("l"), audioIn("r")] }
+  ]);
+  const modules = [
+    { id: "out1", type: "out" }, { id: "mixer1", type: "mixer" },
+    { id: "motion1", type: "motionmtr" }, { id: "voltio1", type: "voltio" }
+  ];
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  const cables = [
+    cable("voltio1", "out", "motion1", "in1"),
+    cable("motion1", "out3", "mixer1", "ch1"),
+    cable("mixer1", "main", "out1", "l")
+  ];
+  if (patchIndividualOutputs) {
+    cables.push(cable("motion1", "out1", "mixer1", "ch2"));
+    cables.push(cable("motion1", "out2", "mixer1", "ch3"));
+  }
+  return validateGraph(registry, modules, cables);
+}
+
+function buildMotionMTRRack(engine, patchIndividualOutputs = false) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", {
+    gain: patchIndividualOutputs ? [0.5, 0.5, 0.5, 0] : [0.5, 0, 0, 0]
+  });
+  engine.mkInst("motion1", "motionmtr", {
+    mode: [1, 1, 1], gain: [0.5, 0.25, 0.5], break10VNormalForAudioMode: 1
+  });
+  engine.mkInst("voltio1", "voltio", { octave: 5, semitone: 0, range: 0 });
+  engine.idxE();
+  engine.cab.push(
+    { a: "voltio1.out", b: "motion1.in1" },
+    { a: "motion1.out3", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  if (patchIndividualOutputs) {
+    engine.cab.push(
+      { a: "motion1.out1", b: "mixer1.ch2" },
+      { a: "motion1.out2", b: "mixer1.ch3" }
+    );
+  }
+  engine.rebuild();
+}
+
+test("topological Voltio -> Motion MTR -> Mixer -> Audio Out preserves +10V normaling and OUT3 sum", () => {
+  const engine = createEngineHarness();
+  const plan = makeMotionMTRPlan(false);
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["voltio1", "motion1", "mixer1", "out1"]);
+  buildMotionMTRRack(engine, false);
+  const state = engine.I.motion1.r;
+  const inputBuffer = state.inputs, patchBuffer = state.outputsPatched, outputBuffer = state.out;
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  engine.step();
+  assert.deepEqual(Array.from(outputBuffer), [2.5, 2.5, 10]);
+  assert.equal(engine.V[engine.sig("motion1.out1")], 2.5);
+  assert.equal(engine.V[engine.sig("motion1.out2")], 2.5);
+  assert.equal(engine.V[engine.sig("motion1.out3")], 10);
+  assert.equal(engine.V[engine.sig("mixer1.main")], 5);
+  const expected = Math.tanh(1);
+  const [left, right] = engine.output();
+  assert.ok(Math.abs(left - expected) < 1e-9);
+  assert.ok(Math.abs(right - expected) < 1e-9);
+  engine.step();
+  assert.strictEqual(state.inputs, inputBuffer);
+  assert.strictEqual(state.outputsPatched, patchBuffer);
+  assert.strictEqual(state.out, outputBuffer);
+});
+
+test("patched Motion MTR OUT1 and OUT2 are removed from the internal OUT3 sum", () => {
+  const engine = createEngineHarness();
+  const plan = makeMotionMTRPlan(true);
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["voltio1", "motion1", "mixer1", "out1"]);
+  buildMotionMTRRack(engine, true);
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  engine.step();
+  assert.deepEqual(Array.from(engine.I.motion1.r.out), [2.5, 2.5, 5]);
+  assert.equal(engine.V[engine.sig("motion1.out3")], 5);
+  assert.equal(engine.V[engine.sig("mixer1.main")], 5);
+});
+
+test("Motion MTR remains on the legacy step path when another rack module is unsupported", () => {
+  const engine = createEngineHarness();
+  engine.mkInst("motion1", "motionmtr", {
+    mode: [1, 1, 1], gain: [0.5, 0.25, 0.5], break10VNormalForAudioMode: 1
+  });
+  engine.mkInst("voltio1", "voltio", { octave: 5, semitone: 0, range: 0 });
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  engine.cab.push({ a: "voltio1.out", b: "motion1.in1" });
+  engine.rebuild();
+  assert.equal(engine.setGraphExecutionOrder(["voltio1", "motion1", "mid1"]), false);
+  engine.step();
+  assert.equal(engine.V[engine.sig("motion1.out1")], 2.5);
+  assert.equal(engine.V[engine.sig("motion1.out3")], 10);
 });
