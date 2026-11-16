@@ -1012,3 +1012,47 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 
 - At code commit `530e3b09c7c8cdd3cd155c89b550ece17f153727`, `main...feature/befaco-modules` was **623 commits ahead / 0 behind**, with merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
+
+
+## Workflow #108 — Slew Limiter allocation-free topological adapter (2026-11-16)
+
+### Implemented in code
+
+- Code commit: `a3a36d181dfb2f8f6d47d53b33e4cc31f09e4f7f` on `feature/befaco-modules`.
+- Added `MoldgfSlewLimiterDSP.createState()`, `reset()` and `processInto()`. The real-time method mutates the module-owned state and returns a numeric sample; it does not create a result object or array per sample. The previous `process()` result-record API remains as a compatibility wrapper.
+- The host supplies `1 / sr` for every sample. The state has no cached sample-rate coefficient, so changing the engine sample rate changes the integration step immediately without reallocating the module state.
+- Replaced the legacy `{out:0}` state initializer with `createState()`; changed `slewlimiterF` to call `processInto()`.
+- Added Slew Limiter to both engine-side and UI-side scheduler allowlists and to `processTopologicalRack()`. Its existing typed graph descriptor remains: signal input accepts audio/CV/gate/trigger/clock/MIDI, independent RISE CV and FALL CV inputs accept CV, and OUT is CV.
+- Kept the legacy `step()` bucket path intact. Unsupported racks still fall back to legacy processing.
+- Added deterministic DSP tests for caller-owned state, primitive return value, reset, independent rise/fall CV, finite-value handling, compatibility API, and equal elapsed-time behavior at 48 kHz / 96 kHz.
+- Added engine-harness tests for the actual chain `Voltio(signal/rise/fall) → Slew Limiter → Mixer → Audio Out`, a live 96 kHz-to-48 kHz change, independent falling CV, state identity, and legacy fallback when an unsupported module is present.
+- Official behavior reference: https://www.befaco.org/slew-limiter/ . The product description confirms independent rise/fall time controls with their own CV and a SHAPE control moving from linear to logarithmic response. Assembly reference: https://befaco.org/docs/Slew_Limiter/Slew_Limiter_V1_2_Assembly_Manual.pdf.
+- **DSP limitation kept explicit:** this commit preserves the pre-existing clean-room shape interpolation (constant-rate to delta-proportional). It is not yet calibrated to the official analog logarithmic curve. Do not claim exact analog/firmware parity until the schematic response is characterized and measured. No VCV/Befaco implementation source or proprietary panel artwork was copied.
+
+### Test and CI evidence
+
+- Workflow [#108 / run 43875761386](https://github.com/joaoevooluti-web/Moldgf/actions/runs/43875761386) completed with conclusion **success** on code commit `a3a36d181dfb2f8f6d47d53b33e4cc31f09e4f7f`.
+- Node suite: **738/738 passed**, 0 failures, errors, skipped or todo. The run includes the Slew Limiter DSP, graph descriptor, topological engine chain, sample-rate transition and legacy-fallback tests.
+- Android JUnit: **13/13 passed**, 0 failures/errors/skips. Downloaded and parsed XML: `MidiMessageDecoderTest` 9/9 and `MidiBatchEncoderTest` 4/4.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed the final `WebAssembly.compile` verifier. Beads native self-test reported `SELFTEST OK` for all four media × two modes, synth output, and 44.1 kHz host / 24 kHz media resampling.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success. All workflow steps, including the final WASM payload verifier, completed successfully.
+- Artifact records:
+  - `eurorack-study-debug-apk`, ID **14229817946**, ZIP **1,680,540 bytes**, SHA-256 `bae3fafd87ee8c4fadf89db255b6c6ad9d5eedb879d1fa979455678b49d5b9d0`; embedded `app-debug.apk` **1,715,039 bytes**, SHA-256 `11e47418f5625ebbe68dea180cd4917063fd0e8f912a1158988b091146ccaf14`.
+  - `android-unit-test-report`, ID **14230501493**, ZIP **9,911 bytes**, SHA-256 `4bf0d8e46685bc5bdceb874e41df67fee7d9221a9ecdf108a2dadb4f97af3124`.
+  - `wasm-log`, ID **14229333789**, ZIP **1,379 bytes**, SHA-256 `02a2d78e9f7aee4348a48ec5ce3bfd7cdc6b6c18a077338429a98d9a3a535694`.
+- Inspected the downloaded APK archive: `assets/index.html`, `assets/module_graph.js`, `assets/slewlimiter_dsp.js`, Plaits/Beads wrappers and **42 DSP assets** are present. The packaged `index.html` contains the `processInto` adapter, state initializer and topological dispatch.
+- The WASM log has one non-fatal Plaits `PAGE_SIZE` macro-redefinition warning. GitHub also reported upstream deprecation notices for `actions/setup-java@v4` and Node 20-based actions; they did not fail this run.
+- CI evidence only: APK assembly and package inspection are not an installation or physical-device test. No hardware CV/audio, MIDI, touch, visual or Android-device validation is claimed.
+
+### Phase 1 status after #108
+
+- **Implemented:** guarded topological execution now covers 11 processing module types (Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer), plus Audio Out.
+- **Tested:** 738 Node tests and 13 Android JUnit tests; Slew Limiter DSP, graph routing, scheduled chain, sample-rate change and legacy fallback all passed.
+- **Validated in CI:** workflow #108; Plaits/Beads WASM build and final payload verification; Beads native self-test; Gradle unit tests/APK assembly; artifact upload and APK content inspection.
+- **Pending:** characterize and calibrate the SHAPE response against the analog logarithmic behavior; improve the Slew Limiter front panel from generic controls to a hardware-faithful original layout; integrate its reset into the future global versioned state/reset contract; continue migrating the other existing modules only after their sample-rate, normaling, state and no-allocation contracts pass.
+- **Not claimed:** exact analog/firmware parity, APK installation, or physical Android validation.
+
+### Repository protection
+
+- At code commit `a3a36d181dfb2f8f6d47d53b33e4cc31f09e4f7f`, `main...feature/befaco-modules` reported **625 ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified. No merge or force-push was performed.
