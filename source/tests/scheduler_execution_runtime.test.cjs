@@ -18,6 +18,7 @@ const JoystickDSP = require("../app/src/main/assets/joystick_dsp.js");
 const STMixDSP = require("../app/src/main/assets/stmix_dsp.js");
 const HexmixDSP = require("../app/src/main/assets/hexmix_dsp.js");
 const MotionMTRDSP = require("../app/src/main/assets/motionmtr_dsp.js");
+const SlewLimiterDSP = require("../app/src/main/assets/slewlimiter_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -42,13 +43,15 @@ function createEngineHarness() {
     MoldgfJoystickDSP: JoystickDSP,
     MoldgfSTMixDSP: STMixDSP,
     MoldgfHexmixDSP: HexmixDSP,
-    MoldgfMotionMTRDSP: MotionMTRDSP
+    MoldgfMotionMTRDSP: MotionMTRDSP,
+    MoldgfSlewLimiterDSP: SlewLimiterDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
     globalThis.__MOLDGF_TEST = {
       mkInst, idxE, I, byT, cab, cs, V, sig, K, rebuild, step,
       setGraphExecutionOrder,
+      setSampleRate: value => { if (Number.isFinite(value) && value > 0) sr = value; },
       output: () => [OL, OR],
       setInput: (port, value) => {
         const source = sig("fixture.source." + port);
@@ -586,4 +589,106 @@ test("Motion MTR remains on the legacy step path when another rack module is uns
   engine.step();
   assert.equal(engine.V[engine.sig("motion1.out1")], 2.5);
   assert.equal(engine.V[engine.sig("motion1.out3")], 10);
+});
+
+
+function makeSlewLimiterPlan() {
+  const cvIn = id => ({ id, direction: "input", signal: "cv", channels: 1,
+    accepts: ["audio", "cv", "gate", "trigger", "clock", "midi"] });
+  const audioIn = id => ({ id, direction: "input", signal: "audio", channels: 1,
+    accepts: ["audio", "cv"] });
+  const registry = createRegistry([
+    { type: "voltio", ports: [cvIn("sumIn"), { id: "out", direction: "output", signal: "cv" }] },
+    { type: "slewlimiter", ports: [
+      cvIn("in"),
+      { id: "rise", direction: "input", signal: "cv", channels: 1, accepts: ["cv"] },
+      { id: "fall", direction: "input", signal: "cv", channels: 1, accepts: ["cv"] },
+      { id: "out", direction: "output", signal: "cv" }
+    ] },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn)
+      .concat([{ id: "main", direction: "output", signal: "audio" },
+        { id: "inverted", direction: "output", signal: "audio" }]) },
+    { type: "out", ports: [audioIn("l"), audioIn("r")] }
+  ]);
+  const modules = [
+    { id: "out1", type: "out" }, { id: "mixer1", type: "mixer" },
+    { id: "slew1", type: "slewlimiter" }, { id: "signal1", type: "voltio" },
+    { id: "riseCv1", type: "voltio" }, { id: "fallCv1", type: "voltio" }
+  ];
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  return validateGraph(registry, modules, [
+    cable("signal1", "out", "slew1", "in"),
+    cable("riseCv1", "out", "slew1", "rise"),
+    cable("fallCv1", "out", "slew1", "fall"),
+    cable("slew1", "out", "mixer1", "ch1"),
+    cable("mixer1", "main", "out1", "l")
+  ]);
+}
+
+function buildSlewLimiterRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("slew1", "slewlimiter", { rise: 0, fall: 0, shape: 0 });
+  engine.mkInst("signal1", "voltio", { octave: 5, semitone: 0, range: 0 });
+  engine.mkInst("riseCv1", "voltio", { octave: 10, semitone: 0, range: 0 });
+  engine.mkInst("fallCv1", "voltio", { octave: 0, semitone: 0, range: 0 });
+  engine.idxE();
+  engine.cab.push(
+    { a: "signal1.out", b: "slew1.in" },
+    { a: "riseCv1.out", b: "slew1.rise" },
+    { a: "fallCv1.out", b: "slew1.fall" },
+    { a: "slew1.out", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+}
+
+test("topological Voltio -> Slew Limiter -> Mixer -> Audio Out is sample-rate aware and reuses state", () => {
+  const engine = createEngineHarness();
+  const plan = makeSlewLimiterPlan();
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["signal1", "riseCv1", "fallCv1", "slew1", "mixer1", "out1"]);
+  buildSlewLimiterRack(engine);
+  const state = engine.I.slew1.r;
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+
+  engine.setSampleRate(96000);
+  engine.step();
+  const first = 0.1 / 96000;
+  assert.ok(Math.abs(state.out - first) < 1e-15);
+  assert.equal(engine.V[engine.sig("slew1.out")], state.out);
+  assert.equal(engine.V[engine.sig("mixer1.main")], state.out);
+
+  engine.setSampleRate(48000);
+  engine.step();
+  const second = first + 0.1 / 48000;
+  assert.ok(Math.abs(state.out - second) < 1e-15);
+  assert.strictEqual(engine.I.slew1.r, state);
+
+  engine.I.signal1.s.octave = 0;
+  engine.I.fallCv1.s.octave = 10;
+  engine.step();
+  const slowFall = state.out;
+  assert.ok(slowFall > 0 && slowFall < second);
+
+  engine.I.fallCv1.s.octave = 0;
+  engine.step();
+  assert.equal(state.out, 0);
+  const [left, right] = engine.output();
+  assert.ok(Number.isFinite(left) && Number.isFinite(right));
+});
+
+test("Slew Limiter still runs through the legacy step path when an unsupported rack module exists", () => {
+  const engine = createEngineHarness();
+  const plan = makeSlewLimiterPlan();
+  buildSlewLimiterRack(engine);
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  engine.rebuild();
+  assert.equal(engine.setGraphExecutionOrder(plan.order), false);
+  engine.step();
+  assert.ok(engine.I.slew1.r.out > 0);
+  assert.equal(engine.V[engine.sig("slew1.out")], engine.I.slew1.r.out);
 });
