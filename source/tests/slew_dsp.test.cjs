@@ -66,7 +66,7 @@ test("processInto uses caller-owned state and returns a number without a result 
 });
 
 test("processInto applies CV only to the selected rise or fall direction", () => {
-  const params = { rise: 1, fall: 1, range: 0, shape: 0, cvMode: 2 };
+  const params = { rise: 1, fall: 0, range: 0, shape: 0, cvMode: 2 };
   const rising = Slew.createState();
   Slew.processInto(5, 10, params, rising, 1 / 48000);
   assert.equal(rising.rate, 2.5);
@@ -77,6 +77,7 @@ test("processInto applies CV only to the selected rise or fall direction", () =>
   Slew.processInto(0, 10, params, falling, 1 / 48000);
   assert.equal(falling.rate, 2500, "rise-only mode must leave fall on its manual control");
 
+  params.fall = 1;
   params.cvMode = 0;
   const fallCv = { out: 5 };
   Slew.processInto(0, 10, params, fallCv, 1 / 48000);
