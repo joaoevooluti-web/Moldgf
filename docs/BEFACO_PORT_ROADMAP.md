@@ -1106,5 +1106,5 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 
 ### Repository protection
 
-- At HEAD `1dce6ef918a4433db3a0b5ffdcac04788998d331`, `main...feature/befaco-modules` is **628 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- At code commit `1dce6ef918a4433db3a0b5ffdcac04788998d331`, `main...feature/befaco-modules` was **628 commits ahead / 0 behind**. After the roadmap-only commit `f6e597280a212e075abcfd2b6dc751f8a243c041`, the current branch is **629 ahead / 0 behind**; merge base remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
