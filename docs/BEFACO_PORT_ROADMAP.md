@@ -1056,3 +1056,55 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 
 - At code commit `a3a36d181dfb2f8f6d47d53b33e4cc31f09e4f7f`, `main...feature/befaco-modules` reported **625 ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
+
+
+## Workflow #110 — Slew allocation-free topological adapter (2026-11-17)
+
+### Implemented in code
+
+- Code commit: `0813861f83db1eebba20a1ce1f73d463f79e8fc2` on `feature/befaco-modules`.
+- Follow-up regression expectation correction: `1dce6ef918a4433db3a0b5ffdcac04788998d331`.
+- Added `MoldgfSlewDSP.createState()`, `reset()` and a real-time `processInto()` path. With a caller-owned state, `processInto()` returns a primitive output sample and updates `out`, `rising`, `falling`, and `rate` without constructing a result record or array per sample. The existing `process()` result-record API remains as a compatibility wrapper.
+- Changed the runtime state factory from `{out:0}` to `MoldgfSlewDSP.createState()`.
+- Reworked `slewF()` to use `processInto()` in both execution modes. It publishes the CV output and the two 0–10 V slope-detector gates directly into the shared signal table.
+- Added Slew to both the UI scheduler allowlist and the audio-engine execution whitelist, and added its dispatcher in `processTopologicalRack()`. The legacy `step()` bucket remains intact and continues to call the same allocation-free adapter when an unsupported module forces fallback.
+- Kept the existing five graph endpoints: voltage input, shared rise/fall CV input, CV output, rising gate output, and falling gate output. Tightened the voltage input contract to audio/CV/gate/trigger/clock; raw MIDI messages are not voltage and are rejected by this port.
+- Preserved the existing parameter model: three time ranges, independent Rise/Fall faders, shared CV selector (Fall / Rise+Fall / Rise), and Shape response. The official manual describes CV input range 0–10 V, faders as CV attenuators, and gates held while the output rises/falls: https://www.befaco.org/docs/Slew/SLEW_User_manual.pdf.
+- No VCV/Befaco implementation code or proprietary faceplate artwork was copied.
+
+### Regression correction before final CI
+
+- Workflow [#109 / run 44095521117](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44095521117) was an intermediate failed run: 744/746 Node tests passed. The two failures were stale/incorrect test expectations, not DSP or scheduler runtime regressions:
+  - `graph_scheduler_runtime.test.cjs` still expected the pre-Slew allowlist; updated it to assert Slew admission and dispatcher parity.
+  - The new manual-fall test set the Fall fader to 1 while expecting maximum speed; corrected the fixture to use 0 for the manual-fast case and 1 for the CV-controlled slow case.
+- Both corrections are in commit `1dce6ef918a4433db3a0b5ffdcac04788998d331`.
+
+### Test and CI evidence
+
+- Workflow [#110 / run 44095927440](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44095927440) completed with conclusion **success** on commit `1dce6ef918a4433db3a0b5ffdcac04788998d331`.
+- Node suite: **746/746 passed**, 0 failures, errors, skipped or todo. This includes the new allocation-free Slew DSP tests, graph rejection of raw MIDI, topological signal/CV/rising/falling routing through Mixer to Audio Out, direction-specific CV selection, sample-rate change, and legacy fallback.
+- Android/JUnit: **13/13 passed**, 0 failures/errors/skips. The downloaded XML reports confirm `MidiMessageDecoderTest` 9/9 and `MidiBatchEncoderTest` 4/4.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed the workflow's final `WebAssembly.compile` verifier.
+- Beads native self-test: `SELFTEST OK`; all eight media/mode combinations, synth output, and 44.1 kHz host / 24 kHz media resampling checks were successful.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success. The final APK/WASM payload verification step also succeeded.
+- Artifact records:
+  - `eurorack-study-debug-apk`, ID **14334455794**, ZIP **1,680,884 bytes**, SHA-256 `4cb543875f72dc085b9f7bdf442bd328ce2ddcb74ebf3910ee76dba33c649dc9`; embedded `app-debug.apk` **1,715,467 bytes**, SHA-256 `cdc78c6441f437dcfcffe83ea35b100042af12d7b885b123d4389d1358e0ce8e`.
+  - `android-unit-test-report`, ID **14333218616**, ZIP **9,899 bytes**, SHA-256 `0ced7ce197e49394074b5a1cd496cf59fc67d73d3dcb92c5355afcf880c91de9`.
+  - `wasm-log`, ID **14333632633**, ZIP **1,381 bytes**, SHA-256 `a4f97a2ee8cafd3ed16f2104fd63e61895c243a00247bb16c8b11a8b443c9490`.
+- Inspected the downloaded APK archive: `assets/index.html`, `assets/module_graph.js`, `assets/slew_dsp.js`, Plaits/Beads wrappers and **42 DSP assets** are present. The packaged engine contains the `processInto` dispatcher and Slew in the UI scheduler allowlist.
+- Non-fatal warnings: Plaits still reports an Emscripten `PAGE_SIZE` macro redefinition; GitHub Actions logs include upstream Node/punycode deprecation notices. They did not fail the build.
+- CI evidence only: APK assembly and archive inspection do not imply installation or physical-device testing. No hardware CV/audio, MIDI, touch, visual or Android-device validation is claimed.
+
+### Phase 1 status after #110
+
+- **Implemented:** guarded topological execution now covers 12 processing module types (Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Slew, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer), plus Audio Out.
+- **Tested:** 746 Node tests and 13 Android JUnit tests; Slew's DSP, CV routing, both slope-detector gates, downstream mixer routing, sample-rate changes and unsupported-rack fallback passed.
+- **Validated in CI:** workflow #110; Plaits/Beads WASM builds and final payload compilation; Beads native self-test; Gradle unit tests/APK assembly; artifact upload and APK content inspection.
+- **Pending:** characterize/calibrate Slew's analog shape curve and pitch tracking; improve its front panel separately; integrate its reset into the future versioned global state/reset contract; continue scheduler adoption only after each module's normaling, hidden dependencies, sample-rate, state and no-allocation contracts are verified.
+- **Pending globally:** parameter event queue, versioned state schema, explicit reset/bypass contract, dynamic output signal typing and complete 34-module hardware parity.
+- **Not claimed:** exact analog/firmware parity, APK installation, or physical Android validation.
+
+### Repository protection
+
+- At HEAD `1dce6ef918a4433db3a0b5ffdcac04788998d331`, `main...feature/befaco-modules` is **628 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified. No merge or force-push was performed.
