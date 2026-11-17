@@ -11,6 +11,7 @@ const ports = [
 const registry = createRegistry([
   { type: "slew", ports },
   { type: "source", ports: [{ id: "out", direction: "output", signal: "cv", channels: 1 }] },
+  { type: "midiSource", ports: [{ id: "out", direction: "output", signal: "midi", channels: 1 }] },
   { type: "sink", ports: [{ id: "in", direction: "input", signal: "cv", channels: 1, accepts: ["cv","gate"] }] }
 ]);
 
@@ -27,4 +28,9 @@ test("Slew exposes output plus rising and falling gate signals", () => {
 
 test("Slew rejects reverse cable direction", () => {
   assert.equal(canConnect(registry, { type: "slew" }, "in", { type: "source" }, "out").code, "direction");
+});
+
+
+test("Slew voltage input rejects raw MIDI messages", () => {
+  assert.equal(canConnect(registry, { type: "midiSource" }, "out", { type: "slew" }, "in").ok, false);
 });

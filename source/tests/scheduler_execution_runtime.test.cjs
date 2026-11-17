@@ -19,6 +19,7 @@ const STMixDSP = require("../app/src/main/assets/stmix_dsp.js");
 const HexmixDSP = require("../app/src/main/assets/hexmix_dsp.js");
 const MotionMTRDSP = require("../app/src/main/assets/motionmtr_dsp.js");
 const SlewLimiterDSP = require("../app/src/main/assets/slewlimiter_dsp.js");
+const SlewDSP = require("../app/src/main/assets/slew_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -44,7 +45,8 @@ function createEngineHarness() {
     MoldgfSTMixDSP: STMixDSP,
     MoldgfHexmixDSP: HexmixDSP,
     MoldgfMotionMTRDSP: MotionMTRDSP,
-    MoldgfSlewLimiterDSP: SlewLimiterDSP
+    MoldgfSlewLimiterDSP: SlewLimiterDSP,
+    MoldgfSlewDSP: SlewDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -691,4 +693,151 @@ test("Slew Limiter still runs through the legacy step path when an unsupported r
   engine.step();
   assert.ok(engine.I.slew1.r.out > 0);
   assert.equal(engine.V[engine.sig("slew1.out")], engine.I.slew1.r.out);
+});
+
+
+function makeSlewPlan() {
+  const voltageInput = id => ({ id, direction: "input", signal: "cv", channels: 1,
+    accepts: ["audio", "cv", "gate", "trigger", "clock"] });
+  const audioInput = id => ({ id, direction: "input", signal: "audio", channels: 1,
+    accepts: ["audio", "cv", "gate"] });
+  const registry = createRegistry([
+    { type: "voltio", ports: [voltageInput("sumIn"), { id: "out", direction: "output", signal: "cv", channels: 1 }] },
+    { type: "slew", ports: [
+      voltageInput("in"),
+      { id: "cv", direction: "input", signal: "cv", channels: 1, accepts: ["cv"] },
+      { id: "out", direction: "output", signal: "cv", channels: 1 },
+      { id: "rising", direction: "output", signal: "gate", channels: 1 },
+      { id: "falling", direction: "output", signal: "gate", channels: 1 }
+    ] },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioInput)
+      .concat([{ id: "main", direction: "output", signal: "audio", channels: 1 },
+        { id: "inverted", direction: "output", signal: "audio", channels: 1 }]) },
+    { type: "out", ports: [audioInput("l"), audioInput("r")] }
+  ]);
+  const modules = [
+    { id: "out1", type: "out" }, { id: "mixer1", type: "mixer" },
+    { id: "slew1", type: "slew" }, { id: "signal1", type: "voltio" },
+    { id: "cv1", type: "voltio" }
+  ];
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  return validateGraph(registry, modules, [
+    cable("signal1", "out", "slew1", "in"),
+    cable("cv1", "out", "slew1", "cv"),
+    cable("slew1", "out", "mixer1", "ch1"),
+    cable("slew1", "rising", "mixer1", "ch2"),
+    cable("slew1", "falling", "mixer1", "ch3"),
+    cable("mixer1", "main", "out1", "l")
+  ]);
+}
+
+function buildSlewRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 1, 1, 0] });
+  engine.mkInst("slew1", "slew", { shape: 0, range: 0, rise: 0, fall: 0, cvMode: 1 });
+  engine.mkInst("signal1", "voltio", { octave: 5, semitone: 0, range: 1 });
+  engine.mkInst("cv1", "voltio", { octave: 10, semitone: 0, range: 0 });
+  engine.idxE();
+  engine.cab.push(
+    { a: "signal1.out", b: "slew1.in" },
+    { a: "cv1.out", b: "slew1.cv" },
+    { a: "slew1.out", b: "mixer1.ch1" },
+    { a: "slew1.rising", b: "mixer1.ch2" },
+    { a: "slew1.falling", b: "mixer1.ch3" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+}
+
+test("topological Slew routes CV and both slope-detector gates through Mixer to Audio Out", () => {
+  const engine = createEngineHarness();
+  const plan = makeSlewPlan();
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["signal1", "cv1", "slew1", "mixer1", "out1"]);
+  buildSlewRack(engine);
+  const state = engine.I.slew1.r;
+  assert.deepEqual(state, { out: 0, rising: 0, falling: 0, rate: 0 });
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+
+  engine.step();
+  assert.equal(state.rising, 10);
+  assert.equal(state.falling, 0);
+  assert.equal(engine.V[engine.sig("slew1.rising")], 10);
+  assert.equal(engine.V[engine.sig("slew1.falling")], 0);
+  assert.ok(engine.V[engine.sig("mixer1.main")] > 10,
+    "the connected rising gate must reach the downstream mixer");
+  assert.strictEqual(engine.I.slew1.r, state);
+
+  for (let i = 0; i < 110; i++) engine.step();
+  assert.equal(state.out, 5);
+  assert.equal(state.rising, 0, "rising gate must fall when the output reaches its target");
+
+  engine.I.signal1.s.octave = -5;
+  engine.step();
+  assert.equal(state.rising, 0);
+  assert.equal(state.falling, 10);
+  assert.equal(engine.V[engine.sig("slew1.falling")], 10);
+  assert.ok(engine.V[engine.sig("mixer1.main")] > 9,
+    "the connected falling gate must reach the downstream mixer");
+  for (let i = 0; i < 210; i++) engine.step();
+  assert.equal(state.out, -5);
+  assert.equal(state.falling, 0);
+});
+
+test("topological Slew applies shared CV only in the selected direction and preserves sample-rate state", () => {
+  const engine = createEngineHarness();
+  const plan = makeSlewPlan();
+  buildSlewRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  const state = engine.I.slew1.r;
+
+  SlewDSP.reset(state, 0);
+  engine.I.signal1.s.octave = 5;
+  engine.I.slew1.s.cvMode = 2;
+  engine.I.slew1.s.rise = 1;
+  engine.I.slew1.s.fall = 0;
+  engine.setSampleRate(48000);
+  engine.step();
+  assert.equal(state.rate, 2.5);
+  assert.equal(state.rising, 10);
+
+  SlewDSP.reset(state, 5);
+  engine.I.signal1.s.octave = 0;
+  engine.I.slew1.s.cvMode = 0;
+  engine.I.slew1.s.fall = 1;
+  engine.step();
+  assert.equal(state.rate, 2.5);
+  assert.equal(state.falling, 10);
+
+  engine.setSampleRate(96000);
+  SlewDSP.reset(state, 0);
+  engine.I.signal1.s.octave = 5;
+  engine.I.slew1.s.cvMode = 2;
+  engine.step();
+  assert.ok(Math.abs(state.out - (2.5 / 96000)) < 1e-15);
+  assert.strictEqual(engine.I.slew1.r, state);
+});
+
+test("Slew keeps processing through the legacy step path when an unsupported module is present", () => {
+  const engine = createEngineHarness();
+  const plan = makeSlewPlan();
+  buildSlewRack(engine);
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  engine.rebuild();
+  assert.equal(engine.setGraphExecutionOrder(plan.order), false);
+  engine.step();
+  assert.equal(engine.I.slew1.r.rising, 10);
+  assert.equal(engine.V[engine.sig("slew1.rising")], 10);
+});
+
+test("Slew is admitted consistently by the UI and audio scheduler allowlists", () => {
+  const uiScript = scripts.find(match => match[2].includes("const PORT_REGISTRY=MoldgfModuleGraph.createRegistry()"))?.[2];
+  assert.ok(uiScript, "rack UI script must contain the live module registry");
+  assert.match(uiScript, /ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'slew'[^\]]*\]\)/);
+  assert.match(engineSource, /'slew','dualAt'/);
+  assert.match(engineSource, /else if\(m\.t==='slew'\)slewF\(m\)/);
+  assert.match(engineSource, /slew:\(\)=>MoldgfSlewDSP\.createState\(\)/);
 });
