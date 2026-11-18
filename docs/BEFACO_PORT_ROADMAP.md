@@ -1108,3 +1108,57 @@ The STMix → Hexmix hidden stereo expansion link is now implemented and CI-test
 
 - At code commit `1dce6ef918a4433db3a0b5ffdcac04788998d331`, `main...feature/befaco-modules` was **628 commits ahead / 0 behind**. After the roadmap-only commit `f6e597280a212e075abcfd2b6dc751f8a243c041`, the current branch is **629 ahead / 0 behind**; merge base remains `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
+
+
+## ADSR — allocation-free topological adapter and Gate/Trigger mode (2026-11-18)
+
+### Implemented
+
+- DSP/scheduler commit: `36b1842d937e4223594c0aa9e9a2da2ac7791e22`.
+- Mode semantics commit: `770464c55634c392d6a886fa53f088a415a0dc59`.
+- Regression-fixture correction: `5e26713cde300eb645e3a90e6a86b0ba589e711e`.
+- Replaced the ADSR runtime initializer with `MoldgfADSRDSP.createState()`. The state owns its four-element stage-gate buffer and a reusable input scratch object.
+- Added `reset(state)` and `processInto(params, inputs, state, sampleTime)`. The real-time path mutates the existing state, updates the existing gate array and returns the envelope as a primitive number. With a state from `createState()`, it creates no result objects or arrays per sample. The existing `process()` API remains as an allocating compatibility wrapper for non-real-time callers.
+- Reworked `adsrF()` to fill the state-owned input scratch fields, call `processInto()`, and publish ENV, ATTACK, DECAY, SUSTAIN and RELEASE outputs directly. The same adapter is used by both the topological dispatcher and the legacy `step()` bucket.
+- Added ADSR to the engine execution whitelist, the UI active-scheduler allowlist and `processTopologicalRack()`. Its existing typed graph descriptor remains active: Gate, Trigger, four stage-CV inputs, envelope CV output and four 0–10 V stage-gate outputs.
+- Added the explicit hardware operating mode: `mode=0` (GATE) begins Release immediately when the gate falls; `mode=1` (TRIGGER) completes Attack and Decay after a short gate pulse, then enters Release if the input is no longer high. The UI now exposes a GATE / TRIGGER selector instead of the previous RETRIGGER label. The old `retrigger` state field is retained for saved-patch compatibility but is no longer presented as a hardware control.
+- Added automated coverage for reusable state/input/gate buffers, primitive return, reset/edge-memory clearing, compatibility-wrapper parity, both operating modes, topological ADSR → Mixer → Audio Out routing, stage-gate routing and unsupported-rack fallback.
+- Official behavior reference: https://befaco.org/docs/ADSR/ADSR_User_Manual.pdf and https://www.befaco.org/vc-adsr/. The manual documents the Gate/Trigger mode distinction and one 0–10 V output for each active envelope stage.
+
+### Test evidence and intermediate correction
+
+- Workflow [#111 / run 44314632486](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44314632486) succeeded on commit `36b1842d937e4223594c0aa9e9a2da2ac7791e22`:
+  - Node: **751/751 passed**, zero failures/skips.
+  - Android JUnit: **13/13 passed** (MIDI decoder 9/9; MIDI batch encoder 4/4), confirmed from downloaded XML.
+  - Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**.
+  - Beads native self-test: `SELFTEST OK`; all eight media/mode combinations, synth output and 44.1 kHz host / 24 kHz media resampling checks passed.
+  - Both embedded WASM payloads passed the workflow's `WebAssembly.compile` verification. Gradle `testDebugUnitTest` and `assembleDebug` succeeded.
+  - Artifacts: APK ID **14432820133** (ZIP 1,681,352 bytes; SHA-256 `76ca536d7d95de2a8d8a1be9142b0c87f81fcc2c705367fc17ad6e3d83b28d25`; embedded APK 1,716,031 bytes, SHA-256 `c9d0a64f7839df0584ae6cde89c23dc49409cbac25f2594d5b3ab398e70fd8bb`); JUnit ID **14431084013** (9,912 bytes; SHA-256 `3e52d269f4acfbe850a1dc64cbb5093a26f2e4052850de9b65fc6596e397b19c`); WASM log ID **14431267670** (1,379 bytes; SHA-256 `c1022c31f39f61f3bc7fb88ee8fe9bba1c19cc183dbea9243000b8f0167be02b`).
+  - APK archive inspection confirmed `adsr_dsp.js`, `index.html`, `module_graph.js), 42 DSP assets and both Plaits/Beads wrappers. This is CI packaging evidence only.
+- Workflow [#112 / run 44315360822](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44315360822) was an intermediate failure on `770464c`: **753/754** Node tests passed. The only failure was an off-by-one in the new trigger-mode test fixture: it advanced one extra 1 ms sample and therefore expected DECAY after the envelope had correctly entered RELEASE. No existing DSP or graph test failed. Because the Node gate stopped the build, WASM and Gradle/APK stages were skipped; the always-run payload verifier then reported missing wrappers. This was not a WASM regression.
+- Corrected the fixture in `5e26713cde300eb645e3a90e6a86b0ba589e711e`. Final workflow [#114 / run 44315582651](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44315582651) succeeded on that commit:
+  - Node: **754/754 passed**, zero failures, cancellations, skips or todo.
+  - Android JUnit: **13/13 passed**, zero failures/errors/skips; XML confirms decoder 9/9 and encoder 4/4.
+  - Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**; both passed `WebAssembly.compile`.
+  - Beads native self-test: `SELFTEST OK`.
+  - Gradle `testDebugUnitTest`, `assembleDebug`, APK upload and final payload verification: success.
+  - Artifacts: APK ID **14432032418** (ZIP 1,681,400 bytes; SHA-256 `d0f12c4c3d6979731754ea4377ba842a78840615343573ba92945baeb58068c1`; embedded APK 1,716,023 bytes, SHA-256 `a3285f171731118c63e418de91c58937a5ac33e19fdbd8d6a95069eda6d3c837`); JUnit ID **14432786032** (9,887 bytes; SHA-256 `378da3a7e792b807470104947b81e71052291a499459db42caf8fd9998c21c`); WASM log ID **14432980357** (1,381 bytes; SHA-256 `f2246b54bdef8ecd3bcbf6c018f73279f97db9b384d473d0a7a6c3230190a6a5`).
+  - Inspected the downloaded APK: `assets/adsr_dsp.js` (6,272 bytes), updated `assets/index.html` (335,684 bytes), `assets/module_graph.js` (12,560 bytes), all **42 DSP assets**, and both WASM wrappers are present. The packaged HTML contains the ADSR `processInto` adapter, Gate/Trigger selector and scheduler admission. CI evidence only; no installation or device test is implied.
+- Non-fatal warnings: Plaits emits an Emscripten `PAGE_SIZE` macro-redefinition warning; Node/GitHub Actions emit upstream `punycode` / Node 20 deprecation warnings. They did not fail workflow #114.
+
+### ADSR status after #114
+
+- **Implemented:** allocation-free per-sample ADSR adapter, persistent stage state, explicit Gate/Trigger mode, four stage-gate outputs, reset API and guarded topological dispatcher; legacy `process()` and legacy `step()` remain available.
+- **Tested:** DSP limits/stages/CV, short-pulse Trigger behavior, immediate Gate release, reset, buffer identity, compatibility wrapper, real ADSR → Mixer → Audio Out chain and legacy fallback.
+- **Validated in CI:** workflow #114, 754/754 Node, 13/13 Android JUnit, Plaits/Beads WASM build and payload compilation, Beads native self-test, Gradle tests/APK assembly and APK content inspection.
+- **Pending / limitations:** the application retains a separate TRIG jack alongside GATE as an extra compatibility input, whereas the physical VC ADSR manual describes one combined Gate/Trigger input; the two-port app extension is not a literal hardware-panel match. The DSP is a clean-room envelope model, not a transistor-level current-mirror simulation; the response curve and stage timing have not been calibrated against measured hardware. Full panel fidelity and physical voltage/audio validation remain unclaimed.
+- **Global pending:** parameter event queue, versioned state schema, shared reset/bypass contract, dynamic output signal typing and migration of the remaining Befaco modules.
+
+### Scheduler inventory after #114
+
+The guarded topological scheduler now admits **13 processing module types**, plus the Audio Out sink: Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Slew, ADSR, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer. The remaining catalog modules continue on the legacy path until their normaling, hidden dependencies, sample-rate, state/reset and no-allocation contracts are audited.
+
+### Repository protection
+
+- At code commit `5e26713cde300eb645e3a90e6a86b0ba589e711e`, `main...feature/befaco-modules` was **633 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified. No merge or force-push was performed.
