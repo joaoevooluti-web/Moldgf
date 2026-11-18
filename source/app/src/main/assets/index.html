@@ -436,7 +436,7 @@ po:()=>({s1:0,s2:0,s3:0,s4:0,cl:0,G:.1,oc:1e9,qc:-1,k:0,dx:0,dy:0}),
 mout:()=>({g:0,n:-1,on:0,vv:100,cv:[-1,-1,-1,-1],cd:[0,0,0,0]}),
 bbd:()=>({buf:new Float32Array(4096),w:0,ph:0,upi:0,yh:0,dx:0,dy:0,wet:0,fc:0,vk:-1,rk:-1,xh:new Float64Array(16),xi:0,ho:new Float64Array(64),oi:0,l1:0,l2:0,ac:.5}),
 bds:()=>({buf:null,wp:0,bl:0,pr:0,na:0,tp:0,idl:0,op:0,pk:0,g:1,f1l:0,f1r:0,f2l:0,f2r:0,qp:0,hl:0,hr:0,sdl:0,hl2:0,hdl:0,tc:0,ta:1e9,tapT:0,cd:0,cn:0,rnd:0,ph1:0,ph2:0,sn:0,dly:0,so:0,fl:0,li:0,igk:-1,igv:1,cdn:-1,cdv:-1,cper:0,bdn:-1,bdv:-1,bbase:0,nb:-1,nm:1,ptk:-1,ptv:0,bi:-1,binit:0,k:0,bv:null,ib:0}),
-out:()=>({ol:0,or:0,pk:[0,0]}),atte:()=>({out:[0,0,0,0]}),dualAt:()=>({out:[0,0],led:["off","off"]}),voltio:()=>({out:0}),axbc:()=>({out:[0,0],led:["off","off"]}),abc:()=>({out:[0,0],led:["off","off"]}),bypass:()=>MoldgfBypassDSP.createState(),mixer2:()=>({out:[0,0],meter:[{positive:false,negative:false,level:0},{positive:false,negative:false,level:0}]}),mixer:()=>({out:[0,0],meter:[{positive:false,negative:false,magnitude:0},{positive:false,negative:false,magnitude:0}]}),stmix:()=>({out:[0,0],meter:[0,0]}),morphader:()=>({out:[0,0,0,0],fader:0}),hexmixvca:()=>({out:[0,0,0,0,0,0]}),motionmtr:()=>MoldgfMotionMTRDSP.createState(),slewlimiter:()=>MoldgfSlewLimiterDSP.createState(),ponyVco:()=>({out:0,frequency:0}),adsr:()=>({env:0,stage:0,gates:[0,0,0,0]}),percall:()=>({out:[0,0,0,0],env:[0,0,0,0],stage:[0,0,0,0]}),mudi:()=>({states:[false,false,false,false,false]}),slew:()=>MoldgfSlewDSP.createState(),burst:()=>MoldgfBurstDSP.createState(),samplingModulator:()=>MoldgfSamplingModulatorDSP.createState(),choppingKinky:()=>MoldgfChoppingKinkyDSP.createState(),evenVco:()=>MoldgfEvenVCODSP.createState(),rampage:()=>Object.assign(MoldgfRampageDSP.createState(),{manualA:0,manualB:0}),springReverb:()=>MoldgfSpringReverbDSP.createState(48000),kickall:()=>Object.assign(MoldgfKickallDSP.createState(),{manualTrigger:0}),noisePlethora:()=>MoldgfNoisePlethoraDSP.createState(),muxlicer:()=>MoldgfMuxlicerDSP.createState()};
+out:()=>({ol:0,or:0,pk:[0,0]}),atte:()=>({out:[0,0,0,0]}),dualAt:()=>({out:[0,0],led:["off","off"]}),voltio:()=>({out:0}),axbc:()=>({out:[0,0],led:["off","off"]}),abc:()=>({out:[0,0],led:["off","off"]}),bypass:()=>MoldgfBypassDSP.createState(),mixer2:()=>({out:[0,0],meter:[{positive:false,negative:false,level:0},{positive:false,negative:false,level:0}]}),mixer:()=>({out:[0,0],meter:[{positive:false,negative:false,magnitude:0},{positive:false,negative:false,magnitude:0}]}),stmix:()=>({out:[0,0],meter:[0,0]}),morphader:()=>({out:[0,0,0,0],fader:0}),hexmixvca:()=>({out:[0,0,0,0,0,0]}),motionmtr:()=>MoldgfMotionMTRDSP.createState(),slewlimiter:()=>MoldgfSlewLimiterDSP.createState(),ponyVco:()=>({out:0,frequency:0}),adsr:()=>MoldgfADSRDSP.createState(),percall:()=>({out:[0,0,0,0],env:[0,0,0,0],stage:[0,0,0,0]}),mudi:()=>({states:[false,false,false,false,false]}),slew:()=>MoldgfSlewDSP.createState(),burst:()=>MoldgfBurstDSP.createState(),samplingModulator:()=>MoldgfSamplingModulatorDSP.createState(),choppingKinky:()=>MoldgfChoppingKinkyDSP.createState(),evenVco:()=>MoldgfEvenVCODSP.createState(),rampage:()=>Object.assign(MoldgfRampageDSP.createState(),{manualA:0,manualB:0}),springReverb:()=>MoldgfSpringReverbDSP.createState(48000),kickall:()=>Object.assign(MoldgfKickallDSP.createState(),{manualTrigger:0}),noisePlethora:()=>MoldgfNoisePlethoraDSP.createState(),muxlicer:()=>MoldgfMuxlicerDSP.createState()};
 const newQ=()=>({p:0,q:0,l2:0,lp:0,lg:0,s1:0,ns:0,tc:0,en:0,pe:0,sf:1000,ex:0,bi:0,bu:0,sH:.5,sT:.5,sM:.5,sk:36,dc:.99,ldc:-1,md:-1,
 b:new Float32Array(4096),ph:new Float64Array(8),me:new Float64Array(8),g:new Float64Array(8).fill(1),d:new Float64Array(8),r:new Float64Array(8).fill(1),s:new Float64Array(6),v:new Float64Array(4),
 v1:{mp:0,sp:0,ns:0,pp:.5,hi:0},v2:{mp:0,sp:0,ns:0,pp:.5,hi:0},vi:-1,tm:0,ro:new Float32Array(64),ra:new Float32Array(64),wi:0,rp:0,inited:0});
@@ -451,7 +451,7 @@ function setGraphExecutionOrder(order){
  const seen=new Set(),positions=Object.create(null);
  for(let i=0;i<pendingGraphExecutionOrder.length;i++){
   const id=pendingGraphExecutionOrder[i],m=I[id];
-  if(!m||seen.has(id)||!['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','out'].includes(m.t)){graphExecutionOrder=null;return false}
+  if(!m||seen.has(id)||!['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','out'].includes(m.t)){graphExecutionOrder=null;return false}
   seen.add(id);positions[id]=i
  }
  for(let i=0;i<cab.length;i++){
@@ -477,6 +477,7 @@ function processTopologicalRack(){
   else if(m.t==='motionmtr')motionmtrF(m);
   else if(m.t==='slewlimiter')slewlimiterF(m);
   else if(m.t==='slew')slewF(m);
+  else if(m.t==='adsr')adsrF(m);
   else if(m.t==='dualAt')dualAtenuverterF(m);
   else if(m.t==='abc')abcF(m);
   else if(m.t==='axbc')axbcF(m);
@@ -714,7 +715,7 @@ function crushDelayV3F(m){const P=m.s,R=m.r,o=MoldgfCrushDelayV3DSP.process(P,{i
 function bf22F(m){const P=m.s,R=m.r,o=MoldgfBF22DSP.process(P,{inA:inp(K(m,'inA')),inB:inp(K(m,'inB')),cv1A:inp(K(m,'cv1A')),cv2A:inp(K(m,'cv2A')),resCVA:inp(K(m,'resCVA')),cv1B:inp(K(m,'cv1B')),cv2B:inp(K(m,'cv2B')),resCVB:inp(K(m,'resCVB'))},R,sr);V[K(m,'outA')]=o.outA;V[K(m,'outB')]=o.outB;R.cutoffA=o.cutoffA;R.cutoffB=o.cutoffB;R.resonanceA=o.resonanceA;R.resonanceB=o.resonanceB;R.peakA=o.peakA;R.peakB=o.peakB}
 function ponyVcfF(m){const P=m.s,R=m.r,o=MoldgfPonyVCFDSP.process(P,{in1:inp(K(m,'in1')),in2:inp(K(m,'in2')),in3:inp(K(m,'in3')),cv1:inp(K(m,'cv1')),cv2:inp(K(m,'cv2')),resCV:inp(K(m,'resCV')),volumeCV:inp(K(m,'volumeCV'))},R,sr);V[K(m,'out')]=o.output;R.peak=o.peak;R.clipping=o.clipping;R.cutoff=o.cutoff}
 function ponyVcoF(m){const P=m.s,R=m.r,o=MoldgfPonyVCODSP.process(P,{tzfm:inp(K(m,'tzfm')),timbre:inp(K(m,'timbre')),voct:inp(K(m,'voct')),sync:inp(K(m,'sync')),vca:inp(K(m,'vca'))},R,sr);V[K(m,'out')]=R.out=o.output;V[K(m,'freq')]=o.frequency;R.frequency=o.frequency}
-function adsrF(m){const P=m.s,R=m.r,o=MoldgfADSRDSP.process({attack:P.attack,decay:P.decay,sustain:P.sustain,release:P.release,shape:P.shape,retrigger:P.retrigger===1,button:!!P.button},{gate:inp(K(m,'gate')),trigger:inp(K(m,'trigger')),attackCV:inp(K(m,'attackCV')),decayCV:inp(K(m,'decayCV')),sustainCV:inp(K(m,'sustainCV')),releaseCV:inp(K(m,'releaseCV'))},R,1/sr);V[K(m,'env')]=R.env=o.envelope;['attackGate','decayGate','sustainGate','releaseGate'].forEach((n,i)=>V[K(m,n)]=R.gates[i]=o.gates[i]);R.stage=o.stage}
+function adsrF(m){const P=m.s,R=m.r,IN=R.inputs;IN.gate=inp(K(m,'gate'));IN.trigger=inp(K(m,'trigger'));IN.attackCV=inp(K(m,'attackCV'));IN.decayCV=inp(K(m,'decayCV'));IN.sustainCV=inp(K(m,'sustainCV'));IN.releaseCV=inp(K(m,'releaseCV'));const env=MoldgfADSRDSP.processInto(P,IN,R,1/sr);V[K(m,'env')]=R.env=env;V[K(m,'attackGate')]=R.gates[0];V[K(m,'decayGate')]=R.gates[1];V[K(m,'sustainGate')]=R.gates[2];V[K(m,'releaseGate')]=R.gates[3]}
 function percallF(m){const P=m.s,R=m.r,o=MoldgfPercallDSP.process({audio:[inp(K(m,'ch1')),inp(K(m,'ch2')),inp(K(m,'ch3')),inp(K(m,'ch4'))],trigger:[inp(K(m,'trigger1')),inp(K(m,'trigger2')),inp(K(m,'trigger3')),inp(K(m,'trigger4'))],decayCV:[inp(K(m,'cv1')),inp(K(m,'cv2')),inp(K(m,'cv3')),inp(K(m,'cv4'))],strength:inp(K(m,'strength')),outputPatched:[!!SU[K(m,'out1')],!!SU[K(m,'out2')],!!SU[K(m,'out3')]]},{volume:P.volume,decay:P.decay,choke:P.choke},R,1/sr);for(let i=0;i<4;i++){V[K(m,'out'+(i+1))]=R.out[i]=o.outputs[i];V[K(m,'env'+(i+1))]=R.env[i]=o.env[i];R.stage[i]=o.stages[i]}}
 function mudiF(m){const P=m.s,R=m.r,o=MoldgfMuDiDSP.process(inp(K(m,'clock')),inp(K(m,'reset')),P.removeClockDC===1,R);['f1','f2','f4','f8','f16'].forEach((n,i)=>{V[K(m,n)]=o.outputs[i];R.states[i]=o.states[i]})}
 function slewF(m){const P=m.s,R=m.r,out=MoldgfSlewDSP.processInto(inp(K(m,'in')),inp(K(m,'cv')),P,R,1/sr);V[K(m,'out')]=out;V[K(m,'rising')]=R.rising;V[K(m,'falling')]=R.falling}
@@ -1258,7 +1259,7 @@ function refreshGraphPlan(){
  graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables,runtimeHostDependencies(modules));
  return graphPlan;
 }
-const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','out']);
+const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','out']);
 function activeSchedulerOrder(){
  const ids=Object.keys(I);
  if(!ids.length||!graphPlan.valid||graphPlan.order.length!==ids.length)return null;

@@ -20,6 +20,7 @@ const HexmixDSP = require("../app/src/main/assets/hexmix_dsp.js");
 const MotionMTRDSP = require("../app/src/main/assets/motionmtr_dsp.js");
 const SlewLimiterDSP = require("../app/src/main/assets/slewlimiter_dsp.js");
 const SlewDSP = require("../app/src/main/assets/slew_dsp.js");
+const ADSRDSP = require("../app/src/main/assets/adsr_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -46,7 +47,8 @@ function createEngineHarness() {
     MoldgfHexmixDSP: HexmixDSP,
     MoldgfMotionMTRDSP: MotionMTRDSP,
     MoldgfSlewLimiterDSP: SlewLimiterDSP,
-    MoldgfSlewDSP: SlewDSP
+    MoldgfSlewDSP: SlewDSP,
+    MoldgfADSRDSP: ADSRDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -840,4 +842,96 @@ test("Slew is admitted consistently by the UI and audio scheduler allowlists", (
   assert.match(engineSource, /'slew','dualAt'/);
   assert.match(engineSource, /else if\(m\.t==='slew'\)slewF\(m\)/);
   assert.match(engineSource, /slew:\(\)=>MoldgfSlewDSP\.createState\(\)/);
+});
+
+
+function makeADSRMixerPlan() {
+  const gateIn = id => ({ id, direction: "input", signal: "gate", channels: 1, accepts: ["gate", "cv"] });
+  const cvIn = id => ({ id, direction: "input", signal: "cv", channels: 1, accepts: ["cv"] });
+  const audioIn = id => ({ id, direction: "input", signal: "audio", channels: 1, accepts: ["audio", "cv"] });
+  const registry = createRegistry([
+    { type: "adsr", ports: [
+      gateIn("gate"), gateIn("trigger"), cvIn("attackCV"), cvIn("decayCV"),
+      cvIn("sustainCV"), cvIn("releaseCV"),
+      { id: "env", direction: "output", signal: "cv", channels: 1 },
+      { id: "attackGate", direction: "output", signal: "gate", channels: 1 },
+      { id: "decayGate", direction: "output", signal: "gate", channels: 1 },
+      { id: "sustainGate", direction: "output", signal: "gate", channels: 1 },
+      { id: "releaseGate", direction: "output", signal: "gate", channels: 1 }
+    ] },
+    { type: "mixer", ports: ["ch1", "ch2", "ch3", "ch4"].map(audioIn).concat([
+      { id: "main", direction: "output", signal: "audio" },
+      { id: "inverted", direction: "output", signal: "audio" }
+    ]) },
+    { type: "out", ports: [audioIn("l"), audioIn("r")] }
+  ]);
+  const cable = (fromModule, fromPort, toModule, toPort) => ({
+    from: { module: fromModule, port: fromPort }, to: { module: toModule, port: toPort }
+  });
+  return validateGraph(registry,
+    [{ id: "out1", type: "out" }, { id: "mixer1", type: "mixer" }, { id: "adsr1", type: "adsr" }],
+    [cable("adsr1", "env", "mixer1", "ch1"), cable("mixer1", "main", "out1", "l")]);
+}
+
+function buildADSRMixerRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("adsr1", "adsr", {
+    attack: 0, decay: 0, sustain: 0.5, release: 0, shape: 0, retrigger: 1, button: 0
+  });
+  engine.idxE();
+  engine.cab.push(
+    { a: "adsr1.env", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+  engine.setInput("adsr1.gate", 10);
+}
+
+test("topological ADSR envelope and four stage gates route through Mixer to Audio Out", () => {
+  const engine = createEngineHarness();
+  const plan = makeADSRMixerPlan();
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["adsr1", "mixer1", "out1"]);
+  buildADSRMixerRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  const state = engine.I.adsr1.r;
+  const gates = state.gates;
+  const inputScratch = state.inputs;
+  engine.step();
+  assert.equal(state.stage, ADSRDSP.STAGE.ATTACK);
+  assert.ok(state.env > 0 && state.env < 10);
+  assert.deepEqual(Array.from(state.gates), [10, 0, 0, 0]);
+  assert.equal(engine.V[engine.sig("adsr1.env")], state.env);
+  assert.equal(engine.V[engine.sig("adsr1.attackGate")], 10);
+  assert.equal(engine.V[engine.sig("mixer1.main")], state.env);
+  const [left, right] = engine.output();
+  assert.ok(Math.abs(left - Math.tanh(state.env * 0.2)) < 1e-9);
+  assert.ok(Math.abs(right - left) < 1e-9);
+  for (let i = 0; i < 300; i++) engine.step();
+  assert.equal(state.stage, ADSRDSP.STAGE.SUSTAIN);
+  assert.equal(state.env, 5);
+  assert.deepEqual(Array.from(state.gates), [0, 0, 10, 0]);
+  engine.setInput("adsr1.gate", 0);
+  engine.step();
+  assert.equal(state.stage, ADSRDSP.STAGE.RELEASE);
+  assert.deepEqual(Array.from(state.gates), [0, 0, 0, 10]);
+  for (let i = 0; i < 140; i++) engine.step();
+  assert.equal(state.stage, ADSRDSP.STAGE.IDLE);
+  assert.equal(state.env, 0);
+  assert.strictEqual(state.gates, gates);
+  assert.strictEqual(state.inputs, inputScratch);
+});
+
+test("ADSR remains active in legacy fallback when an unsupported module is present", () => {
+  const engine = createEngineHarness();
+  const plan = makeADSRMixerPlan();
+  buildADSRMixerRack(engine);
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  assert.equal(engine.setGraphExecutionOrder(plan.order), false);
+  engine.step();
+  assert.equal(engine.I.adsr1.r.stage, ADSRDSP.STAGE.ATTACK);
+  assert.ok(engine.I.adsr1.r.env > 0);
+  assert.equal(engine.V[engine.sig("adsr1.attackGate")], 10);
 });

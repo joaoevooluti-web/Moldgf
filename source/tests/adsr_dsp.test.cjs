@@ -64,3 +64,50 @@ test("button gate and retrigger reset the envelope", () => {
   const button = ADSR.process({ ...params, button: true }, inputs, ADSR.createState(), 0.001);
   assert.equal(button.stage, ADSR.STAGE.ATTACK);
 });
+
+
+test("processInto mutates caller-owned state and reuses its gate and input buffers", () => {
+  const state = ADSR.createState();
+  const gates = state.gates;
+  const inputScratch = state.inputs;
+  inputScratch.gate = 10;
+  const envelope = ADSR.processInto(params, inputScratch, state, 0.001);
+  assert.equal(typeof envelope, "number");
+  assert.equal(envelope, state.env);
+  assert.deepEqual(Array.from(state.gates), [10, 0, 0, 0]);
+  for (let i = 0; i < 32; i++) ADSR.processInto(params, inputScratch, state, 1 / 48000);
+  assert.strictEqual(state.gates, gates);
+  assert.strictEqual(state.inputs, inputScratch);
+});
+
+test("reset clears stage, edge memory, envelope and gate outputs without replacing buffers", () => {
+  const state = ADSR.createState();
+  const gates = state.gates;
+  const inputScratch = state.inputs;
+  inputScratch.gate = 10;
+  ADSR.processInto(params, inputScratch, state, 0.001);
+  assert.equal(state.gateHigh, true);
+  ADSR.reset(state);
+  assert.equal(state.stage, ADSR.STAGE.IDLE);
+  assert.equal(state.env, 0);
+  assert.equal(state.gateHigh, false);
+  assert.equal(state.triggerHigh, false);
+  assert.equal(state.buttonHigh, false);
+  assert.deepEqual(Array.from(state.gates), [0, 0, 0, 0]);
+  assert.strictEqual(state.gates, gates);
+  assert.strictEqual(state.inputs, inputScratch);
+});
+
+test("process compatibility wrapper and allocation-free path produce identical stage transitions", () => {
+  const fastState = ADSR.createState();
+  const compatState = ADSR.createState();
+  const fastInputs = { ...inputs, gate: 10 };
+  const compatInputs = { ...inputs, gate: 10 };
+  for (let n = 0; n < 400; n++) {
+    const fast = ADSR.processInto(params, fastInputs, fastState, 1 / 48000);
+    const compat = ADSR.process(params, compatInputs, compatState, 1 / 48000);
+    assert.equal(fast, compat.envelope);
+    assert.equal(fastState.stage, compatState.stage);
+    assert.deepEqual(Array.from(fastState.gates), compat.gates);
+  }
+});
