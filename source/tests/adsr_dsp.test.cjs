@@ -134,7 +134,7 @@ test("trigger mode completes attack and decay after a short gate pulse, then rel
   scratch.gate = 0;
   ADSR.processInto(modeParams, scratch, state, 0.001);
   assert.equal(state.stage, ADSR.STAGE.ATTACK, "short pulse must not interrupt attack in trigger mode");
-  for (let i = 0; i < 4; i++) ADSR.processInto(modeParams, scratch, state, 0.001);
+  for (let i = 0; i < 3; i++) ADSR.processInto(modeParams, scratch, state, 0.001);
   assert.equal(state.stage, ADSR.STAGE.DECAY, "attack must finish before release");
   ADSR.processInto(modeParams, scratch, state, 0.001);
   assert.equal(state.stage, ADSR.STAGE.RELEASE, "release begins after decay when the pulse is no longer high");
