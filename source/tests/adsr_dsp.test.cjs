@@ -111,3 +111,32 @@ test("process compatibility wrapper and allocation-free path produce identical s
     assert.deepEqual(Array.from(fastState.gates), compat.gates);
   }
 });
+
+
+test("gate mode starts release as soon as the gate falls", () => {
+  const state = ADSR.createState();
+  const modeParams = { ...params, mode: 0 };
+  const scratch = state.inputs;
+  scratch.gate = 10;
+  ADSR.processInto(modeParams, scratch, state, 0.001);
+  scratch.gate = 0;
+  ADSR.processInto(modeParams, scratch, state, 0.001);
+  assert.equal(state.stage, ADSR.STAGE.RELEASE);
+  assert.deepEqual(Array.from(state.gates), [0, 0, 0, 10]);
+});
+
+test("trigger mode completes attack and decay after a short gate pulse, then releases", () => {
+  const state = ADSR.createState();
+  const modeParams = { ...params, mode: 1 };
+  const scratch = state.inputs;
+  scratch.gate = 10;
+  ADSR.processInto(modeParams, scratch, state, 0.001);
+  scratch.gate = 0;
+  ADSR.processInto(modeParams, scratch, state, 0.001);
+  assert.equal(state.stage, ADSR.STAGE.ATTACK, "short pulse must not interrupt attack in trigger mode");
+  for (let i = 0; i < 4; i++) ADSR.processInto(modeParams, scratch, state, 0.001);
+  assert.equal(state.stage, ADSR.STAGE.DECAY, "attack must finish before release");
+  ADSR.processInto(modeParams, scratch, state, 0.001);
+  assert.equal(state.stage, ADSR.STAGE.RELEASE, "release begins after decay when the pulse is no longer high");
+  assert.deepEqual(Array.from(state.gates), [0, 0, 0, 10]);
+});

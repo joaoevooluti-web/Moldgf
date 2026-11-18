@@ -69,6 +69,7 @@
     const buttonRising = button && !s.buttonHigh;
     const startAttack = gateRising || triggerRising || buttonRising;
     const gateFalling = !gate && s.gateHigh;
+    const triggerMode = p.mode === 1 || p.mode === "trigger";
     s.gateHigh = gate;
     s.triggerHigh = trigger;
     s.buttonHigh = button;
@@ -78,7 +79,7 @@
       s.progress = 0;
       s.start = s.env;
       s.target = 10;
-    } else if (gateFalling && s.stage !== STAGE.IDLE && s.stage !== STAGE.RELEASE) {
+    } else if (gateFalling && !triggerMode && s.stage !== STAGE.IDLE && s.stage !== STAGE.RELEASE) {
       s.stage = STAGE.RELEASE;
       s.progress = 0;
       s.start = s.env;

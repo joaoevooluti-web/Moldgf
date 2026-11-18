@@ -873,11 +873,11 @@ function makeADSRMixerPlan() {
     [cable("adsr1", "env", "mixer1", "ch1"), cable("mixer1", "main", "out1", "l")]);
 }
 
-function buildADSRMixerRack(engine) {
+function buildADSRMixerRack(engine, mode = 0) {
   engine.mkInst("out1", "out", { lv: 1, mu: 0 });
   engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
   engine.mkInst("adsr1", "adsr", {
-    attack: 0, decay: 0, sustain: 0.5, release: 0, shape: 0, retrigger: 1, button: 0
+    attack: 0, decay: 0, sustain: 0.5, release: 0, shape: 0, mode, retrigger: 1, button: 0
   });
   engine.idxE();
   engine.cab.push(
@@ -934,4 +934,21 @@ test("ADSR remains active in legacy fallback when an unsupported module is prese
   assert.equal(engine.I.adsr1.r.stage, ADSRDSP.STAGE.ATTACK);
   assert.ok(engine.I.adsr1.r.env > 0);
   assert.equal(engine.V[engine.sig("adsr1.attackGate")], 10);
+});
+
+
+test("topological ADSR trigger mode completes attack/decay after a short gate pulse", () => {
+  const engine = createEngineHarness();
+  const plan = makeADSRMixerPlan();
+  buildADSRMixerRack(engine, 1);
+  assert.equal(engine.setGraphExecutionOrder(plan.order), true);
+  const state = engine.I.adsr1.r;
+  engine.step();
+  engine.setInput("adsr1.gate", 0);
+  engine.step();
+  assert.equal(state.stage, ADSRDSP.STAGE.ATTACK);
+  for (let i = 0; i < 300; i++) engine.step();
+  assert.equal(state.stage, ADSRDSP.STAGE.RELEASE);
+  assert.ok(state.env > 0);
+  assert.deepEqual(Array.from(state.gates), [0, 0, 0, 10]);
 });
