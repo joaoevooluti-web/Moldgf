@@ -21,6 +21,7 @@ const MotionMTRDSP = require("../app/src/main/assets/motionmtr_dsp.js");
 const SlewLimiterDSP = require("../app/src/main/assets/slewlimiter_dsp.js");
 const SlewDSP = require("../app/src/main/assets/slew_dsp.js");
 const ADSRDSP = require("../app/src/main/assets/adsr_dsp.js");
+const PercallDSP = require("../app/src/main/assets/percall_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -48,7 +49,8 @@ function createEngineHarness() {
     MoldgfMotionMTRDSP: MotionMTRDSP,
     MoldgfSlewLimiterDSP: SlewLimiterDSP,
     MoldgfSlewDSP: SlewDSP,
-    MoldgfADSRDSP: ADSRDSP
+    MoldgfADSRDSP: ADSRDSP,
+    MoldgfPercallDSP: PercallDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -951,4 +953,48 @@ test("topological ADSR trigger mode completes attack/decay after a short gate pu
   assert.equal(state.stage, ADSRDSP.STAGE.RELEASE);
   assert.ok(state.env > 0);
   assert.deepEqual(Array.from(state.gates), [0, 0, 0, 10]);
+});
+
+test("topological Percall -> Mixer -> Audio Out runs allocation-free state and master normaling", () => {
+  const engine = createEngineHarness();
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("percall1", "percall", { volume: [1,1,1,1], decay: [0,0,0,0], choke: [0,0] });
+  engine.idxE();
+  engine.cab.push({ a: "percall1.out4", b: "mixer1.ch1" }, { a: "mixer1.main", b: "out1.l" });
+  engine.rebuild();
+  engine.setInput("percall1.ch1", 10);
+  engine.setInput("percall1.ch3", 5);
+  for (let i = 1; i <= 4; i++) engine.setInput("percall1.trigger" + i, 5);
+  assert.equal(engine.setGraphExecutionOrder(["percall1", "mixer1", "out1"]), true);
+  const state = engine.I.percall1.r, result = state.result, inputs = state.inputs;
+  for (let i = 0; i < 48; i++) engine.step();
+  assert.strictEqual(engine.I.percall1.r, state);
+  assert.strictEqual(state.result, result);
+  assert.strictEqual(state.inputs, inputs);
+  assert.strictEqual(state.result.outputs, state.out);
+  assert.strictEqual(state.result.env, state.envOut);
+  assert.ok(Math.abs(state.out[3] - 20) < 1e-9, "master output must include all four channels and odd-channel normaling");
+  assert.ok(Math.abs(engine.V[engine.sig("percall1.env1")] - (10 * (1/48000*48) / 0.0015)) < 1e-9);
+  assert.ok(Math.abs(engine.V[engine.sig("mixer1.main")] - 20) < 1e-9);
+  const [left, right] = engine.output();
+  assert.ok(Math.abs(left - Math.tanh(4)) < 1e-9);
+  assert.ok(Math.abs(right - Math.tanh(4)) < 1e-9);
+});
+
+test("Percall adapter remains active through legacy step when an unsupported module disables the scheduler", () => {
+  const engine = createEngineHarness();
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("percall1", "percall", { volume: [1,1,1,1], decay: [0,0,0,0], choke: [0,0] });
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  engine.cab.push({ a: "percall1.out4", b: "mixer1.ch1" }, { a: "mixer1.main", b: "out1.l" });
+  engine.rebuild();
+  engine.setInput("percall1.ch1", 10);
+  engine.setInput("percall1.trigger1", 5);
+  assert.equal(engine.setGraphExecutionOrder(["percall1", "mixer1", "out1"]), false);
+  for (let i = 0; i < 48; i++) engine.step();
+  assert.ok(engine.I.percall1.r.out[3] > 0);
+  assert.ok(Math.abs(engine.V[engine.sig("mixer1.main")] - engine.I.percall1.r.out[3]) < 1e-9);
 });
