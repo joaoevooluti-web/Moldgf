@@ -94,7 +94,7 @@ Implement the 34 modules listed in the Befaco VCV Library as native, interoperab
   - WASM: Plaits **185,636 bytes** and Beads **196,726 bytes** were built; the Beads native self-test logged all eight media/mode combinations, synth output and 44.1 kHz host / 24 kHz media resampling as OK; the final verification step successfully compiled both embedded payloads with `WebAssembly.compile`.
   - Gradle: `assembleDebug` succeeded and the debug APK was uploaded.
   - Artifacts: `eurorack-study-debug-apk` ID `13762275448` (1,674,772-byte ZIP, SHA-256 `402a6fb12a13cab3976d83f84b5c675aba5b7f039c29c2f65736059edb5349e9`); `android-unit-test-report` ID `13762210386` (9,904 bytes, SHA-256 `17d24f66187c01f680bd04cfefb85521afba4146f9ff41e3d52b7f634898a371`); `wasm-log` ID `13760556442` (1,378-byte ZIP, SHA-256 `e8e47554965993385a3fe571a9d28b0741436810a232a0cd55df4f2bd70e6a45`).
-- [x] Phase 0 CI evidence is complete. The current branch HEAD is documentation-only commit `1cc81b378735e9c7344c49a87af90c6c2c0e2f1c`, whose parent is the CI-validated code commit above. The baseline artifact and run #75 artifacts are CI evidence only; no installation, audio output, MIDI reception, touch behavior, or visual validation on a physical Android device is claimed.
+- [x] Phase 0 CI evidence is complete. At the historical Phase 0 checkpoint on 2026-11-10, the branch HEAD was documentation-only commit `1cc81b378735e9c7344c49a87af90c6c2c0e2f1c`, whose parent was the CI-validated code commit above; this is not a current-HEAD claim. The baseline artifact and run #75 artifacts are CI evidence only; no installation, audio output, MIDI reception, touch behavior, or visual validation on a physical Android device is claimed.
 - Workflow #75 was triggered by four consecutive code pushes (#72–#75); all four completed successfully, but future work should continue to batch related files into a single commit to avoid redundant CI runs.
 
 **Phase 0 status: complete in automated CI; physical-device validation remains unclaimed.**
@@ -1162,3 +1162,43 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 
 - At code commit `5e26713cde300eb645e3a90e6a86b0ba589e711e`, `main...feature/befaco-modules` was **633 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified. No merge or force-push was performed.
+
+## Workflow #116 — Percall allocation-free topological adapter (2026-11-19)
+
+### Implemented
+- DSP/runtime commit: `a7e795318ebb8e214bd00001957e2f3242e9f7e9`.
+- Regression correction: `aa972582bff9874a460a9955261a1da8950b8d3e`.
+- Replaced the PerCall runtime initializer with `MoldgfPercallDSP.createState()`; the state owns four envelope/stage/edge arrays, normalized audio/channel scratch, reusable inputs, output/envelope/gain buffers and a stable result record.
+- Added `reset(state)` and `processInto(inputs, params, state, sampleTime)`. The caller-owned path mutates state and returns the same result object/buffers without per-sample array or result-object creation. The older `process()` result-copy API remains as a compatibility wrapper.
+- Reworked `percallF()` to fill state-owned input/patch-status scratch and call `processInto()`, publishing audio and envelope outputs directly. The same adapter is used by the guarded topological dispatcher and legacy `step()`.
+- Added PerCall to the audio-engine whitelist, UI active-scheduler allowlist and `processTopologicalRack()` dispatcher. Its existing typed graph descriptor remains unchanged.
+- Preserved the four-channel audio normaling (odd channels normal to the previous even channel), individual outputs, channel-four master sum that removes OUT1/OUT2/OUT3 when patched, Strength CV, Decay CV, trigger edge/hysteresis and Choke behavior. No VCV/Befaco source implementation or proprietary panel artwork was copied.
+
+### Tests and intermediate regression
+- Added three DSP tests: stable `processInto` result/buffer identities, reset clearing envelope/edge/scratch/output state without replacing buffers, and patched-master/Strength scaling.
+- Added two scheduler-runtime tests: PerCall → Mixer → Audio Out in topological mode, and PerCall routing when an unsupported module forces legacy execution.
+- Workflow [#115 / run 44532606879](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44532606879) failed at the Node gate on commit `a7e7953`: **758/759** tests passed. The single failure was an overstrict legacy-fallback fixture that expected same-sample equality despite the fixed legacy bucket order processing Mixer before PerCall. The adapter itself produced its output; the fallback test was corrected to assert downstream positive routing/output and document the one-sample legacy ordering limitation.
+- Final workflow [#116 / run 44532791672](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44532791672) completed with **success** on commit `aa972582bff9874a460a9955261a1da8950b8d3e`.
+- Node: **759/759 passed**, zero failures, skips or todo.
+- Android/JUnit: **13/13 passed**, zero failures/errors/skips. The downloaded XML confirms MIDI decoder 9/9 and MIDI batch encoder 4/4.
+- Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**. Both embedded payloads passed the final `WebAssembly.compile` verifier.
+- Beads native self-test: `SELFTEST OK`; all eight media/mode combinations, synth output and 44.1 kHz host / 24 kHz media resampling checks passed.
+- Gradle `testDebugUnitTest` and `assembleDebug`: success; APK upload and final WASM payload verification succeeded.
+- Artifacts:
+  - `eurorack-study-debug-apk`, ID **14533543484**, ZIP **1,681,902 bytes**, SHA-256 `c848dcdcf8ad61bc50b8890e347d6a27ca868a0a2b781c0afbee3923b5b63580`; embedded APK **1,716,707 bytes**, SHA-256 `fcaabb7000b58c075f4b1819c2f9ad0d479a51e8bc5866f805a80b052713abdd`.
+  - `android-unit-test-report`, ID **14533808199**, ZIP **9,914 bytes**, SHA-256 `3a519b259f35d09ee69b9bfe235a7c39cc8fbf058f198c0c566a4ba1f0dbd048`.
+  - `wasm-log`, ID **14535012022**, ZIP **1,380 bytes** (downloaded and inspected; build log records both real payloads and Beads self-test).
+- APK archive inspection confirms `percall_dsp.js` (5,329 bytes), updated `index.html` (335,887 bytes), `module_graph.js` (12,560 bytes), 42 DSP assets and both Plaits/Beads wrappers. The packaged HTML includes the PerCall `createState()` factory, dispatcher and scheduler allowlist. This is CI packaging evidence only.
+- Non-fatal warnings: Plaits `PAGE_SIZE` macro redefinition; upstream GitHub Actions Node 20 deprecation, `punycode` and `url.parse()` warnings. None failed #116.
+
+### PerCall status after #116
+- **Implemented:** reusable DSP state/reset and `processInto()`, legacy compatibility wrapper, typed-graph scheduler admission and both topological/legacy adapter paths.
+- **Tested:** DSP limits/strength, master patch-normaling, reset/edge state, buffer identity, topological audio routing and legacy downstream routing.
+- **Validated in CI:** #116; 759/759 Node, 13/13 JUnit, Plaits/Beads build and payload verification, Beads native self-test, Gradle unit tests/APK assembly and artifact inspection.
+- **Pending / limitations:** legacy fallback's fixed bucket order can leave Mixer one sample behind PerCall; topological execution removes that ordering issue when the rack is fully supported. The model remains a clean-room behavioral approximation, not analog/firmware parity. Choke/decay/strength response and visual faceplate fidelity have not been calibrated against physical hardware. The global versioned state/reset and parameter event queue remain pending.
+- **Scheduler inventory:** **14 processing module types** plus Audio Out — Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Slew, ADSR, Percall, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer. Remaining catalog modules continue on legacy execution until their contracts are audited.
+- **Not claimed:** APK installation, audio/CV, MIDI, touch, visual or physical Android-device validation.
+
+### Repository protection after #116
+- At code commit `aa972582bff9874a460a9955261a1da8950b8d3e`, `main...feature/befaco-modules` is **637 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` was not modified; no merge or force-push was performed.
