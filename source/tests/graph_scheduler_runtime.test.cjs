@@ -39,7 +39,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(engine, /function setGraphExecutionOrder\(order\)/);
   assert.match(engine, /function processTopologicalRack\(\)/);
   assert.match(engine, /fromIndex>=toIndex/);
-  assert.match(engine, /!\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','out'\]\.includes\(m\.t\)/);
+  assert.match(engine, /!\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','out'\]\.includes\(m\.t\)/);
   assert.match(engine, /if\(m\.t==='voltio'\)voltioF\(m\)/);
   assert.match(engine, /function atteF\(m\)\{[^}]*MoldgfAtteDSP\.processInto\(/);
   assert.match(engine, /function joystickF\(m\)\{[^}]*MoldgfJoystickDSP\.processInto\(/);
