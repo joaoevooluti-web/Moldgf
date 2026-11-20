@@ -41,7 +41,9 @@ test("Schmitt trigger rejects low noise and requires a clean falling threshold",
   const state=MuDi.createState();
   MuDi.process(.5,0,false,state);
   assert.equal(state.clockHigh,false);
-  MuDi.process(5,0,false,state);
+  MuDi.process(1.5,0,false,state);
+  assert.equal(state.clockHigh,false);
+  MuDi.process(2.1,0,false,state);
   assert.equal(state.clockHigh,true);
   MuDi.process(.5,0,false,state);
   assert.equal(state.clockHigh,true);
@@ -55,4 +57,35 @@ test("divider states remain independent and reset can be held high", () => {
   assert.equal(state.div2,false);
   MuDi.process(0,5,false,state);
   assert.deepEqual([state.div2,state.div4,state.div8,state.div16],[false,false,false,false]);
+});
+
+test("allocation-free processInto exposes three base copies and four divisions",()=>{
+  const state=MuDi.createState(), outputs=state.outputs;
+  MuDi.processInto(5,0,false,state);
+  assert.strictEqual(MuDi.processInto(5,0,false,state),outputs);
+  assert.deepEqual(Array.from(outputs),[10,10,10,10,10,10,10]);
+  MuDi.processInto(0,0,false,state);
+  MuDi.processInto(5,0,false,state);
+  assert.deepEqual(Array.from(outputs),[10,10,10,0,10,10,10]);
+  assert.strictEqual(state.outputs,outputs);
+});
+
+test("reset API clears clock/divider edge state and preserves buffers",()=>{
+  const state=MuDi.createState(),outputs=state.outputs,states=state.states;
+  for(let i=0;i<8;i++){pulse(state);MuDi.process(0,0,false,state)}
+  MuDi.reset(state);
+  assert.deepEqual(Array.from(outputs),[0,0,0,0,0,0,0]);
+  assert.deepEqual(Array.from(states),[0,0,0,0,0]);
+  assert.strictEqual(state.outputs,outputs);
+  assert.strictEqual(state.states,states);
+  assert.equal(state.clockHigh,false);
+});
+
+test("reset dominates a simultaneous clock rising edge",()=>{
+  const state=MuDi.createState();
+  MuDi.processInto(5,5,false,state);
+  assert.deepEqual(Array.from(state.states),[1,0,0,0,0]);
+  MuDi.processInto(0,0,false,state);
+  MuDi.processInto(5,0,false,state);
+  assert.deepEqual(Array.from(state.states),[1,1,1,1,1]);
 });

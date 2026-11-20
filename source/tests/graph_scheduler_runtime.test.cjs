@@ -52,6 +52,9 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(engine, /function adsrF\(m\)\{[^\n]*MoldgfADSRDSP\.processInto\(/);
   assert.match(engine, /else if\(m\.t==='adsr'\)adsrF\(m\)/);
   assert.match(engine, /else if\(m\.t==='percall'\)percallF\(m\)/);
+  assert.match(engine, /else if\(m\.t==='mudi'\)mudiF\(m\)/);
+  assert.match(engine, /function mudiF\(m\)\{[^\n]*MoldgfMuDiDSP\.processInto\(/);
+  assert.match(engine, /mudi:\(\)=>MoldgfMuDiDSP\.createState\(\)/);
   assert.match(engine, /else if\(m\.t==='joystick'\)joystickF\(m\)/);
   assert.match(engine, /else if\(m\.t==='dualAt'\)dualAtenuverterF\(m\)/);
   assert.match(engine, /else if\(m\.t==='abc'\)abcF\(m\)/);
@@ -61,7 +64,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(step, /graphExecutionOrder&&processTopologicalRack\(\)/);
   assert.match(step, /A=byT\.atte/);
   assert.match(step, /A=byT\.out/);
-  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','out'\]\)/);
+  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','out'\]\)/);
   assert.match(ui, /executionMode:executionOrder\?'topological':'legacy'/);
   assert.match(ui, /fromIndex>=toIndex/);
   assert.match(ui, /function postCab\(\)\{const order=activeSchedulerOrder\(\);if\(typeof globalThis\.MoldgfSetExecutionOrder==='function'\)globalThis\.MoldgfSetExecutionOrder\(order\);post\(\{t:'cab'/);
@@ -94,4 +97,12 @@ test("every module bucket referenced by the shared step is declared for idxE and
   const referenced = new Set([...step.matchAll(/A=byT\.([A-Za-z0-9_]+)/g)].map(match => match[1]));
   const missing = [...referenced].filter(type => !declared.has(type));
   assert.deepEqual(missing, []);
+});
+
+
+test("MuDi is admitted consistently by the guarded scheduler",()=>{
+  const {engine,ui}=readScripts();
+  assert.match(engine,/function mudiF\(m\)\{[^\n]*MoldgfMuDiDSP\.processInto\(/);
+  assert.match(engine,/else if\(m\.t==='mudi'\)mudiF\(m\)/);
+  assert.match(ui,/ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'mudi'[^\]]*\]\)/);
 });

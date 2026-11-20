@@ -22,6 +22,7 @@ const SlewLimiterDSP = require("../app/src/main/assets/slewlimiter_dsp.js");
 const SlewDSP = require("../app/src/main/assets/slew_dsp.js");
 const ADSRDSP = require("../app/src/main/assets/adsr_dsp.js");
 const PercallDSP = require("../app/src/main/assets/percall_dsp.js");
+const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -50,7 +51,8 @@ function createEngineHarness() {
     MoldgfSlewLimiterDSP: SlewLimiterDSP,
     MoldgfSlewDSP: SlewDSP,
     MoldgfADSRDSP: ADSRDSP,
-    MoldgfPercallDSP: PercallDSP
+    MoldgfPercallDSP: PercallDSP,
+    MoldgfMuDiDSP: MuDiDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -998,4 +1000,54 @@ test("Percall adapter remains active through legacy step when an unsupported mod
   assert.ok(engine.I.percall1.r.out[3] > 0);
   assert.ok(engine.V[engine.sig("mixer1.main")] > 0, "legacy bucket order may leave Mixer one sample behind but must still route PerCall output");
   assert.ok(engine.output()[0] > 0, "legacy audio output must remain connected");
+});
+
+
+test("topological MuDi exposes three conditioned copies and four divisions through ADSR and Mixer",()=>{
+  const engine=createEngineHarness();
+  engine.mkInst("out1","out",{lv:1,mu:0});
+  engine.mkInst("mixer1","mixer",{gain:[1,0,0,0]});
+  engine.mkInst("adsr1","adsr",{attack:0,decay:0,sustain:.5,release:0,shape:0,mode:0,retrigger:1,button:0});
+  engine.mkInst("mudi1","mudi",{removeClockDC:0});
+  engine.idxE();
+  engine.cab.push({a:"mudi1.f1",b:"adsr1.gate"},{a:"adsr1.env",b:"mixer1.ch1"},{a:"mixer1.main",b:"out1.l"});
+  engine.rebuild();
+  engine.setInput("mudi1.clock",5);
+  const order=["mudi1","adsr1","mixer1","out1"];
+  assert.equal(engine.setGraphExecutionOrder(order),true);
+  const state=engine.I.mudi1.r,outputs=state.outputs;
+  engine.step();
+  assert.deepEqual(Array.from(outputs),[10,10,10,10,10,10,10]);
+  assert.equal(engine.V[engine.sig("mudi1.f1")],10);
+  assert.equal(engine.V[engine.sig("mudi1.f1b")],10);
+  assert.equal(engine.V[engine.sig("mudi1.f1c")],10);
+  assert.equal(engine.I.adsr1.r.stage,ADSRDSP.STAGE.ATTACK);
+  assert.ok(engine.V[engine.sig("mixer1.main")]>0,"clock copy must trigger the downstream envelope and mixer");
+  assert.strictEqual(state.outputs,outputs);
+  engine.setInput("mudi1.reset",5);
+  engine.step();
+  assert.deepEqual(Array.from(state.states),[1,0,0,0,0]);
+  engine.setInput("mudi1.clock",0);engine.setInput("mudi1.reset",0);engine.step();
+  engine.setInput("mudi1.clock",5);engine.step();
+  assert.deepEqual(Array.from(state.states),[1,1,1,1,1]);
+  assert.strictEqual(state.outputs,outputs);
+});
+
+test("MuDi still routes its conditioned clock in legacy fallback",()=>{
+  const engine=createEngineHarness();
+  engine.mkInst("out1","out",{lv:1,mu:0});
+  engine.mkInst("mixer1","mixer",{gain:[1,0,0,0]});
+  engine.mkInst("adsr1","adsr",{attack:0,decay:0,sustain:.5,release:0,shape:0,mode:0,retrigger:1,button:0});
+  engine.mkInst("mudi1","mudi",{removeClockDC:0});
+  engine.mkInst("mid1","mid",{});
+  engine.idxE();
+  engine.cab.push({a:"mudi1.f1",b:"adsr1.gate"},{a:"adsr1.env",b:"mixer1.ch1"},{a:"mixer1.main",b:"out1.l"});
+  engine.rebuild();engine.setInput("mudi1.clock",5);
+  assert.equal(engine.setGraphExecutionOrder(["mudi1","adsr1","mixer1","out1"]),false);
+  engine.step();
+  assert.equal(engine.V[engine.sig("mudi1.f1")],10);
+  engine.step();engine.step();
+  assert.ok(engine.I.adsr1.r.env>0);
+  assert.ok(engine.V[engine.sig("mixer1.main")]>0);
+  assert.ok(engine.output()[0]>0);
 });
