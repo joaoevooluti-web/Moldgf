@@ -38,5 +38,5 @@ test("MuDi faceplate and live descriptor expose seven output jacks",()=>{
     assert.ok(descriptor.includes("id:'"+id+"'"),"missing descriptor port "+id);
   }
   assert.match(panel,/CLOCK MULTIPLE/);
-  assert.match(panel,/1/16 F/);
+  assert.match(panel,/1\/16 F/);
 });
