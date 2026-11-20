@@ -1202,3 +1202,39 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 ### Repository protection after #116
 - At code commit `aa972582bff9874a460a9955261a1da8950b8d3e`, `main...feature/befaco-modules` is **637 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` was not modified; no merge or force-push was performed.
+
+
+## Workflow #119 — MuDi allocation-conscious scheduler migration (2026-11-20)
+
+### Implemented
+- DSP commit: `f141612d515be6b5479f9792496a9d1a298017ed`; graph-test correction: `ca17f70f18cdf055c2fb33c684c7fda08fc61e0d`; scheduler-admission test correction: `b4dcc27257aa7e5086a113769431b7310ff8c9fe`.
+- Reworked MuDi around `createState()`, `reset()`, and `processInto()`. The caller-owned `Float32Array(7)` and `Uint8Array(5)` remain stable; `processInto()` does not create per-sample objects or arrays. The legacy `process()` wrapper preserves the original five-output shape for compatibility.
+- Implemented three conditioned base-clock copies and four square-wave divisions (1/2, 1/4, 1/8, 1/16), 0–10 V scaling, the optional application bipolar offset, Schmitt clock/reset thresholds, reset dominance and divider state.
+- Added seven typed gate outputs to the descriptor, jack renderer and graph contracts; admitted MuDi to the engine/UI scheduler allowlists and topological dispatcher. The legacy `step()` bucket still calls the same adapter when a rack falls back.
+- The app renders separate CLOCK and RESET jacks rather than the hardware TRS tip/ring connector. The optional ±5 V selector is an app compatibility feature. This clean-room port did not reuse VCV/Befaco source or proprietary panel artwork.
+
+### Tests and corrections
+- Added nine deterministic DSP tests, four graph/faceplate tests, two scheduler runtime routing tests and a scheduler-admission regression.
+- Intermediate workflow #117 (run 44744774475) failed at the scheduler allowlist assertion because its expected list had not yet been updated for MuDi; run #118 (44744849805) exposed the same stale assertion after the graph-test regex correction. Updated the audio-engine whitelist assertion in commit `b4dcc272`.
+- Final workflow [#119 / run 44745021819](https://github.com/joaoevooluti-web/Moldgf/actions/runs/44745021819) succeeded on `b4dcc27257aa7e5086a113769431b7310ff8c9fe`:
+  - Node: **766 tests**, successful, zero failures (run log summary).
+  - Android `testDebugUnitTest`: success; uploaded JUnit artifact.
+  - Plaits WASM: **185,636 bytes**; Beads WASM: **196,726 bytes**; both passed the final `WebAssembly.compile` verification.
+  - Beads native self-test: `SELFTEST OK`.
+  - Gradle `assembleDebug`: success; APK artifact uploaded.
+- Artifacts (metadata verified; binary downloads unavailable in this run, so contents/hashes inside the APK were not independently inspected):
+  - `eurorack-study-debug-apk`, ID **14633305236**, 1,682,502 bytes, GitHub SHA-256 digest `76b94ecd956adefab146c41538453b63e27eec987c3d40f3360e5628c8f42e86`.
+  - `android-unit-test-report`, ID **14631509878**, 9,898 bytes, SHA-256 `096ff0c5039296aea8bf41f60c026371aff266a1cc1c32b69baabb54f439341f`.
+  - `wasm-log`, ID **14631979009**, 1,379 bytes, SHA-256 `d9702a4a3d3af718f3e1a97f8db75d3a7c1f882d2670142ca9b58c6709cd6b3f`.
+- The successful workflow is CI packaging/build evidence only; no APK installation, audio/CV output, MIDI, touch, visual or physical Android-device validation is claimed.
+
+### MuDi status after #119
+- **Implemented:** seven outputs, typed routing, stable-state adapter, reset and topological/legacy dispatch.
+- **Tested:** deterministic clock thresholds, divider sequence, reset, level offset, output buffer identity, faceplate/descriptor ports and downstream routing/fallback.
+- **Validated in CI:** #119, 766 Node tests, Gradle unit tests, WASM builds/verification, Beads native self-test and APK assembly/upload.
+- **Pending/limitations:** the square-wave divider model and hysteresis remain clean-room approximations, not measured hardware calibration; TRS clock/reset is represented by two app jacks; the optional bipolar selector is not a literal hardware feature. Parameter event queue, versioned runtime state/reset contracts, dynamic output typing and visual/device validation remain pending.
+- **Scheduler inventory:** **15 processing types** plus Audio Out — Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Slew, ADSR, PerCall, MuDi, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer. Other catalog modules remain on legacy execution until audited.
+
+### Repository protection after #119
+- `main...feature/befaco-modules`: **641 commits ahead / 0 behind**; merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
+- `main` remains unchanged; no merge or force-push.
