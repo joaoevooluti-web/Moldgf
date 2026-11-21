@@ -1238,3 +1238,13 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 ### Repository protection after #119
 - `main...feature/befaco-modules`: **641 commits ahead / 0 behind**; merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`.
 - `main` remains unchanged; no merge or force-push.
+
+
+
+## IROI — allocation-conscious adapter and guarded scheduler migration (2026-11-21, CI pending)
+
+- **Implemented:** added `processInto()` while preserving `process()`; state now owns a reusable input scratch record and result record. `iroiF()` fills the scratch fields and dispatches the DSP without constructing an input object per sample. Added a buffer-preserving `reset()` for filter, comb, resonator, echo, reverb/allpass and modulation state. Iroi is admitted to both scheduler allowlists and the topological dispatcher; its existing legacy `step()` path remains available.
+- **Tests added:** stable scratch/result identity, reset memory clearing with buffer identity preservation, right-input normaling and independent stereo paths, topological Iroi → Mixer → Audio Out routing, legacy fallback, and scheduler-admission assertions. Existing typed ports and jack audit are unchanged.
+- **CI status:** pending this commit; no local Node/Gradle execution was possible in this session. The consolidated GitHub Actions gate is the next direct validation.
+- **Limitations:** Iroi still models L/R as two scalar mono ports; filter/resonator/echo/ambience algorithms remain clean-room approximations, not firmware/analog parity. The sample-rate change path rebuilds effect buffers when the rate changes; the steady-state processing path reuses scratch/result and does not allocate per sample.
+- **License:** no VCV/Befaco source or proprietary panel artwork was reused in this adapter change.

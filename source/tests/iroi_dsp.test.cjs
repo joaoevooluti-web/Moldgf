@@ -24,3 +24,22 @@ test("sample-rate changes rebuild the delay buffers safely",()=>{const s=Iroi.cr
 test("IROI reuses its result object across audio callbacks",()=>{const s=Iroi.createState(48000),a=Iroi.process(params(),{left:.1},s,48000),b=Iroi.process(params(),{left:.2},s,48000);assert.equal(a,b)});
 
 test("shift-page dissonance changes the three resonator tuning ratios",()=>{const a=Iroi.createState(48000),b=Iroi.createState(48000),p=params({resMix:1,resDissonance:0}),q=params({resMix:1,resDissonance:1});for(let n=0;n<200;n++){Iroi.process(p,{left:n===0?1:0,right:n===0?1:0},a,48000);Iroi.process(q,{left:n===0?1:0,right:n===0?1:0},b,48000)}assert.ok(a.channels[0].resonator[1].buf.some((v,i)=>v!==b.channels[0].resonator[1].buf[i]))});
+
+test("processInto reuses Iroi input scratch and result record",()=>{
+ const s=Iroi.createState(48000),inputs=s.inputs,result=s.result;
+ inputs.left=.25;inputs.right=.25;
+ assert.strictEqual(Iroi.processInto(params(),inputs,s,48000),result);
+ inputs.left=.1;inputs.right=.1;
+ assert.strictEqual(Iroi.processInto(params(),inputs,s,48000),result);
+ assert.strictEqual(s.inputs,inputs);assert.strictEqual(s.result,result);
+});
+test("reset clears Iroi effect memory without replacing preallocated buffers",()=>{
+ const s=Iroi.createState(48000),ch=s.channels[0],echo=ch.echoBuf,comb=ch.filter.comb,res=ch.resonator[0].buf,rev=ch.reverb[0].buf,all=ch.allpass[0].buf,result=s.result,inputs=s.inputs;
+ inputs.left=1;inputs.right=1;
+ Iroi.processInto(params({filterMode:3,filterRes:.8,resMix:1,echoMix:1,ambienceMix:1}),inputs,s,48000);
+ assert.ok(echo.some(v=>v!==0));assert.ok(comb.some(v=>v!==0));assert.ok(res.some(v=>v!==0));assert.ok(rev.some(v=>v!==0));assert.ok(all.some(v=>v!==0));
+ Iroi.reset(s);
+ assert.strictEqual(s.channels[0].echoBuf,echo);assert.strictEqual(s.channels[0].filter.comb,comb);assert.strictEqual(s.channels[0].resonator[0].buf,res);assert.strictEqual(s.channels[0].reverb[0].buf,rev);assert.strictEqual(s.channels[0].allpass[0].buf,all);assert.strictEqual(s.result,result);assert.strictEqual(s.inputs,inputs);
+ assert.equal(echo.some(v=>v!==0),false);assert.equal(comb.some(v=>v!==0),false);assert.equal(res.some(v=>v!==0),false);assert.equal(rev.some(v=>v!==0),false);assert.equal(all.some(v=>v!==0),false);
+ assert.equal(result.left,0);assert.equal(result.right,0);assert.equal(result.peak,0);assert.equal(result.clipping,false);assert.equal(inputs.left,0);assert.equal(inputs.right,null);assert.equal(s.echoPos,0);assert.equal(s.sampleRate,48000);
+});

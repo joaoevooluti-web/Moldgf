@@ -20,7 +20,8 @@
  }
  function createState(sampleRate){
   const sr=clamp(sampleRate,8000,192000,48000),result={left:0,right:0,peak:0,clipping:false,mod:0};
-  return{sampleRate:sr,channels:[channel(sr),channel(sr)],echoPos:0,modPhase:0,modHold:0,modChaos:0,modEnvelope:0,randomValue:0,rng:0x49524f49,syncHigh:false,randomHigh:false,syncCounter:0,syncPeriodSamples:0,result};
+  const inputs={left:0,right:null,vcaCV:null,resMixCV:null,echoMixCV:null,ambienceMixCV:null,filterCutoffCV:null,resonatorTuneCV:null,echoDensityCV:null,ambienceSpaceCV:null,sync:0,random:0};
+  return{sampleRate:sr,channels:[channel(sr),channel(sr)],echoPos:0,modPhase:0,modHold:0,modChaos:0,modEnvelope:0,randomValue:0,rng:0x49524f49,syncHigh:false,randomHigh:false,syncCounter:0,syncPeriodSamples:0,inputs,result};
  }
  function ringRead(buf,pos,delay){const n=buf.length,d=Math.max(1,Math.min(n-2,delay|0));return buf[(pos-d+n)%n]}
  function filterVca(ch,x,cutoff,resonance,mode,level,sr,noise){
@@ -63,8 +64,8 @@
   return ch.reverbLP;
  }
  function process(params,inputs,state,sampleRate){
-  const p=params||{},i=inputs||{},s=state||createState(sampleRate),sr=clamp(sampleRate,8000,192000,s.sampleRate);
-  if(s.sampleRate!==sr){const fresh=createState(sr);s.sampleRate=sr;s.channels=fresh.channels;s.echoPos=0;s.syncCounter=0;s.syncPeriodSamples=0;s.modPhase=0;s.modHold=0;s.modChaos=0;s.modEnvelope=0;s.result=fresh.result;s.syncHigh=false;s.randomHigh=false}
+  const p=params||{},s=state||createState(sampleRate),i=inputs||s.inputs,sr=clamp(sampleRate,8000,192000,s.sampleRate);
+  if(s.sampleRate!==sr){const fresh=createState(sr);s.sampleRate=sr;s.channels=fresh.channels;s.echoPos=0;s.syncCounter=0;s.syncPeriodSamples=0;s.modPhase=0;s.modHold=0;s.modChaos=0;s.modEnvelope=0;s.result=fresh.result;s.inputs=fresh.inputs;s.syncHigh=false;s.randomHigh=false}
   const left=finite(i.left),right=i.right===null||i.right===undefined?left:finite(i.right);
   const sync=finite(i.sync)>=1,random=finite(i.random)>=1;
   if(sync&&!s.syncHigh){if(s.syncCounter>0)s.syncPeriodSamples=s.syncCounter;s.syncCounter=0;s.modPhase=0}
@@ -130,5 +131,25 @@
   r.left=xL;r.right=xR;r.peak=peak;r.clipping=peak>1;r.mod=mod;r.modPhase=s.modPhase;
   return r;
  }
- return{createState,process};
+ function processInto(params,inputs,state,sampleRate){
+  const s=state||createState(sampleRate);
+  return process(params,inputs||s.inputs,s,sampleRate);
+ }
+ function reset(state){
+  if(!state)return state;
+  for(let c=0;c<state.channels.length;c++){
+   const ch=state.channels[c],f=ch.filter;
+   f.ic1=0;f.ic2=0;f.comb.fill(0);f.combPos=0;f.lastCutoff=-1;f.lastRes=-1;f.lastMode=-1;f.g=0;f.k=1;f.a1=1;
+   for(let n=0;n<ch.resonator.length;n++){ch.resonator[n].buf.fill(0);ch.resonator[n].pos=0}
+   ch.echoLP=0;ch.echoBuf.fill(0);
+   for(let n=0;n<ch.reverb.length;n++){ch.reverb[n].buf.fill(0);ch.reverb[n].pos=0}
+   for(let n=0;n<ch.allpass.length;n++){ch.allpass[n].buf.fill(0);ch.allpass[n].pos=0}
+   ch.reverbLP=0;
+  }
+  state.echoPos=0;state.modPhase=0;state.modHold=0;state.modChaos=0;state.modEnvelope=0;state.randomValue=0;state.rng=0x49524f49;state.syncHigh=false;state.randomHigh=false;state.syncCounter=0;state.syncPeriodSamples=0;
+  const i=state.inputs;if(i){i.left=0;i.right=null;i.vcaCV=null;i.resMixCV=null;i.echoMixCV=null;i.ambienceMixCV=null;i.filterCutoffCV=null;i.resonatorTuneCV=null;i.echoDensityCV=null;i.ambienceSpaceCV=null;i.sync=0;i.random=0}
+  const r=state.result;r.left=0;r.right=0;r.peak=0;r.clipping=false;r.mod=0;r.modPhase=0;
+  return state;
+ }
+ return{createState,process,processInto,reset};
 });

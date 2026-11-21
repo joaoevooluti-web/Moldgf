@@ -23,6 +23,7 @@ const SlewDSP = require("../app/src/main/assets/slew_dsp.js");
 const ADSRDSP = require("../app/src/main/assets/adsr_dsp.js");
 const PercallDSP = require("../app/src/main/assets/percall_dsp.js");
 const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
+const IroiDSP = require("../app/src/main/assets/iroi_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -52,7 +53,8 @@ function createEngineHarness() {
     MoldgfSlewDSP: SlewDSP,
     MoldgfADSRDSP: ADSRDSP,
     MoldgfPercallDSP: PercallDSP,
-    MoldgfMuDiDSP: MuDiDSP
+    MoldgfMuDiDSP: MuDiDSP,
+    MoldgfIroiDSP: IroiDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -1050,4 +1052,43 @@ test("MuDi still routes its conditioned clock in legacy fallback",()=>{
   assert.ok(engine.I.adsr1.r.env>0);
   assert.ok(engine.V[engine.sig("mixer1.main")]>0);
   assert.ok(engine.output()[0]>0);
+});
+
+const IROI_PARAMS={filterMode:0,filterPosition:0,cutoff:1,filterRes:0,vcaLevel:1,resTune:.5,resDissonance:0,resFeedback:0,resMix:0,echoDensity:0,echoTone:1,echoRepeats:0,echoMix:0,space:0,decay:.5,ambienceMix:0,filterCutoffAtt:0,resonatorTuneAtt:0,echoDensityAtt:0,ambienceSpaceAtt:0,modSource:0,modTarget:0,modWave:1,modLevel:0,modFreq:.2};
+function buildIroiMixerRack(engine,params=IROI_PARAMS){
+ engine.mkInst("out1","out",{lv:1,mu:0});
+ engine.mkInst("mixer1","mixer",{gain:[1,1,0,0]});
+ engine.mkInst("iroi1","iroi",params);
+ engine.idxE();
+ engine.cab.push({a:"iroi1.outL",b:"mixer1.ch1"},{a:"iroi1.outR",b:"mixer1.ch2"},{a:"mixer1.main",b:"out1.l"});
+ engine.rebuild();
+}
+test("topological Iroi normalizes the unpatched right input and routes reusable stereo state",()=>{
+ const engine=createEngineHarness();buildIroiMixerRack(engine);
+ engine.setInput("iroi1.inL",.5);
+ assert.equal(engine.setGraphExecutionOrder(["iroi1","mixer1","out1"]),true);
+ const state=engine.I.iroi1.r,inputs=state.inputs,result=state.result;
+ engine.step();
+ assert.equal(inputs.right,null);
+ assert.ok(Number.isFinite(result.left)&&Number.isFinite(result.right));
+ assert.ok(Math.abs(result.left-result.right)<1e-9,"unpatched right input must follow left");
+ assert.strictEqual(state.inputs,inputs);assert.strictEqual(state.result,result);
+ assert.equal(engine.V[engine.sig("iroi1.outL")],result.left);
+ assert.equal(engine.V[engine.sig("iroi1.outR")],result.right);
+ assert.ok(engine.output()[0]>0,"Iroi output must reach the downstream Mixer and Audio Out");
+});
+test("topological Iroi keeps the two connected input paths independent",()=>{
+ const engine=createEngineHarness();buildIroiMixerRack(engine);
+ engine.setInput("iroi1.inL",.5);engine.setInput("iroi1.inR",-.25);
+ assert.equal(engine.setGraphExecutionOrder(["iroi1","mixer1","out1"]),true);
+ engine.step();
+ const r=engine.I.iroi1.r.result;
+ assert.notEqual(r.left,r.right,"patched right input must not be normalled from left");
+});
+test("Iroi remains active in the legacy step when an unsupported rack disables the scheduler",()=>{
+ const engine=createEngineHarness();buildIroiMixerRack(engine);engine.mkInst("mid1","mid",{});
+ engine.idxE();engine.setInput("iroi1.inL",.5);
+ assert.equal(engine.setGraphExecutionOrder(["iroi1","mixer1","out1"]),false);
+ engine.step();engine.step();
+ assert.ok(engine.output()[0]>0,"legacy fallback must continue routing Iroi through the Mixer and Audio Out");
 });
