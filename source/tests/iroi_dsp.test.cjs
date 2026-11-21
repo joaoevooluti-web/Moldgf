@@ -36,7 +36,7 @@ test("processInto reuses Iroi input scratch and result record",()=>{
 test("reset clears Iroi effect memory without replacing preallocated buffers",()=>{
  const s=Iroi.createState(48000),ch=s.channels[0],echo=ch.echoBuf,comb=ch.filter.comb,res=ch.resonator[0].buf,rev=ch.reverb[0].buf,all=ch.allpass[0].buf,result=s.result,inputs=s.inputs;
  inputs.left=1;inputs.right=1;
- Iroi.processInto(params({filterMode:3,filterRes:.8,resMix:1,echoMix:1,ambienceMix:1}),inputs,s,48000);
+ const p=params({filterMode:3,filterRes:.8,resMix:0,echoMix:.5,ambienceMix:1});for(let n=0;n<2000;n++){inputs.left=1;inputs.right=1;Iroi.processInto(p,inputs,s,48000);}
  assert.ok(echo.some(v=>v!==0));assert.ok(comb.some(v=>v!==0));assert.ok(res.some(v=>v!==0));assert.ok(rev.some(v=>v!==0));assert.ok(all.some(v=>v!==0));
  Iroi.reset(s);
  assert.strictEqual(s.channels[0].echoBuf,echo);assert.strictEqual(s.channels[0].filter.comb,comb);assert.strictEqual(s.channels[0].resonator[0].buf,res);assert.strictEqual(s.channels[0].reverb[0].buf,rev);assert.strictEqual(s.channels[0].allpass[0].buf,all);assert.strictEqual(s.result,result);assert.strictEqual(s.inputs,inputs);
