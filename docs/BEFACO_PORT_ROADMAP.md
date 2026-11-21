@@ -1241,7 +1241,7 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 
 
 
-## IROI — allocation-conscious adapter and guarded scheduler migration (2026-11-21, CI pending)
+## IROI — allocation-conscious adapter and guarded scheduler migration (2026-11-21, CI #121 validated)
 
 - **Implemented:** added `processInto()` while preserving `process()`; state now owns a reusable input scratch record and result record. `iroiF()` fills the scratch fields and dispatches the DSP without constructing an input object per sample. Added a buffer-preserving `reset()` for filter, comb, resonator, echo, reverb/allpass and modulation state. Iroi is admitted to both scheduler allowlists and the topological dispatcher; its existing legacy `step()` path remains available.
 - **Tests added:** stable scratch/result identity, reset memory clearing with buffer identity preservation, right-input normaling and independent stereo paths, topological Iroi → Mixer → Audio Out routing, legacy fallback, and scheduler-admission assertions. Existing typed ports and jack audit are unchanged.
@@ -1251,7 +1251,7 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 - **APK inspection:** the ZIP and APK were downloaded and inspected. The APK contains 42 DSP assets, `assets/iroi_dsp.js` (10,854 bytes; SHA-256 `16dbe058a3854af73b728b11dff7e20d4a8988183f8b6bb52537e84ebf3a3b2c`) with `processInto()` and `reset()`, updated `assets/index.html` (335,584 bytes; SHA-256 `c245cbbdb76c7ffad2746c91515d3c397104e8cf6b8df1782132df052f5fbf73`), and both WASM wrappers. This is CI package evidence, not device validation.
 - **Warnings:** non-fatal Plaits `PAGE_SIZE` macro redefinition and GitHub Actions/dependency deprecation warnings remain.
 - **Scheduler inventory:** now **16 processing types** plus Audio Out: Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Slew, ADSR, PerCall, MuDi, Iroi, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer.
-- **Repository protection after #121:** expected `main...feature/befaco-modules` **646 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; `main` unchanged, no merge or force-push.
+- **Repository protection after #121:** expected `main...feature/befaco-modules` **647 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; `main` unchanged, no merge or force-push.
 - No local Node/Gradle execution or physical Android validation was performed in this session.
 - **Limitations:** Iroi still models L/R as two scalar mono ports; filter/resonator/echo/ambience algorithms remain clean-room approximations, not firmware/analog parity. The sample-rate change path rebuilds effect buffers when the rate changes; the steady-state processing path reuses scratch/result and does not allocate per sample.
 - **License:** no VCV/Befaco source or proprietary panel artwork was reused in this adapter change.
