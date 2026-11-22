@@ -203,7 +203,10 @@ test("Bandit panel exposes four hardware bands, individual inserts, CV faders an
   const panel=html.slice(html.indexOf("bandit:{n:"),html.indexOf("iroi:{n:"));
   for(const label of ["BANDIT","8 HP","ALL AUDIO IN","ALL CV IN","LOW 300 Hz","MID LOW 700 Hz","MID HIGH 1.5 kHz","HIGH 5 kHz","BAND IN","LEVEL CV","BAND OUT","RETURN","MIX OUT"])assert.ok(panel.includes(label),"missing Bandit control "+label);
   assert.match(html,/MoldgfBanditDSP\.processInto/);
-  assert.match(html,/MoldgfBanditDSP\.reset/);
+  const dspPath=path.join(__dirname,"../app/src/main/assets/bandit_dsp.js");
+  const dsp=fs.readFileSync(dspPath,"utf8");
+  assert.match(dsp,/function reset\(state\)/);
+  assert.match(dsp,/function processInto\(params,inputs,state,sampleRate,outputPatched\)/);
   assert.match(html,/SU\[K\(m,'bandOut1'\)\]/);
   assert.match(html,/V\[K\(m,'mixOut'\)\]=o\.mixOut/);
 });

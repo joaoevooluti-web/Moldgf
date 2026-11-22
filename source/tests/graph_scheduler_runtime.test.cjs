@@ -64,7 +64,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(step, /graphExecutionOrder&&processTopologicalRack\(\)/);
   assert.match(step, /A=byT\.atte/);
   assert.match(step, /A=byT\.out/);
-  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','out'\]\)/);
+  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','out'\]\)/);
   assert.match(ui, /executionMode:executionOrder\?'topological':'legacy'/);
   assert.match(ui, /fromIndex>=toIndex/);
   assert.match(ui, /function postCab\(\)\{const order=activeSchedulerOrder\(\);if\(typeof globalThis\.MoldgfSetExecutionOrder==='function'\)globalThis\.MoldgfSetExecutionOrder\(order\);post\(\{t:'cab'/);
