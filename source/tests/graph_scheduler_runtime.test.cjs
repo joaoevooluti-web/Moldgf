@@ -39,7 +39,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(engine, /function setGraphExecutionOrder\(order\)/);
   assert.match(engine, /function processTopologicalRack\(\)/);
   assert.match(engine, /fromIndex>=toIndex/);
-  assert.match(engine, /!\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','out'\]\.includes\(m\.t\)/);
+  assert.match(engine, /!\['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','out'\]\.includes\(m\.t\)/);
   assert.match(engine, /if\(m\.t==='voltio'\)voltioF\(m\)/);
   assert.match(engine, /function atteF\(m\)\{[^}]*MoldgfAtteDSP\.processInto\(/);
   assert.match(engine, /function joystickF\(m\)\{[^}]*MoldgfJoystickDSP\.processInto\(/);
@@ -110,6 +110,15 @@ test("MuDi is admitted consistently by the guarded scheduler",()=>{
 test("IROI is admitted consistently by the guarded topological scheduler",()=>{
  const {engine,ui}=readScripts();
  assert.match(engine,/function iroiF\(m\)\{[^\n]*MoldgfIroiDSP\.processInto\(/);
+ assert.match(engine,/function banditF\(m\)\{[^\n]*MoldgfBanditDSP\.processInto\(/);
  assert.match(engine,/else if\(m\.t==='iroi'\)iroiF\(m\)/);
- assert.match(ui,/ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'iroi'[^\]]*\]\)/);
+ assert.match(engine,/else if\(m\.t==='bandit'\)banditF\(m\)/);
+ assert.match(ui,/ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'iroi'[^\]]*'bandit'[^\]]*\]\)/);
+});
+
+test("Bandit is admitted consistently by the guarded topological scheduler",()=>{
+ const {engine,ui}=readScripts();
+ assert.match(engine,/function banditF\(m\)\{[^\n]*MoldgfBanditDSP\.processInto\(/);
+ assert.match(engine,/else if\(m\.t==='bandit'\)banditF\(m\)/);
+ assert.match(ui,/ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'bandit'[^\]]*\]\)/);
 });

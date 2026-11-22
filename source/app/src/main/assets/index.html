@@ -451,7 +451,7 @@ function setGraphExecutionOrder(order){
  const seen=new Set(),positions=Object.create(null);
  for(let i=0;i<pendingGraphExecutionOrder.length;i++){
   const id=pendingGraphExecutionOrder[i],m=I[id];
-  if(!m||seen.has(id)||!['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','out'].includes(m.t)){graphExecutionOrder=null;return false}
+  if(!m||seen.has(id)||!['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','out'].includes(m.t)){graphExecutionOrder=null;return false}
   seen.add(id);positions[id]=i
  }
  for(let i=0;i<cab.length;i++){
@@ -481,6 +481,7 @@ function processTopologicalRack(){
   else if(m.t==='percall')percallF(m);
   else if(m.t==='mudi')mudiF(m);
   else if(m.t==='iroi')iroiF(m);
+  else if(m.t==='bandit')banditF(m);
   else if(m.t==='dualAt')dualAtenuverterF(m);
   else if(m.t==='abc')abcF(m);
   else if(m.t==='axbc')axbcF(m);
@@ -730,7 +731,7 @@ function rampageF(m){const P=m.s,R=m.r,ma=!!R.manualA,mb=!!R.manualB;R.manualA=R
 function springReverbF(m){const P=m.s,o=MoldgfSpringReverbDSP.process(P,{in1:inp(K(m,'in1')),cv1:inp(K(m,'cv1')),in2:inp(K(m,'in2')),cv2:inp(K(m,'cv2')),mixCV:inp(K(m,'mixCV'))},m.r,sr);m.r=o.state;m.r.inputMeter=o.inputMeter;m.r.wetMeter=o.wetMeter;m.r.inputMeterColor=o.inputMeterColor;m.r.wetMeterColor=o.wetMeterColor;m.r.mixAmount=o.mixAmount;m.r.tankInput=o.tankInput;V[K(m,'mix')]=o.mix;V[K(m,'wet')]=o.wet}
 function kickallF(m){const P=m.s,R=m.r,manual=!!R.manualTrigger;R.manualTrigger=0;const o=MoldgfKickallDSP.process(Object.assign({},P,{manualTrigger:manual}),{volume:inp(K(m,'volume')),trigger:inp(K(m,'trigger')),tune:inp(K(m,'tune')),shape:inp(K(m,'shape')),decay:inp(K(m,'decay'))},R,sr);m.r=o.state;V[K(m,'out')]=o.out;m.r.frequency=o.frequency;m.r.volumeEnvelope=o.volumeEnvelope;m.r.pitchEnvelope=o.pitchEnvelope;m.r.output=o.out;m.r.triggered=o.triggered}
 function noisePlethoraF(m){const P=m.s,R=m.r,o=MoldgfNoisePlethoraDSP.process(P,{programCVA:inp(K(m,'programCVA')),programCVB:inp(K(m,'programCVB')),xCVA:inp(K(m,'xCVA')),yCVA:inp(K(m,'yCVA')),xCVB:inp(K(m,'xCVB')),yCVB:inp(K(m,'yCVB')),cutoffCVA:inp(K(m,'cutoffCVA')),cutoffCVB:inp(K(m,'cutoffCVB')),cutoffCVC:inp(K(m,'cutoffCVC')),gritCV:inp(K(m,'gritCV'))},R,sr);m.r=o.state;for(const n of ['outA','outB','white','gritty','filtered'])V[K(m,n)]=o[n];m.r.programAName=o.programAName;m.r.programBName=o.programBName;m.r.programA=o.programA;m.r.programB=o.programB}
-function banditF(m){const P=m.s,R=m.r,o=MoldgfBanditDSP.process(P,{allIn:inp(K(m,'allIn')),allCV:inp(K(m,'allCV')),bandIn:[inp(K(m,'bandIn1')),inp(K(m,'bandIn2')),inp(K(m,'bandIn3')),inp(K(m,'bandIn4'))],bandCV:[inp(K(m,'bandCV1')),inp(K(m,'bandCV2')),inp(K(m,'bandCV3')),inp(K(m,'bandCV4'))],returns:[inp(K(m,'return1')),inp(K(m,'return2')),inp(K(m,'return3')),inp(K(m,'return4'))]},R,sr,[!!SU[K(m,'bandOut1')],!!SU[K(m,'bandOut2')],!!SU[K(m,'bandOut3')],!!SU[K(m,'bandOut4')]]);for(let n=0;n<4;n++)V[K(m,'bandOut'+(n+1))]=o.bands[n];V[K(m,'mixOut')]=o.mixOut;R.peak=o.peak;R.clipping=o.clipping}
+function banditF(m){const P=m.s,R=m.r,i=R.inputs,patch=R.outputPatched;i.allIn=inp(K(m,'allIn'));i.allCV=inp(K(m,'allCV'));for(let n=0;n<4;n++){i.bandIn[n]=inp(K(m,'bandIn'+(n+1));i.bandCV[n]=inp(K(m,'bandCV'+(n+1));i.returns[n]=inp(K(m,'return'+(n+1));patch[n]=SU[K(m,'bandOut'+(n+1))]?1:0}const o=MoldgfBanditDSP.processInto(P,i,R,sr,patch);for(let n=0;n<4;n++)V[K(m,'bandOut'+(n+1))]=o.bands[n];V[K(m,'mixOut')]=o.mixOut;R.peak=o.peak;R.clipping=o.clipping}
 function iroiF(m){const P=m.s,R=m.r,i=R.inputs;i.left=inp(K(m,'inL'));i.right=inp(K(m,'inR'));i.vcaCV=inp(K(m,'vcaCV'));i.resMixCV=inp(K(m,'resMixCV'));i.echoMixCV=inp(K(m,'echoMixCV'));i.ambienceMixCV=inp(K(m,'ambienceMixCV'));i.filterCutoffCV=inp(K(m,'filterCutoffCV'));i.resonatorTuneCV=inp(K(m,'resonatorTuneCV'));i.echoDensityCV=inp(K(m,'echoDensityCV'));i.ambienceSpaceCV=inp(K(m,'ambienceSpaceCV'));i.sync=inp(K(m,'sync'));i.random=inp(K(m,'random'));const o=MoldgfIroiDSP.processInto(P,i,R,sr);V[K(m,'outL')]=o.left;V[K(m,'outR')]=o.right;R.peak=o.peak;R.clipping=o.clipping;R.mod=o.mod}
 function octavesF(m){const P=m.s,R=m.r,o=MoldgfOctavesDSP.process(P,{pitch1:inp(K(m,'pitch1')),pitch2:inp(K(m,'pitch2')),sync:inp(K(m,'sync')),pwmCV:inp(K(m,'pwmCV')),levelCV:[inp(K(m,'levelCV1')),inp(K(m,'levelCV2')),inp(K(m,'levelCV3')),inp(K(m,'levelCV4')),inp(K(m,'levelCV5')),inp(K(m,'levelCV6'))]},R,sr,[!!SU[K(m,'out1')],!!SU[K(m,'out2')],!!SU[K(m,'out3')],!!SU[K(m,'out4')],!!SU[K(m,'out5')],!!SU[K(m,'out6')]]);for(let i=0;i<6;i++)V[K(m,'out'+(i+1))]=o.outputs[i]}
 function mexF(m){const P=m.s,R=m.r,host=byT.muxlicer[(P.host|0)-1],step=host?host.r.step:0,clock=host?(V[K(host,'clockOut')]||0):0,gateInput=inp(K(m,'gateIn')),gateIn=gateInput===null?clock:gateInput,muxGate=host?(V[K(host,'gate'+(step+1))]||0):0,o=MoldgfMexDSP.process(P,{hostPresent:!!host,step,gateIn,muxGate},R);V[K(m,'out')]=o.out}
@@ -1262,7 +1263,7 @@ function refreshGraphPlan(){
  graphPlan=MoldgfModuleGraph.validateGraph(PORT_REGISTRY,modules,cables,runtimeHostDependencies(modules));
  return graphPlan;
 }
-const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','out']);
+const ACTIVE_SCHEDULER_TYPES=new Set(['voltio','atte','joystick','motionmtr','slewlimiter','slew','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','out']);
 function activeSchedulerOrder(){
  const ids=Object.keys(I);
  if(!ids.length||!graphPlan.valid||graphPlan.order.length!==ids.length)return null;

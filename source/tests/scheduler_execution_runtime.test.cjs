@@ -24,6 +24,7 @@ const ADSRDSP = require("../app/src/main/assets/adsr_dsp.js");
 const PercallDSP = require("../app/src/main/assets/percall_dsp.js");
 const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
 const IroiDSP = require("../app/src/main/assets/iroi_dsp.js");
+const BanditDSP = require("../app/src/main/assets/bandit_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -54,7 +55,8 @@ function createEngineHarness() {
     MoldgfADSRDSP: ADSRDSP,
     MoldgfPercallDSP: PercallDSP,
     MoldgfMuDiDSP: MuDiDSP,
-    MoldgfIroiDSP: IroiDSP
+    MoldgfIroiDSP: IroiDSP,
+    MoldgfBanditDSP: BanditDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -1091,4 +1093,34 @@ test("Iroi remains active in the legacy step when an unsupported rack disables t
  assert.equal(engine.setGraphExecutionOrder(["iroi1","mixer1","out1"]),false);
  engine.step();engine.step();
  assert.ok(engine.output()[0]>0,"legacy fallback must continue routing Iroi through the Mixer and Audio Out");
+});
+
+function buildBanditAudioOutRack(engine,params={level1:1,level2:0,level3:0,level4:0}){
+ engine.mkInst("out1","out",{lv:1,mu:0});
+ engine.mkInst("bandit1","bandit",params);
+ engine.idxE();
+ engine.cab.push({a:"bandit1.bandOut1",b:"out1.l"},{a:"bandit1.mixOut",b:"out1.r"});
+ engine.rebuild();
+}
+test("topological Bandit routes its individual send and return-only MIX OUT with stable scratch",()=>{
+ const engine=createEngineHarness();buildBanditAudioOutRack(engine);
+ engine.setInput("bandit1.allIn",.5);engine.setInput("bandit1.return1",.25);
+ assert.equal(engine.setGraphExecutionOrder(["bandit1","out1"]),true);
+ const state=engine.I.bandit1.r,inputs=state.inputs,patch=state.outputPatched,result=state.result,bands=state.bands,lastInputs=state.lastInputs;
+ for(let n=0;n<256;n++)engine.step();
+ assert.deepEqual([...state.lastInputs],[.5,.5,.5,.5]);
+ assert.equal(state.outputPatched[0],1);
+ assert.ok(state.bands[0]>0);
+ assert.ok(Math.abs(state.result.mixOut-Math.tanh(.25))<1e-9,"patched band send must be removed while return remains in MIX OUT");
+ assert.equal(engine.V[engine.sig("bandit1.bandOut1")],state.bands[0]);
+ assert.equal(engine.V[engine.sig("bandit1.mixOut")],state.result.mixOut);
+ assert.ok(engine.output()[0]>0&&engine.output()[1]>0,"individual send and return-only mix must reach the stereo Audio Out");
+ assert.strictEqual(state.inputs,inputs);assert.strictEqual(state.outputPatched,patch);assert.strictEqual(state.result,result);assert.strictEqual(state.bands,bands);assert.strictEqual(state.lastInputs,lastInputs);
+});
+test("Bandit remains active through the legacy step when an unsupported module disables scheduling",()=>{
+ const engine=createEngineHarness();buildBanditAudioOutRack(engine);
+ engine.mkInst("mid1","mid",{});engine.idxE();engine.setInput("bandit1.allIn",.5);engine.setInput("bandit1.return1",.25);
+ assert.equal(engine.setGraphExecutionOrder(["bandit1","out1"]),false);
+ for(let n=0;n<256;n++)engine.step();
+ assert.ok(engine.output()[0]>0&&engine.output()[1]>0,"legacy step must keep the Bandit sends connected");
 });

@@ -16,3 +16,9 @@ test("ALL AUDIO and individual band inputs accept audio sources",()=>{const r=re
 test("ALL CV and individual band CV inputs accept CV sources",()=>{const r=registry(),src={id:"s",type:"source"},m={id:"m",type:"bandit"};for(const port of ["allCV","bandCV1","bandCV4"])assert.equal(Graph.canConnect(r,src,"cv",m,port).ok,true)});
 test("four band outputs and MIX OUT connect to downstream audio",()=>{const r=registry(),m={id:"m",type:"bandit"},sink={id:"s",type:"sink"};for(const port of ["bandOut1","bandOut2","bandOut3","bandOut4","mixOut"])assert.equal(Graph.canConnect(r,m,port,sink,"audio").ok,true)});
 test("Bandit rejects reversed connections and CV-to-audio-only outputs",()=>{const r=registry(),m={id:"m",type:"bandit"},sink={id:"s",type:"sink"};assert.equal(Graph.canConnect(r,sink,"audio",m,"allIn").ok,false);assert.equal(Graph.canConnect(r,m,"mixOut",sink,"cv").ok,false)});
+
+test("Bandit graph plan routes an individual send to an audio sink",()=>{
+ const r=registry(),modules=[{id:"bandit1",type:"bandit"},{id:"sink1",type:"sink"}];
+ const plan=Graph.validateGraph(r,modules,[{from:{module:"bandit1",port:"bandOut1"},to:{module:"sink1",port:"audio"}}]);
+ assert.equal(plan.valid,true);assert.deepEqual(plan.order,["bandit1","sink1"]);
+});
