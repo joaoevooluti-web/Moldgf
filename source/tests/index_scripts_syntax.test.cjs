@@ -207,7 +207,7 @@ test("Bandit panel exposes four hardware bands, individual inserts, CV faders an
   const dsp=fs.readFileSync(dspPath,"utf8");
   assert.match(dsp,/function reset\(state\)/);
   assert.match(dsp,/function processInto\(params,inputs,state,sampleRate,outputPatched\)/);
-  assert.match(html,/SU\[K\(m,'bandOut1'\)\]/);
+  assert.match(html,/patch\[n\]=SU\[K\(m,'bandOut'\+\(n\+1\)\)\]\?1:0/);
   assert.match(html,/V\[K\(m,'mixOut'\)\]=o\.mixOut/);
 });
 
