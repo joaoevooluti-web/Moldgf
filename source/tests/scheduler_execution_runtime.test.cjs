@@ -25,6 +25,7 @@ const PercallDSP = require("../app/src/main/assets/percall_dsp.js");
 const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
 const IroiDSP = require("../app/src/main/assets/iroi_dsp.js");
 const BanditDSP = require("../app/src/main/assets/bandit_dsp.js");
+const HexmixVCADSP = require("../app/src/main/assets/hexmixvca_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -56,7 +57,8 @@ function createEngineHarness() {
     MoldgfPercallDSP: PercallDSP,
     MoldgfMuDiDSP: MuDiDSP,
     MoldgfIroiDSP: IroiDSP,
-    MoldgfBanditDSP: BanditDSP
+    MoldgfBanditDSP: BanditDSP,
+    MoldgfHexmixVCADSP: HexmixVCADSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -1123,4 +1125,69 @@ test("Bandit remains active through the legacy step when an unsupported module d
  assert.equal(engine.setGraphExecutionOrder(["bandit1","out1"]),false);
  for(let n=0;n<256;n++)engine.step();
  assert.ok(engine.output()[0]>0&&engine.output()[1]>0,"legacy step must keep the Bandit sends connected");
+});
+
+
+function buildHexmixVCAMixerRack(engine) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("vca1", "hexmixvca", { shape: [0,0,0,0,0,0], level: [1,1,1,1,1,1], finalRowIsMix: 0 });
+  engine.idxE();
+  engine.cab.push(
+    { a: "vca1.out6", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" },
+    { a: "vca1.out1", b: "out1.r" }
+  );
+  engine.rebuild();
+  engine.setInput("vca1.in1", 1);
+  engine.setInput("vca1.cv1", 5);
+  engine.setInput("vca1.in2", 2);
+  engine.setInput("vca1.in3", 3);
+  engine.setInput("vca1.cv3", 0);
+  engine.setInput("vca1.in4", 4);
+  engine.setInput("vca1.in5", 5);
+  engine.setInput("vca1.in6", 6);
+}
+
+test("topological Hexmix VCA routes normalized CV, individual OUT 1 and patch-aware OUT 6 through Mixer to Audio Out", () => {
+  const engine = createEngineHarness();
+  buildHexmixVCAMixerRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(["vca1", "mixer1", "out1"]), true);
+  const state = engine.I.vca1.r, inputs = state.inputs, signalScratch = inputs.signal, cvScratch = inputs.cv;
+  const patch = state.outputPatched, out = state.out;
+  engine.step();
+  assert.deepEqual(Array.from(out), [0.5, 2, 0, 4, 5, 17]);
+  assert.deepEqual(Array.from(patch), [1,0,0,0,0]);
+  assert.equal(inputs.cv[1], null, "unpatched CV2 must normalize to +10 V");
+  assert.equal(inputs.cv[2], 0, "connected zero-volt CV3 must not be treated as unpatched");
+  assert.equal(engine.V[engine.sig("vca1.out1")], 0.5);
+  assert.equal(engine.V[engine.sig("vca1.out6")], 17);
+  assert.equal(engine.V[engine.sig("mixer1.main")], 17);
+  assert.ok(Math.abs(engine.output()[0] - Math.tanh(3.4)) < 1e-9);
+  assert.ok(Math.abs(engine.output()[1] - Math.tanh(0.1)) < 1e-9);
+  assert.strictEqual(state.inputs, inputs);
+  assert.strictEqual(state.inputs.signal, signalScratch);
+  assert.strictEqual(state.inputs.cv, cvScratch);
+  assert.strictEqual(state.outputPatched, patch);
+  assert.strictEqual(state.out, out);
+
+  engine.I.vca1.s.finalRowIsMix = 1;
+  engine.step();
+  assert.equal(engine.V[engine.sig("vca1.out6")], 6, "independent mode must output only channel six");
+  assert.equal(engine.V[engine.sig("mixer1.main")], 6);
+  assert.ok(Math.abs(engine.output()[0] - Math.tanh(1.2)) < 1e-9);
+  assert.strictEqual(state.out, out);
+});
+
+test("Hexmix VCA stays connected through legacy step when an unsupported module disables the scheduler", () => {
+  const engine = createEngineHarness();
+  buildHexmixVCAMixerRack(engine);
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  assert.equal(engine.setGraphExecutionOrder(["vca1", "mixer1", "out1"]), false);
+  engine.step();
+  engine.step();
+  assert.equal(engine.V[engine.sig("vca1.out6")], 17);
+  assert.equal(engine.V[engine.sig("mixer1.main")], 17);
+  assert.ok(engine.output()[0] > 0 && engine.output()[1] > 0);
 });
