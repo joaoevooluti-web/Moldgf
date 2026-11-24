@@ -39,7 +39,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(engine, /function setGraphExecutionOrder\(order\)/);
   assert.match(engine, /function processTopologicalRack\(\)/);
   assert.match(engine, /fromIndex>=toIndex/);
-  assert.match(engine, /!\['voltio','atte','joystick','motionmtr','slewlimiter','slew','hexmixvca','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','out'\]\.includes\(m\.t\)/);
+  assert.match(engine, /!\['voltio','atte','joystick','motionmtr','slewlimiter','slew','hexmixvca','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','choppingKinky','out'\]\.includes\(m\.t\)/);
   assert.match(engine, /if\(m\.t==='voltio'\)voltioF\(m\)/);
   assert.match(engine, /function atteF\(m\)\{[^}]*MoldgfAtteDSP\.processInto\(/);
   assert.match(engine, /function joystickF\(m\)\{[^}]*MoldgfJoystickDSP\.processInto\(/);
@@ -67,7 +67,7 @@ test("active scheduler admits only verified utility/mixer adapters and keeps the
   assert.match(step, /graphExecutionOrder&&processTopologicalRack\(\)/);
   assert.match(step, /A=byT\.atte/);
   assert.match(step, /A=byT\.out/);
-  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','joystick','motionmtr','slewlimiter','slew','hexmixvca','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','out'\]\)/);
+  assert.match(ui, /const ACTIVE_SCHEDULER_TYPES=new Set\(\['voltio','atte','joystick','motionmtr','slewlimiter','slew','hexmixvca','dualAt','abc','axbc','bypass','mixer2','mixer','adsr','percall','mudi','iroi','bandit','choppingKinky','out'\]\)/);
   assert.match(ui, /executionMode:executionOrder\?'topological':'legacy'/);
   assert.match(ui, /fromIndex>=toIndex/);
   assert.match(ui, /function postCab\(\)\{const order=activeSchedulerOrder\(\);if\(typeof globalThis\.MoldgfSetExecutionOrder==='function'\)globalThis\.MoldgfSetExecutionOrder\(order\);post\(\{t:'cab'/);
@@ -124,4 +124,12 @@ test("Bandit is admitted consistently by the guarded topological scheduler",()=>
  assert.match(engine,/function banditF\(m\)\{[^\n]*MoldgfBanditDSP\.processInto\(/);
  assert.match(engine,/else if\(m\.t==='bandit'\)banditF\(m\)/);
  assert.match(ui,/ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'bandit'[^\]]*\]\)/);
+});
+
+test("Chopping Kinky is admitted consistently by the topological scheduler",()=>{
+ const {engine,ui}=readScripts();
+ assert.match(engine,/function choppingKinkyF\(m\)\{[^\n]*MoldgfChoppingKinkyDSP\.processInto\(/);
+ assert.match(engine,/else if\(m\.t==='choppingKinky'\)choppingKinkyF\(m\)/);
+ assert.match(engine,/choppingKinky:\(\)=>MoldgfChoppingKinkyDSP\.createState\(\)/);
+ assert.match(ui,/ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'choppingKinky'[^\]]*\]\)/);
 });

@@ -26,6 +26,7 @@ const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
 const IroiDSP = require("../app/src/main/assets/iroi_dsp.js");
 const BanditDSP = require("../app/src/main/assets/bandit_dsp.js");
 const HexmixVCADSP = require("../app/src/main/assets/hexmixvca_dsp.js");
+const ChoppingKinkyDSP = require("../app/src/main/assets/chopping_kinky_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -58,7 +59,8 @@ function createEngineHarness() {
     MoldgfMuDiDSP: MuDiDSP,
     MoldgfIroiDSP: IroiDSP,
     MoldgfBanditDSP: BanditDSP,
-    MoldgfHexmixVCADSP: HexmixVCADSP
+    MoldgfHexmixVCADSP: HexmixVCADSP,
+    MoldgfChoppingKinkyDSP: ChoppingKinkyDSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -1190,4 +1192,38 @@ test("Hexmix VCA stays connected through legacy step when an unsupported module 
   assert.equal(engine.V[engine.sig("vca1.out6")], 17);
   assert.equal(engine.V[engine.sig("mixer1.main")], 17);
   assert.ok(engine.output()[0] > 0 && engine.output()[1] > 0);
+});
+
+function buildChoppingKinkyAudioOutRack(engine,params={foldA:1,foldB:1,cvA:0,cvB:0,blockDC:0}){
+ engine.mkInst("out1","out",{lv:1,mu:0});
+ engine.mkInst("ck1","choppingKinky",params);
+ engine.idxE();
+ engine.cab.push({a:"ck1.chopp",b:"out1.l"},{a:"ck1.outB",b:"out1.r"});
+ engine.rebuild();
+ engine.setInput("ck1.a",2);engine.setInput("ck1.b",4);engine.setInput("ck1.gate",5);
+}
+test("topological Chopping Kinky reuses scratch and routes CHOPP/OUT B to Audio Out",()=>{
+ const engine=createEngineHarness();buildChoppingKinkyAudioOutRack(engine);
+ assert.equal(engine.setGraphExecutionOrder(["ck1","out1"]),true);
+ const state=engine.I.ck1.r,inputs=state.inputs,result=state.result;
+ engine.step();
+ assert.strictEqual(state.inputs,inputs);assert.strictEqual(state.result,result);
+ assert.equal(engine.V[engine.sig("ck1.chopp")],result.chopp);
+ assert.equal(engine.V[engine.sig("ck1.outB")],result.outB);
+ assert.equal(result.chopp,result.outA);
+ const [left,right]=engine.output();
+ assert.ok(Math.abs(left-Math.tanh(result.chopp*.2))<1e-9);
+ assert.ok(Math.abs(right-Math.tanh(result.outB*.2))<1e-9);
+});
+test("Chopping Kinky stays connected through legacy step when an unsupported rack disables scheduling",()=>{
+ const engine=createEngineHarness();
+ engine.mkInst("out1","out",{lv:1,mu:0});engine.mkInst("ck1","choppingKinky",{foldA:1,foldB:1,cvA:0,cvB:0,blockDC:0});engine.mkInst("mid1","mid",{});
+ engine.idxE();engine.cab.push({a:"ck1.chopp",b:"out1.l"},{a:"ck1.outB",b:"out1.r"});engine.rebuild();
+ engine.setInput("ck1.a",2);engine.setInput("ck1.b",4);engine.setInput("ck1.gate",5);
+ assert.equal(engine.setGraphExecutionOrder(["ck1","out1"]),false);
+ const state=engine.I.ck1.r,inputs=state.inputs,result=state.result;
+ engine.step();engine.step();
+ assert.strictEqual(state.inputs,inputs);assert.strictEqual(state.result,result);
+ assert.equal(engine.V[engine.sig("ck1.chopp")],result.chopp);
+ assert.ok(Math.abs(engine.output()[0])>0&&Math.abs(engine.output()[1])>0);
 });

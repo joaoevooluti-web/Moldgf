@@ -13,17 +13,30 @@
     if(x>=0)return 10*foldTriangle(x*.9+.08);
     return 10*foldTriangle(x*1.1-.08);
   }
-  function createState(){return{previousA:0,chopA:false,gateHigh:false,dcX:0,dcY:0}}
-  function process(inputs,params,state,sampleRate){
-    const s=state||createState(),sr=clamp(sampleRate,8000,384000,48000);
-    const cvA=finite(inputs.cvA),cvB=inputs.cvB===null||inputs.cvB===undefined?cvA:finite(inputs.cvB);
-    const gainA=Math.max(0,clamp(params.foldA,0,2,0)+clamp(params.cvA,-1,1,0)*cvA/10+finite(inputs.vcaA)/10);
-    const gainB=Math.max(0,clamp(params.foldB,0,2,0)+clamp(params.cvB,-1,1,0)*cvB/10+finite(inputs.vcaB)/10);
-    const inA=finite(inputs.a),inB=inputs.b===null||inputs.b===undefined?inA:finite(inputs.b);
+  function createState(){
+    const inputs={a:null,b:null,gate:null,cvA:null,vcaA:null,cvB:null,vcaB:null};
+    const result={outA:0,outB:0,chopp:0,chopA:false,gainA:0,gainB:0,state:null};
+    const state={previousA:0,chopA:false,gateHigh:false,dcX:0,dcY:0,inputs,result};
+    result.state=state;
+    return state;
+  }
+  function reset(state){
+    if(!state||!state.inputs||!state.result)return false;
+    state.previousA=0;state.chopA=false;state.gateHigh=false;state.dcX=0;state.dcY=0;
+    const i=state.inputs;i.a=i.b=i.gate=i.cvA=i.vcaA=i.cvB=i.vcaB=null;
+    const r=state.result;r.outA=0;r.outB=0;r.chopp=0;r.chopA=false;r.gainA=0;r.gainB=0;r.state=state;
+    return state;
+  }
+  function processInto(inputs,params,state,sampleRate){
+    const s=state||createState(),i=inputs||s.inputs,p=params||{},sr=clamp(sampleRate,8000,384000,48000);
+    const cvA=finite(i.cvA),cvB=i.cvB===null||i.cvB===undefined?cvA:finite(i.cvB);
+    const gainA=Math.max(0,clamp(p.foldA,0,2,0)+clamp(p.cvA,-1,1,0)*cvA/10+finite(i.vcaA)/10);
+    const gainB=Math.max(0,clamp(p.foldB,0,2,0)+clamp(p.cvB,-1,1,0)*cvB/10+finite(i.vcaB)/10);
+    const inA=finite(i.a),inB=i.b===null||i.b===undefined?inA:finite(i.b);
     const outA=foldA(inA,gainA),outB=foldB(inB,gainB);
-    const gateConnected=inputs.gate!==null&&inputs.gate!==undefined;
+    const gateConnected=i.gate!==null&&i.gate!==undefined;
     if(gateConnected){
-      const v=finite(inputs.gate),high=s.gateHigh?v>.1:v>=1;
+      const v=finite(i.gate),high=s.gateHigh?v>.1:v>=1;
       s.gateHigh=high;s.chopA=high;
     }else{
       if(s.previousA>0&&inA<0)s.chopA=false;
@@ -31,11 +44,16 @@
     }
     s.previousA=inA;
     let chopp=s.chopA?outA:outB;
-    if(params.blockDC){
+    if(p.blockDC){
       const alpha=Math.exp(-2*Math.PI*22.05/sr);
       const y=chopp-s.dcX+alpha*s.dcY;s.dcX=chopp;s.dcY=y;chopp=y;
     }
-    return{outA,outB,chopp,chopA:s.chopA,gainA,gainB,state:s};
+    const r=s.result;r.outA=outA;r.outB=outB;r.chopp=chopp;r.chopA=s.chopA;r.gainA=gainA;r.gainB=gainB;r.state=s;
+    return r;
   }
-  return Object.freeze({finite,clamp,foldTriangle,foldA,foldB,createState,process});
+  function process(inputs,params,state,sampleRate){
+    const s=state||createState();
+    return processInto(inputs||s.inputs,params,s,sampleRate);
+  }
+  return Object.freeze({finite,clamp,foldTriangle,foldA,foldB,createState,reset,processInto,process});
 });
