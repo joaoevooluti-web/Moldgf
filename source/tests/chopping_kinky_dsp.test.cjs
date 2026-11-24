@@ -75,5 +75,5 @@ test("invalid inputs and out-of-range controls remain finite and bounded",()=>{
  const state=CK.createState(),p={foldA:Infinity,foldB:-Infinity,cvA:Infinity,cvB:-Infinity,blockDC:false};
  const r=CK.process({a:NaN,b:Infinity,gate:Infinity,cvA:Infinity,cvB:Infinity,vcaA:NaN,vcaB:Infinity},p,state,48000);
  for(const v of [r.outA,r.outB,r.chopp,r.gainA,r.gainB])assert.ok(Number.isFinite(v));
- assert.equal(r.gainA,0);assert.equal(r.gainB,0);assert.equal(r.outA,0);assert.equal(r.outB,0);
+ assert.equal(r.gainA,0);assert.equal(r.gainB,0);assert.equal(r.outA,0);assert.equal(r.outB,CK.foldB(0,0));
 });

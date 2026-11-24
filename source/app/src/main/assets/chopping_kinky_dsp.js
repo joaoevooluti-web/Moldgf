@@ -52,8 +52,8 @@
     return r;
   }
   function process(inputs,params,state,sampleRate){
-    const s=state||createState();
-    return processInto(inputs||s.inputs,params,s,sampleRate);
+    const s=state||createState(),r=processInto(inputs||s.inputs,params,s,sampleRate);
+    return{outA:r.outA,outB:r.outB,chopp:r.chopp,chopA:r.chopA,gainA:r.gainA,gainB:r.gainB,state:s};
   }
   return Object.freeze({finite,clamp,foldTriangle,foldA,foldB,createState,reset,processInto,process});
 });
