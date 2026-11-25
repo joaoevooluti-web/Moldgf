@@ -1298,3 +1298,13 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 - **Current scheduler inventory:** **19 processing module types** plus Audio Out — Voltio, Atte, Joystick, Motion MTR, Slew Limiter, Slew, ADSR, PerCall, MuDi, Iroi, Bandit, Hexmix VCA, Chopping Kinky, Dual Atenuverter, A*B+C V1, AxBC, Molten Bypass, Mixer2 and Mixer. Other catalogue modules remain on legacy execution until audited and migrated.
 - **Repository protection after #129:** `main...feature/befaco-modules` is **660 commits ahead / 0 behind**, merge base `8e81fcb36fb1bedbf63019b6ee5d890f694fb165`; `main` unchanged, no merge or force-push. Phase 0 baseline remains corrected and recorded.
 - **Next objective:** audit Even VCO waveform generation, pitch/FM/sync and PWM CV/state/reset before migrating its DSP to the scheduler.
+
+
+
+## Even VCO — allocation-conscious topological scheduler migration (2026-11-25; CI pending)
+
+- **Implemented:** the existing clean-room polyBLEP oscillator now exposes `processInto()` with a state-owned five-waveform `Float32Array`, reusable input scratch, frequency/pulse-width readouts, and `reset()` that clears oscillator state without replacing buffers. The legacy `process()` API still returns an independent output snapshot. Numeric UI switch values (0/1) and boolean test/API values are accepted.
+- **Scheduler:** the engine adapter fills state-owned CV/gate scratch and dispatches Even VCO in the guarded topological scheduler; the UI admission set and engine admission guard are aligned. Legacy `step()` uses the same allocation-conscious adapter when the graph is not eligible for topological execution.
+- **Tested (pending CI):** added direct tests for reusable-buffer identity, reset/state clearing, snapshot compatibility, numeric switch settings, and a typed Even VCO → Mixer2 → Mixer → Audio Out runtime chain plus legacy fallback.
+- **CI:** pending the workflow triggered by the implementation commit; no CI result is claimed yet in this entry.
+- **Pending fidelity:** waveform/pitch/FM/sync/PWM behavior is a clean-room polyBLEP approximation, without analog/firmware parity, oversampling parity, or physical calibration. No VCV/Befaco source or proprietary artwork was copied/adapted.
