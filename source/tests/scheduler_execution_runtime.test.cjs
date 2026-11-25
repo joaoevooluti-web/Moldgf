@@ -851,7 +851,7 @@ test("Slew is admitted consistently by the UI and audio scheduler allowlists", (
   const uiScript = scripts.find(match => match[2].includes("const PORT_REGISTRY=MoldgfModuleGraph.createRegistry()"))?.[2];
   assert.ok(uiScript, "rack UI script must contain the live module registry");
   assert.match(uiScript, /ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'slew'[^\]]*\]\)/);
-  assert.match(engineSource, /'slew','hexmixvca','dualAt'/);
+  assert.match(engineSource, /'slew','hexmixvca','evenVco','dualAt'/);
   assert.match(engineSource, /else if\(m\.t==='slew'\)slewF\(m\)/);
   assert.match(engineSource, /slew:\(\)=>MoldgfSlewDSP\.createState\(\)/);
 });
