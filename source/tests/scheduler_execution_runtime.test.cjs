@@ -26,7 +26,8 @@ const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
 const IroiDSP = require("../app/src/main/assets/iroi_dsp.js");
 const BanditDSP = require("../app/src/main/assets/bandit_dsp.js");
 const HexmixVCADSP = require("../app/src/main/assets/hexmixvca_dsp.js");
-const ChoppingKinkyDSP = require("../app/src/main/assets/chopping_kinky_dsp.js");\nconst PonyVCODSP = require("../app/src/main/assets/pony_vco_dsp.js");
+const ChoppingKinkyDSP = require("../app/src/main/assets/chopping_kinky_dsp.js");
+const PonyVCODSP = require("../app/src/main/assets/pony_vco_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -60,7 +61,8 @@ function createEngineHarness() {
     MoldgfIroiDSP: IroiDSP,
     MoldgfBanditDSP: BanditDSP,
     MoldgfHexmixVCADSP: HexmixVCADSP,
-    MoldgfChoppingKinkyDSP: ChoppingKinkyDSP,\n    MoldgfPonyVCODSP: PonyVCODSP
+    MoldgfChoppingKinkyDSP: ChoppingKinkyDSP,
+    MoldgfPonyVCODSP: PonyVCODSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
