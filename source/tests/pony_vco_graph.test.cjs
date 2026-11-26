@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { createRegistry, canConnect } = require("../app/src/main/assets/module_graph.js");
+const { createRegistry, canConnect, validateGraph } = require("../app/src/main/assets/module_graph.js");
 const ports = [{"id":"tzfm","direction":"input","signal":"cv","channels":1,"accepts":["cv","audio"]},{"id":"timbre","direction":"input","signal":"cv","channels":1,"accepts":["cv"]},{"id":"voct","direction":"input","signal":"cv","channels":1,"accepts":["cv"]},{"id":"sync","direction":"input","signal":"gate","channels":1,"accepts":["gate","cv"]},{"id":"vca","direction":"input","signal":"cv","channels":1,"accepts":["cv"]},{"id":"out","direction":"output","signal":"audio","channels":1}];
 const registry = createRegistry([
   { type: "ponyVco", ports },

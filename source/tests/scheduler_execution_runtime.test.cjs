@@ -853,7 +853,7 @@ test("Slew is admitted consistently by the UI and audio scheduler allowlists", (
   const uiScript = scripts.find(match => match[2].includes("const PORT_REGISTRY=MoldgfModuleGraph.createRegistry()"))?.[2];
   assert.ok(uiScript, "rack UI script must contain the live module registry");
   assert.match(uiScript, /ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'slew'[^\]]*\]\)/);
-  assert.match(engineSource, /'slew','hexmixvca','evenVco','dualAt'/);
+  assert.match(engineSource, /'slew','hexmixvca','evenVco','ponyVco','dualAt'/);
   assert.match(engineSource, /else if\(m\.t==='slew'\)slewF\(m\)/);
   assert.match(engineSource, /slew:\(\)=>MoldgfSlewDSP\.createState\(\)/);
 });
@@ -904,7 +904,7 @@ test("Pony VCO remains active in legacy fallback when an unsupported module disa
   engine.idxE();
   engine.rebuild();
   assert.equal(engine.setGraphExecutionOrder(["pony1", "mixer1", "out1"]), false);
-  engine.step();
+  for (let i = 0; i < 4; i++) engine.step();
   assert.ok(engine.I.pony1.r.frequency > 0);
   assert.ok(Math.abs(engine.output()[0]) > 0.05, "legacy fallback must keep the oscillator connected");
 });
