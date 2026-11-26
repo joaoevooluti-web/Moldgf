@@ -26,7 +26,7 @@ const MuDiDSP = require("../app/src/main/assets/mudi_dsp.js");
 const IroiDSP = require("../app/src/main/assets/iroi_dsp.js");
 const BanditDSP = require("../app/src/main/assets/bandit_dsp.js");
 const HexmixVCADSP = require("../app/src/main/assets/hexmixvca_dsp.js");
-const ChoppingKinkyDSP = require("../app/src/main/assets/chopping_kinky_dsp.js");
+const ChoppingKinkyDSP = require("../app/src/main/assets/chopping_kinky_dsp.js");\nconst PonyVCODSP = require("../app/src/main/assets/pony_vco_dsp.js");
 
 const html = fs.readFileSync(
   path.join(__dirname, "../app/src/main/assets/index.html"),
@@ -60,7 +60,7 @@ function createEngineHarness() {
     MoldgfIroiDSP: IroiDSP,
     MoldgfBanditDSP: BanditDSP,
     MoldgfHexmixVCADSP: HexmixVCADSP,
-    MoldgfChoppingKinkyDSP: ChoppingKinkyDSP
+    MoldgfChoppingKinkyDSP: ChoppingKinkyDSP,\n    MoldgfPonyVCODSP: PonyVCODSP
   };
   vm.createContext(context);
   vm.runInContext(engineSource + `
@@ -856,6 +856,56 @@ test("Slew is admitted consistently by the UI and audio scheduler allowlists", (
   assert.match(engineSource, /slew:\(\)=>MoldgfSlewDSP\.createState\(\)/);
 });
 
+
+function buildPonyVcoMixerRack(engine, params = { freq: 0, range: 1, timbre: 0.5, octave: 3, waveform: 0 }) {
+  engine.mkInst("out1", "out", { lv: 1, mu: 0 });
+  engine.mkInst("mixer1", "mixer", { gain: [1, 0, 0, 0] });
+  engine.mkInst("pony1", "ponyVco", params);
+  engine.idxE();
+  engine.cab.push(
+    { a: "pony1.out", b: "mixer1.ch1" },
+    { a: "mixer1.main", b: "out1.l" }
+  );
+  engine.rebuild();
+  engine.setInput("pony1.voct", 1);
+  engine.setInput("pony1.vca", 10);
+}
+
+test("Pony VCO is admitted consistently by UI and audio scheduler and dispatches topologically", () => {
+  const uiScript = scripts.find(match => match[2].includes("const PORT_REGISTRY=MoldgfModuleGraph.createRegistry()"))?.[2];
+  assert.ok(uiScript, "rack UI script must contain the live module registry");
+  assert.match(uiScript, /ACTIVE_SCHEDULER_TYPES=new Set\(\[[^\]]*'ponyVco'[^\]]*\]\)/);
+  assert.match(engineSource, /'evenVco','ponyVco','dualAt'/);
+  assert.match(engineSource, /else if\(m\.t==='ponyVco'\)ponyVcoF\(m\)/);
+  assert.match(engineSource, /ponyVco:\(\)=>MoldgfPonyVCODSP\.createState\(\)/);
+});
+
+test("topological Pony VCO -> Mixer -> Audio Out reuses input scratch and routes pitch readout", () => {
+  const engine = createEngineHarness();
+  buildPonyVcoMixerRack(engine);
+  assert.equal(engine.setGraphExecutionOrder(["pony1", "mixer1", "out1"]), true);
+  const state = engine.I.pony1.r;
+  const inputs = state.inputs;
+  for (let i = 0; i < 96; i++) engine.step();
+  assert.strictEqual(state.inputs, inputs);
+  assert.ok(Number.isFinite(state.output));
+  assert.ok(state.frequency > 0);
+  assert.equal(engine.V[engine.sig("pony1.out")], state.output);
+  assert.equal(engine.V[engine.sig("pony1.freq")], state.frequency);
+  assert.ok(Math.abs(engine.output()[0]) > 0.05, "oscillator signal must reach the audio sink");
+});
+
+test("Pony VCO remains active in legacy fallback when an unsupported module disables scheduling", () => {
+  const engine = createEngineHarness();
+  buildPonyVcoMixerRack(engine);
+  engine.mkInst("mid1", "mid", {});
+  engine.idxE();
+  engine.rebuild();
+  assert.equal(engine.setGraphExecutionOrder(["pony1", "mixer1", "out1"]), false);
+  engine.step();
+  assert.ok(engine.I.pony1.r.frequency > 0);
+  assert.ok(Math.abs(engine.output()[0]) > 0.05, "legacy fallback must keep the oscillator connected");
+});
 
 function makeADSRMixerPlan() {
   const gateIn = id => ({ id, direction: "input", signal: "gate", channels: 1, accepts: ["gate", "cv"] });

@@ -47,3 +47,48 @@ test("timbre changes pulse width and VCA input scales the output", () => {
   assert.equal(half.output, full.output / 2);
   assert.equal(Pony.clamp(0.5, 0.05, 0.95), 0.5);
 });
+
+test("processInto returns state and reuses its input scratch", () => {
+  const state = Pony.createState();
+  const inputs = state.inputs;
+  const params = { range: 1, octave: 3, freq: 0, timbre: 0.5, waveform: 0 };
+  inputs.voct = 1; inputs.vca = 10;
+  const result = Pony.processInto(params, inputs, state, 48000);
+  assert.strictEqual(result, state);
+  assert.strictEqual(state.inputs, inputs);
+  assert.ok(state.output > 0);
+  assert.equal(state.frequency, 2 * Pony.C4);
+  assert.equal(state.out, state.output);
+});
+
+test("reset preserves state and scratch identities while clearing phase, sync and readouts", () => {
+  const state = Pony.createState();
+  const inputs = state.inputs;
+  const params = { range: 1, octave: 3, freq: 0, timbre: 0.5, waveform: 0 };
+  inputs.sync = 5; inputs.vca = 10;
+  Pony.processInto(params, inputs, state, 48000);
+  assert.ok(state.phase > 0);
+  assert.equal(state.syncHigh, true);
+  Pony.reset(state);
+  assert.strictEqual(state.inputs, inputs);
+  assert.equal(state.phase, 0);
+  assert.equal(state.syncHigh, false);
+  assert.equal(state.output, 0);
+  assert.equal(state.frequency, 0);
+  assert.equal(inputs.vca, null);
+});
+
+test("legacy process returns independent snapshots and processInto supports sample-rate changes", () => {
+  const state = Pony.createState();
+  const params = { range: 1, octave: 3, freq: 0, timbre: 0.5, waveform: 2 };
+  const inputs = { voct: 0, tzfm: 0, timbre: 0, sync: 0, vca: 10 };
+  const a = Pony.process(params, inputs, state, 48000);
+  const phase = state.phase;
+  Pony.processInto(params, inputs, state, 96000);
+  const b = Pony.process(params, inputs, state, 96000);
+  assert.notStrictEqual(a, b);
+  assert.notStrictEqual(a, state);
+  assert.strictEqual(a.state, state);
+  assert.ok(state.phase > phase);
+  assert.ok(Number.isFinite(state.output));
+});

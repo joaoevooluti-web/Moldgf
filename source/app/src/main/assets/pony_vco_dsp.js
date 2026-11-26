@@ -36,23 +36,41 @@
     const pitch = finite(voct) + clamp(params.freq, -0.5, 0.5, 0) * range;
     return base * Math.pow(2, pitch);
   }
-  function createState() { return { initialized: false, phase: 0, triangle: 0, syncHigh: false }; }
-  function process(params, inputs, state, sampleRate) {
+  const DEFAULT_PARAMS = Object.freeze({ range: 0, octave: 3, freq: 0, timbre: 0, waveform: 0 });
+  const DEFAULT_INPUTS = Object.freeze({ tzfm: 0, timbre: 0, voct: 0, sync: 0, vca: null });
+  function createState() {
+    return {
+      initialized: false, phase: 0, triangle: 0, syncHigh: false,
+      output: 0, out: 0, frequency: 0, waveform: 0, gain: 1,
+      inputs: { tzfm: 0, timbre: 0, voct: 0, sync: 0, vca: null }
+    };
+  }
+  function reset(state) {
     const s = state || createState();
+    s.initialized = false; s.phase = 0; s.triangle = 0; s.syncHigh = false;
+    s.output = 0; s.out = 0; s.frequency = 0; s.waveform = 0; s.gain = 1;
+    if (s.inputs) {
+      s.inputs.tzfm = 0; s.inputs.timbre = 0; s.inputs.voct = 0; s.inputs.sync = 0; s.inputs.vca = null;
+    }
+    return s;
+  }
+  function processInto(params, inputs, state, sampleRate) {
+    const s = state || createState();
+    const p = params || DEFAULT_PARAMS;
+    const I = inputs || s.inputs || DEFAULT_INPUTS;
     if (!s.initialized) { s.phase = 0; s.triangle = 0; s.syncHigh = false; s.initialized = true; }
     const sr = clamp(sampleRate, 8000, 384000, 48000);
-    const f = frequency(params, inputs.voct);
-    const fmRatio = 1 + finite(inputs.tzfm);
+    const f = finite(frequency(p, I.voct));
+    const fmRatio = 1 + finite(I.tzfm);
     const delta = clamp(f * fmRatio / sr, -0.5, 0.5, 0);
-    const sync = finite(inputs.sync);
+    const sync = finite(I.sync);
     const syncHigh = s.syncHigh ? sync > 0.1 : sync >= 1;
     const syncRising = !s.syncHigh && syncHigh;
-    s.syncHigh = syncHigh;
-    const waveform = clamp(params.waveform, 0, 3, 0) | 0;
+    const waveform = clamp(p.waveform, 0, 3, 0) | 0;
     if (syncRising) { s.phase = waveform === 0 ? 0.25 : 0; s.triangle = 0; }
     s.phase = wrapPhase(s.phase + delta);
     const dt = Math.max(Math.abs(delta), 1 / sr);
-    const timbre = clamp(params.timbre + finite(inputs.timbre) / 10, 0, 1, 0);
+    const timbre = clamp(p.timbre + finite(I.timbre) / 10, 0, 1, 0);
     const pulseWidth = clamp(timbre, 0.05, 0.95, 0.5);
     let wave;
     if (waveform === 0) wave = Math.sin(2 * Math.PI * s.phase);
@@ -62,9 +80,16 @@
     } else if (waveform === 2) wave = saw(s.phase, dt);
     else wave = square(s.phase, pulseWidth, dt);
     if (waveform !== 3) wave = waveFold(wave, timbre);
-    const vcaVoltage = inputs.vca === null || inputs.vca === undefined ? 10 : finite(inputs.vca);
+    const vcaVoltage = I.vca === null || I.vca === undefined ? 10 : finite(I.vca);
     const gain = clamp(vcaVoltage / 10, 0, 1, 0);
-    return { output: 5 * wave * gain, frequency: f, phase: s.phase, waveform: wave, gain, state: s };
+    s.syncHigh = syncHigh;
+    s.frequency = f; s.waveform = wave; s.gain = gain; s.output = 5 * wave * gain; s.out = s.output;
+    return s;
   }
-  return Object.freeze({ C4, RANGES, finite, clamp, wrapPhase, polyBlep, saw, square, waveFold, frequency, createState, process });
+  function process(params, inputs, state, sampleRate) {
+    const s = state || createState();
+    processInto(params, inputs, s, sampleRate);
+    return { output: s.output, frequency: s.frequency, phase: s.phase, waveform: s.waveform, gain: s.gain, state: s };
+  }
+  return Object.freeze({ C4, RANGES, finite, clamp, wrapPhase, polyBlep, saw, square, waveFold, frequency, createState, reset, processInto, process });
 });

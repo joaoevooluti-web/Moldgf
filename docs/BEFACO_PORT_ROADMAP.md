@@ -1317,3 +1317,12 @@ The guarded topological scheduler now admits **13 processing module types**, plu
 - **Pending fidelity:** waveform/pitch/FM/sync/PWM behavior is a clean-room polyBLEP approximation, without analog/firmware parity, oversampling parity, or physical calibration. No VCV/Befaco source or proprietary artwork was copied/adapted.
 
 - **Next objective:** migrate PonyVCO to the guarded topological scheduler with reusable state, deterministic pitch/waveform/FM tests, typed graph connectivity and legacy fallback.
+
+## Pony VCO — allocation-conscious topological scheduler migration (2026-11-26; CI pending)
+
+- **Implemented:** the clean-room oscillator now exposes `createState()`, buffer-preserving `reset()`, and `processInto()`. State owns reusable modulation-input scratch and output/readout fields; the legacy `process()` API returns a fresh snapshot. Existing pitch, range, polyBLEP waveforms, through-zero FM, sync, timbre/fold and VCA behavior are retained.
+- **Scheduler:** the engine fills Pony VCO's state-owned input scratch and dispatches it in the guarded topological processor; the UI scheduler set and engine guard include Pony VCO. The legacy `step()` path uses the same adapter. Typed ports already declared for TZFM, timbre CV, V/OCT, sync, VCA and audio OUT are preserved.
+- **Tested locally:** a standalone Node harness passed **9/9** direct DSP checks (pitch/range, waveform bounds, waveform output scale, through-zero FM, hard sync, timbre/VCA, scratch reuse, reset and snapshot/sample-rate behavior). Full repository graph/scheduler integration tests are pending CI; local checkout/network access was unavailable.
+- **CI pending:** this implementation batch has not yet been validated by GitHub Actions. No APK or Android-device validation is claimed.
+- **Pending fidelity:** waveform/fold and pitch behavior remain a clean-room approximation, without analog/firmware parity or calibration. No VCV/Befaco code or proprietary panel artwork was copied/adapted.
+- **Next objective:** migrate Rampage with deterministic envelope/trigger, cycle, CV, reset/state and graph-routing tests.

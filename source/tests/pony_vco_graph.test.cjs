@@ -21,3 +21,20 @@ test("Pony VCO exposes all five modulation inputs and its waveform output", () =
 test("Pony VCO rejects reverse signal direction", () => {
   assert.equal(canConnect(registry, { type: "ponyVco" }, "voct", { type: "cv" }, "out").code, "direction");
 });
+
+test("Pony VCO modulation inputs and audio output form a valid typed graph", () => {
+  const plan = validateGraph(registry,
+    [
+      { id: "cv1", type: "cv" },
+      { id: "gate1", type: "gate" },
+      { id: "vco1", type: "ponyVco" },
+      { id: "sink1", type: "sink" }
+    ],
+    [
+      { from: { module: "cv1", port: "out" }, to: { module: "vco1", port: "voct" } },
+      { from: { module: "gate1", port: "out" }, to: { module: "vco1", port: "sync" } },
+      { from: { module: "vco1", port: "out" }, to: { module: "sink1", port: "in" } }
+    ]);
+  assert.equal(plan.valid, true);
+  assert.deepEqual(plan.order, ["cv1", "gate1", "vco1", "sink1"]);
+});
